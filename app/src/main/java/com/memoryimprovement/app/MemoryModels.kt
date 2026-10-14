@@ -34,6 +34,7 @@ data class RecallAttempt(
     val correct: Boolean,
     val score: Int,
     val latencyMs: Long,
+    val recalledResponse: String? = null,
     val reviewedAt: Long = System.currentTimeMillis(),
 )
 
