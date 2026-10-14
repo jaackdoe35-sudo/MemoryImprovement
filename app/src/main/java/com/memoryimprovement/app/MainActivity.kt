@@ -136,6 +136,12 @@ class MainActivity : ComponentActivity() {
                                     onLoaded(repository.loadPalaceNodes())
                                 }
                             },
+                            onMoveNode = { nodeId, parentId, onLoaded ->
+                                lifecycleScope.launch {
+                                    repository.movePalaceNode(nodeId, parentId)
+                                    onLoaded(repository.loadPalaceNodes())
+                                }
+                            },
                         )
                     }
                 }
@@ -166,6 +172,7 @@ private fun MemoryApp(
     onCreateNode: (String, PalaceNodeKind, String?, (List<PalaceNode>) -> Unit) -> Unit,
     onDeleteNode: (String, (List<PalaceNode>) -> Unit) -> Unit,
     onRenameNode: (String, String, (List<PalaceNode>) -> Unit) -> Unit,
+    onMoveNode: (String, String?, (List<PalaceNode>) -> Unit) -> Unit,
 ) {
     var memories by remember { mutableStateOf(initialItems) }
     var palaceNodes by remember { mutableStateOf(initialNodes) }
@@ -280,6 +287,12 @@ private fun MemoryApp(
                     },
                     onRenameNode = { nodeId, name, onLoaded ->
                         onRenameNode(nodeId, name) { refreshed ->
+                            palaceNodes = refreshed
+                            onLoaded(refreshed)
+                        }
+                    },
+                    onMoveNode = { nodeId, parentId, onLoaded ->
+                        onMoveNode(nodeId, parentId) { refreshed ->
                             palaceNodes = refreshed
                             onLoaded(refreshed)
                         }
@@ -1125,8 +1138,10 @@ private fun PalaceScreen(
     onCreateNode: (String, PalaceNodeKind, String?, (List<PalaceNode>) -> Unit) -> Unit,
     onDeleteNode: (String, (List<PalaceNode>) -> Unit) -> Unit,
     onRenameNode: (String, String, (List<PalaceNode>) -> Unit) -> Unit,
+    onMoveNode: (String, String?, (List<PalaceNode>) -> Unit) -> Unit,
 ) {
     var addParent by remember { mutableStateOf<PalaceNode?>(null) }
+    var movingNode by remember { mutableStateOf<PalaceNode?>(null) }
     var renamingNode by remember { mutableStateOf<PalaceNode?>(null) }
     var deletingNode by remember { mutableStateOf<PalaceNode?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
@@ -1179,6 +1194,9 @@ private fun PalaceScreen(
                             TextButton(onClick = { addParent = node; showAddDialog = true }) { Text("+ Add child location") }
                         }
                         TextButton(onClick = { renamingNode = node }) { Text("Rename") }
+                        if (node.kind != PalaceNodeKind.Palace) {
+                            TextButton(onClick = { movingNode = node }) { Text("Move") }
+                        }
                         TextButton(onClick = { deletingNode = node }) { Text("Delete branch") }
                     }
                 }
@@ -1190,6 +1208,15 @@ private fun PalaceScreen(
                 Text("Add memory item")
             }
         }
+    }
+
+    movingNode?.let { node ->
+        MovePalaceNodeDialog(
+            node = node,
+            nodes = nodes,
+            onDismiss = { movingNode = null },
+            onMove = { parentId -> onMoveNode(node.id, parentId) { movingNode = null } },
+        )
     }
 
     renamingNode?.let { node ->
@@ -1231,6 +1258,38 @@ private fun PalaceScreen(
             },
         )
     }
+}
+
+@Composable
+private fun MovePalaceNodeDialog(
+    node: PalaceNode,
+    nodes: List<PalaceNode>,
+    onDismiss: () -> Unit,
+    onMove: (String?) -> Unit,
+) {
+    val currentParent = nodes.firstOrNull { it.id == node.parentId }
+    val candidates = nodes.filter { candidate ->
+        candidate.id != currentParent?.id && PalaceMovePlan.isValidParent(nodes, node.id, candidate.id)
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Move ${node.kind.label.lowercase()}") },
+        text = {
+            if (candidates.isEmpty()) {
+                Text("There are no valid parent locations for this item.")
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Choose a new parent location:")
+                    candidates.forEach { candidate ->
+                        TextButton(onClick = { onMove(candidate.id) }, modifier = Modifier.fillMaxWidth()) {
+                            Text("${candidate.kind.label}: ${candidate.name}")
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
 }
 
 @Composable
