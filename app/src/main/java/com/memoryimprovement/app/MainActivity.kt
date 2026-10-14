@@ -50,13 +50,21 @@ class MainActivity : ComponentActivity() {
         val repository = MemoryRepository(applicationContext)
         lifecycleScope.launch {
             val initialItems = repository.loadItems()
+            val initialNodes = repository.loadPalaceNodes()
             setContent {
                 MaterialTheme {
                     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                         MemoryApp(
                             initialItems = initialItems,
+                            initialNodes = initialNodes,
                             onSave = { updated -> lifecycleScope.launch { repository.saveItems(updated) } },
                             onAttempt = { attempt -> lifecycleScope.launch { repository.saveAttempt(attempt) } },
+                            onCreateNode = { name, kind, parentId, onLoaded ->
+                                lifecycleScope.launch {
+                                    repository.createPalaceNode(name, kind, parentId)
+                                    onLoaded(repository.loadPalaceNodes())
+                                }
+                            },
                         )
                     }
                 }
@@ -73,10 +81,13 @@ private enum class AppTab(val label: String) {
 @Composable
 private fun MemoryApp(
     initialItems: List<MemoryItem>,
+    initialNodes: List<PalaceNode>,
     onSave: (List<MemoryItem>) -> Unit,
     onAttempt: (RecallAttempt) -> Unit,
+    onCreateNode: (String, PalaceNodeKind, String?, (List<PalaceNode>) -> Unit) -> Unit,
 ) {
     var memories by remember { mutableStateOf(initialItems) }
+    var palaceNodes by remember { mutableStateOf(initialNodes) }
     var tab by remember { mutableStateOf(AppTab.Today) }
     var adding by remember { mutableStateOf(false) }
     var active by remember { mutableStateOf<MemoryItem?>(null) }
