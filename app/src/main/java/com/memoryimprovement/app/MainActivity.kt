@@ -974,12 +974,14 @@ private fun TodayScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(1, 7, 30).forEach { delayDays ->
                         val group = completed.filter { it.delayDays == delayDays }
+                        val scheduled = checkpoints.count { it.delayDays == delayDays }
+                        val notTested = (scheduled - group.size).coerceAtLeast(0)
                         val rated = group.mapNotNull { it.score }
                         val timed = group.mapNotNull { it.latencyMs }
                         Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text("${delayDays}-day checkpoint", fontWeight = FontWeight.SemiBold)
-                                Text("${group.size} completed")
+                                Text("${group.size} completed · $notTested not tested")
                                 if (rated.isNotEmpty()) {
                                     Text(
                                         "Mean self-rating: ${"%.1f".format(rated.average())} / 5",
