@@ -147,6 +147,28 @@ object MemoryExportPlan {
     }
 }
 
+data class EncodingQualityCheck(
+    val score: Int,
+    val maxScore: Int = 4,
+    val suggestions: List<String>,
+)
+
+/**
+ * A transparent local checklist for encoding completeness, not a validated predictor of memory performance.
+ * It rewards a clear prompt/answer, a named chunk, and a concrete association.
+ */
+object EncodingQualityPlan {
+    fun evaluate(prompt: String, answer: String, chunkLabel: String, association: String): EncodingQualityCheck {
+        val suggestions = mutableListOf<String>()
+        var score = 0
+        if (prompt.trim().length >= 4) score++ else suggestions += "Make the prompt a specific question or cue."
+        if (answer.trim().length >= 2) score++ else suggestions += "Add a clear answer in your own words."
+        if (chunkLabel.trim().isNotEmpty()) score++ else suggestions += "Group this fact under a short topic or chunk."
+        if (association.trim().length >= 20) score++ else suggestions += "Add a distinctive image or action association (about 20 characters or more)."
+        return EncodingQualityCheck(score = score, suggestions = suggestions)
+    }
+}
+
 data class MemoryItem(
     val id: String,
     val prompt: String,
