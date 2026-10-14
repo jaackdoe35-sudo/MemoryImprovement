@@ -440,6 +440,12 @@ private fun AddPalaceNodeDialog(
     )
 }
 
+private fun RecallMode.label(): String = when (this) {
+    RecallMode.Cued -> "Cued"
+    RecallMode.Free -> "Free"
+    RecallMode.Reverse -> "Reverse"
+}
+
 @Composable
 private fun RecallScreen(
     item: MemoryItem?,
