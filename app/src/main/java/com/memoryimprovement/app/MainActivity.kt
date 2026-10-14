@@ -314,24 +314,29 @@ private fun MemoryApp(
                 } else if (activeSequence != null) {
                     SequenceRecallScreen(
                         sequence = activeSequence!!,
-                        onComplete = { score, latencyMs, response ->
+                        onComplete = { score, sequenceCorrect, latencyMs, response ->
                             val sequence = activeSequence ?: return@SequenceRecallScreen
                             val now = System.currentTimeMillis()
                             val updated = memories.map { memory ->
                                 if (sequence.items.any { it.id == memory.id }) {
-                                    val outcome = RecallScheduler.schedule(memory.reviewCount, score, now)
+                                    val outcome = RecallScheduler.schedule(
+                                        previousReviews = memory.reviewCount,
+                                        score = score,
+                                        now = now,
+                                        consecutiveFailures = if (sequenceCorrect) 0 else 2,
+                                    )
                                     memory.copy(nextReviewAt = outcome.nextReviewAt, lastScore = outcome.score, reviewCount = memory.reviewCount + 1)
                                 } else memory
                             }
                             save(updated)
                             sequence.items.forEach { memory ->
                                 recordAttempt(RecallAttempt(
-                                    itemId = memory.id, mode = RecallMode.Sequence, correct = score >= 3,
+                                    itemId = memory.id, mode = RecallMode.Sequence, correct = sequenceCorrect,
                                     score = score, latencyMs = latencyMs, recalledResponse = response,
                                 ))
                             }
                             attempts += sequence.items.size
-                            if (score >= 3) correct += sequence.items.size
+                            if (sequenceCorrect) correct += sequence.items.size
                             activeSequence = null
                             active = updated.filter { candidate -> sequence.items.none { it.id == candidate.id } }
                                 .minByOrNull { it.nextReviewAt }
@@ -1457,11 +1462,12 @@ private fun RetentionTestScreen(
 @Composable
 private fun SequenceRecallScreen(
     sequence: RecallSequence,
-    onComplete: (Int, Long, String?) -> Unit,
+    onComplete: (Int, Boolean, Long, String?) -> Unit,
 ) {
     var response by remember(sequence.label, sequence.items.map { it.id }) { mutableStateOf("") }
     var revealed by remember(sequence.label, sequence.items.map { it.id }) { mutableStateOf(false) }
     var selectedScore by remember(sequence.label, sequence.items.map { it.id }) { mutableStateOf<Int?>(null) }
+    var sequenceCorrect by remember(sequence.label, sequence.items.map { it.id }) { mutableStateOf<Boolean?>(null) }
     val startedAt = remember(sequence.label, sequence.items.map { it.id }) { SystemClock.elapsedRealtime() }
     Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Heading("Ordered recall")
@@ -1493,16 +1499,25 @@ private fun SequenceRecallScreen(
             }
         }
         if (revealed) {
-            Text("Rate the sequence as a whole after comparing your response.", fontWeight = FontWeight.SemiBold)
-            listOf(0 to "Could not recall", 2 to "Several errors", 3 to "Mostly correct", 5 to "Correct in order")
+            Text("After comparing, mark correctness separately from retrieval effort.", fontWeight = FontWeight.SemiBold)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                TextButton(onClick = { sequenceCorrect = false }, modifier = Modifier.weight(1f)) {
+                    Text(if (sequenceCorrect == false) "✓ Incorrect" else "Incorrect")
+                }
+                TextButton(onClick = { sequenceCorrect = true }, modifier = Modifier.weight(1f)) {
+                    Text(if (sequenceCorrect == true) "✓ Correct" else "Correct")
+                }
+            }
+            Text("How much effort did retrieval require?", fontWeight = FontWeight.SemiBold)
+            listOf(0 to "Again", 2 to "Hard", 3 to "Got it", 5 to "Easy")
                 .forEach { (score, label) ->
                     TextButton(onClick = { selectedScore = score }, modifier = Modifier.fillMaxWidth()) {
                         Text(if (selectedScore == score) "✓ $label" else label)
                     }
                 }
             Button(
-                onClick = { onComplete(selectedScore!!, SystemClock.elapsedRealtime() - startedAt, response.trim().takeIf { it.isNotEmpty() }) },
-                enabled = selectedScore != null,
+                onClick = { onComplete(selectedScore!!, sequenceCorrect == true, SystemClock.elapsedRealtime() - startedAt, response.trim().takeIf { it.isNotEmpty() }) },
+                enabled = selectedScore != null && sequenceCorrect != null,
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("Save sequence result") }
         }
