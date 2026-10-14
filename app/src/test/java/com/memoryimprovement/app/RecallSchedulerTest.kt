@@ -38,6 +38,28 @@ class RecallSchedulerTest {
     }
 
     @Test
+    fun orderedSequenceGroupsOnlyItemsWithSharedChunkAndSequencePositions() {
+        val items = listOf(
+            MemoryItem(id = "b", prompt = "Second", answer = "B", chunkLabel = "Protocol", sequenceOrder = 2),
+            MemoryItem(id = "x", prompt = "Unsequenced", answer = "X", chunkLabel = "Protocol"),
+            MemoryItem(id = "a", prompt = "First", answer = "A", chunkLabel = "Protocol", sequenceOrder = 1),
+            MemoryItem(id = "c", prompt = "Other", answer = "C", chunkLabel = "Different", sequenceOrder = 1),
+        )
+        val groups = RecallSequencePlan.groups(items)
+        assertEquals(1, groups.size)
+        assertEquals("Protocol", groups.single().label)
+        assertEquals(listOf("a", "b"), groups.single().items.map { it.id })
+    }
+
+    @Test
+    fun singleNumberedItemDoesNotCreateSequence() {
+        val groups = RecallSequencePlan.groups(
+            listOf(MemoryItem(id = "a", prompt = "Only", answer = "A", chunkLabel = "Topic", sequenceOrder = 1)),
+        )
+        assertEquals(0, groups.size)
+    }
+
+    @Test
     fun scoreIsClampedToSupportedRange() {
         assertEquals(5, RecallScheduler.schedule(0, 9, 0L).score)
         assertEquals(0, RecallScheduler.schedule(0, -3, 0L).score)
