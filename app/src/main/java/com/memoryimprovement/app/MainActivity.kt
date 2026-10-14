@@ -94,6 +94,7 @@ private fun MemoryApp(
     var revealed by remember { mutableStateOf(false) }
     var attempts by remember { mutableStateOf(0) }
     var correct by remember { mutableStateOf(0) }
+    var recallMode by remember { mutableStateOf(RecallMode.Cued) }
 
     fun save(updated: List<MemoryItem>) {
         memories = updated
@@ -146,8 +147,12 @@ private fun MemoryApp(
                     },
                 )
                 AppTab.Recall -> RecallScreen(
-                    active, revealed, { revealed = true },
-                    { score, latencyMs ->
+                    item = active,
+                    revealed = revealed,
+                    mode = recallMode,
+                    onModeChange = { recallMode = it; revealed = false },
+                    onReveal = { revealed = true },
+                    onRate = { score, latencyMs ->
                         val current = active ?: return@RecallScreen
                         val outcome = RecallScheduler.schedule(current.reviewCount, score)
                         val updated = memories.map { memory ->
@@ -163,7 +168,7 @@ private fun MemoryApp(
                         onAttempt(
                             RecallAttempt(
                                 itemId = current.id,
-                                mode = RecallMode.Cued,
+                                mode = recallMode,
                                 correct = score >= 3,
                                 score = score,
                                 latencyMs = latencyMs,
@@ -172,7 +177,7 @@ private fun MemoryApp(
                         active = updated.filter { it.id != current.id }.minByOrNull { it.nextReviewAt }
                         revealed = false
                     },
-                    { adding = true },
+                    onAdd = { adding = true },
                 )
                 AppTab.Library -> LibraryScreen(memories, { adding = true })
             }
@@ -437,14 +442,26 @@ private fun AddPalaceNodeDialog(
 
 @Composable
 private fun RecallScreen(
-    item: MemoryItem?, revealed: Boolean, onReveal: () -> Unit,
-    onRate: (Int, Long) -> Unit, onAdd: () -> Unit,
+    item: MemoryItem?,
+    revealed: Boolean,
+    mode: RecallMode,
+    onModeChange: (RecallMode) -> Unit,
+    onReveal: () -> Unit,
+    onRate: (Int, Long) -> Unit,
+    onAdd: () -> Unit,
 ) {
     val recallStartedAt = remember(item?.id) { SystemClock.elapsedRealtime() }
     Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Heading("Retrieval practice")
-        Text("Try to retrieve the answer before revealing it. Rate the effort honestly; difficulty is useful data.",
+        Text("Choose a retrieval direction. Rate the effort honestly; difficulty is useful data.",
             color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+            listOf(RecallMode.Cued, RecallMode.Free, RecallMode.Reverse).forEach { option ->
+                TextButton(onClick = { onModeChange(option) }) {
+                    Text(if (mode == option) "• ${option.label()}" else option.label())
+                }
+            }
+        }
         if (item == null) {
             Card(shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(20.dp)) {
@@ -458,9 +475,19 @@ private fun RecallScreen(
         } else {
             Card(shape = RoundedCornerShape(26.dp), modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(22.dp)) {
-                    Text("RECALL PROMPT", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
-                    Spacer(Modifier.height(16.dp))
-                    Text(item.prompt, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    if (mode != RecallMode.Free) {
+                        Text(if (mode == RecallMode.Reverse) "REVERSE CUE · ANSWER" else "RECALL PROMPT",
+                            color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+                        Spacer(Modifier.height(16.dp))
+                        Text(if (mode == RecallMode.Reverse) item.answer else item.prompt,
+                            style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    } else {
+                        Text("FREE RECALL · NO CUE", color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.labelLarge)
+                        Spacer(Modifier.height(16.dp))
+                        Text("Retrieve the fact from memory without seeing its prompt.",
+                            style = MaterialTheme.typography.bodyLarge)
+                    }
                     if (item.palace.isNotBlank()) {
                         Spacer(Modifier.height(10.dp))
                         Text("Place: ${item.palace} · ${item.locus.ifBlank { "locus not set" }}",
@@ -468,9 +495,22 @@ private fun RecallScreen(
                     }
                     if (revealed) {
                         Spacer(Modifier.height(20.dp))
-                        Text("ANSWER", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+                        Text(if (mode == RecallMode.Reverse) "EXPECTED PROMPT" else "ANSWER",
+                            color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
                         Spacer(Modifier.height(6.dp))
-                        Text(item.answer, style = MaterialTheme.typography.bodyLarge)
+                        if (mode == RecallMode.Reverse) {
+                            Text(item.prompt, style = MaterialTheme.typography.bodyLarge)
+                        } else if (mode == RecallMode.Free) {
+                            Text("PROMPT", color = MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.labelMedium)
+                            Text(item.prompt, style = MaterialTheme.typography.bodyLarge)
+                            Spacer(Modifier.height(8.dp))
+                            Text("ANSWER", color = MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.labelMedium)
+                            Text(item.answer, style = MaterialTheme.typography.bodyLarge)
+                        } else {
+                            Text(item.answer, style = MaterialTheme.typography.bodyLarge)
+                        }
                     } else {
                         Spacer(Modifier.height(20.dp))
                         Button(onClick = onReveal) { Text("Reveal answer") }
