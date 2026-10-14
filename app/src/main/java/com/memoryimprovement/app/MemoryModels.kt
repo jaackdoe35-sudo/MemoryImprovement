@@ -29,7 +29,7 @@ data class PalaceNode(
     val createdAt: Long = System.currentTimeMillis(),
 )
 
-enum class RecallMode { Cued, Free, Reverse, Sequence }
+enum class RecallMode { Cued, Free, Reverse, Sequence, Discrimination }
 
 data class RecallSequence(val label: String, val items: List<MemoryItem>)
 
