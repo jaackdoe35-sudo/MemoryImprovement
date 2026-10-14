@@ -371,7 +371,7 @@ private fun MemoryApp(
                         }
                         save(updated)
                         attempts += 1
-                        if (score >= 3) correct += 1
+                        if (userCheckedCorrect) correct += 1
                         recordAttempt(
                             RecallAttempt(
                                 itemId = current.id,
