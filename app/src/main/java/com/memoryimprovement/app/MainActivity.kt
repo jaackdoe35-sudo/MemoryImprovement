@@ -52,6 +52,7 @@ class MainActivity : ComponentActivity() {
             val initialItems = repository.loadItems()
             val initialNodes = repository.loadPalaceNodes()
             val initialAttempts = repository.loadAttempts()
+            val initialCheckpoints = repository.loadRetentionCheckpoints()
             setContent {
                 MaterialTheme {
                     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -59,8 +60,15 @@ class MainActivity : ComponentActivity() {
                             initialItems = initialItems,
                             initialNodes = initialNodes,
                             initialAttempts = initialAttempts,
+                            initialCheckpoints = initialCheckpoints,
                             onSave = { updated -> lifecycleScope.launch { repository.saveItems(updated) } },
                             onAttempt = { attempt -> lifecycleScope.launch { repository.saveAttempt(attempt) } },
+                            onCompleteRetention = { id, score, latencyMs, response, onLoaded ->
+                                lifecycleScope.launch {
+                                    repository.completeRetentionCheckpoint(id, score, latencyMs, response)
+                                    onLoaded(repository.loadRetentionCheckpoints())
+                                }
+                            },
                             onCreateNode = { name, kind, parentId, onLoaded ->
                                 lifecycleScope.launch {
                                     repository.createPalaceNode(name, kind, parentId)
@@ -85,12 +93,16 @@ private fun MemoryApp(
     initialItems: List<MemoryItem>,
     initialNodes: List<PalaceNode>,
     initialAttempts: List<RecallAttempt>,
+    initialCheckpoints: List<RetentionCheckpoint>,
     onSave: (List<MemoryItem>) -> Unit,
     onAttempt: (RecallAttempt) -> Unit,
+    onCompleteRetention: (String, Int, Long, String?, (List<RetentionCheckpoint>) -> Unit) -> Unit,
     onCreateNode: (String, PalaceNodeKind, String?, (List<PalaceNode>) -> Unit) -> Unit,
 ) {
     var memories by remember { mutableStateOf(initialItems) }
     var palaceNodes by remember { mutableStateOf(initialNodes) }
+    var checkpoints by remember { mutableStateOf(initialCheckpoints) }
+    var activeCheckpoint by remember { mutableStateOf<RetentionCheckpoint?>(null) }
     var tab by remember { mutableStateOf(AppTab.Today) }
     var adding by remember { mutableStateOf(false) }
     var active by remember { mutableStateOf<MemoryItem?>(null) }
@@ -104,7 +116,14 @@ private fun MemoryApp(
         onSave(updated)
     }
     fun startRecall() {
+        activeCheckpoint = null
         active = memories.minByOrNull { it.nextReviewAt }
+        revealed = false
+        tab = AppTab.Recall
+    }
+    fun startRetention(checkpoint: RetentionCheckpoint) {
+        activeCheckpoint = checkpoint
+        active = memories.firstOrNull { it.id == checkpoint.itemId }
         revealed = false
         tab = AppTab.Recall
     }
@@ -137,7 +156,7 @@ private fun MemoryApp(
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             when (tab) {
-                AppTab.Today -> TodayScreen(memories, attempts, correct, { adding = true }, ::startRecall)
+                AppTab.Today -> TodayScreen(memories, attempts, correct, checkpoints, { adding = true }, ::startRecall, ::startRetention)
                 AppTab.Palace -> PalaceScreen(
                     memories = memories,
                     nodes = palaceNodes,
@@ -149,7 +168,20 @@ private fun MemoryApp(
                         }
                     },
                 )
-                AppTab.Recall -> RecallScreen(
+                AppTab.Recall -> if (activeCheckpoint != null) {
+                    RetentionTestScreen(
+                        item = active,
+                        checkpoint = activeCheckpoint!!,
+                        onComplete = { score, latencyMs, response ->
+                            val checkpointId = activeCheckpoint!!.id
+                            onCompleteRetention(checkpointId, score, latencyMs, response) { refreshed ->
+                                checkpoints = refreshed
+                                activeCheckpoint = null
+                                tab = AppTab.Today
+                            }
+                        },
+                    )
+                } else RecallScreen(
                     item = active,
                     revealed = revealed,
                     mode = recallMode,
@@ -216,7 +248,9 @@ private fun MemoryApp(
 @Composable
 private fun TodayScreen(
     memories: List<MemoryItem>, attempts: Int, correct: Int,
+    checkpoints: List<RetentionCheckpoint>,
     onAdd: () -> Unit, onRecall: () -> Unit,
+    onStartRetention: (RetentionCheckpoint) -> Unit,
 ) {
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 18.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -252,6 +286,43 @@ private fun TodayScreen(
         item { PrincipleCard("02", "Place", "Put facts into a navigable palace, route, and locus.") }
         item { PrincipleCard("03", "Retrieve", "Practise cues, free recall, and reverse connections.") }
         item { PrincipleCard("04", "Verify", "Measure delayed recall, retrieval speed, and interference.") }
+        item {
+            Heading("Retention checkpoints")
+            val now = System.currentTimeMillis()
+            val pending = checkpoints.filter { it.completedAt == null }.sortedBy { it.dueAt }
+            val due = pending.filter { it.dueAt <= now }
+            Text(
+                if (pending.isEmpty()) "No pending checkpoints. Add memory items to create a retention schedule."
+                else "${due.size} due · ${pending.size - due.size} upcoming",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (pending.isEmpty()) {
+                Spacer(Modifier.height(6.dp))
+                Text("Checkpoints are planned for 24 hours, 7 days, and 30 days after each memory is created.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                pending.take(8).forEach { checkpoint ->
+                    val item = memories.firstOrNull { it.id == checkpoint.itemId }
+                    if (item != null) {
+                        Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(14.dp)) {
+                                Text("${checkpoint.delayDays}-day retention test", fontWeight = FontWeight.SemiBold)
+                                Text(item.prompt, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(
+                                    if (checkpoint.dueAt <= now) "Due now"
+                                    else "Due ${android.text.format.DateUtils.getRelativeTimeSpanString(checkpoint.dueAt, now, android.text.format.DateUtils.MINUTE_IN_MILLIS)}",
+                                    style = MaterialTheme.typography.labelMedium,
+                                )
+                                Spacer(Modifier.height(6.dp))
+                                Button(onClick = { onStartRetention(checkpoint) }, modifier = Modifier.fillMaxWidth()) {
+                                    Text(if (checkpoint.dueAt <= now) "Start delayed test" else "Test early")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
         item {
             Heading("Review queue")
             val due = memories.count { it.nextReviewAt <= System.currentTimeMillis() }
@@ -448,6 +519,67 @@ private fun RecallMode.label(): String = when (this) {
     RecallMode.Cued -> "Cued"
     RecallMode.Free -> "Free"
     RecallMode.Reverse -> "Reverse"
+}
+
+@Composable
+private fun RetentionTestScreen(
+    item: MemoryItem?,
+    checkpoint: RetentionCheckpoint,
+    onComplete: (Int, Long, String?) -> Unit,
+) {
+    var response by remember(checkpoint.id) { mutableStateOf("") }
+    var revealed by remember(checkpoint.id) { mutableStateOf(false) }
+    val startedAt = remember(checkpoint.id) { SystemClock.elapsedRealtime() }
+    Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Heading("${checkpoint.delayDays}-day retention test")
+        Text(
+            "Delayed recall · Attempt the answer before revealing the stored fact. Your self-rating is recorded separately from the written response.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (item == null) {
+            Text("The linked memory item could not be found.")
+        } else {
+            Card(shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("FREE RECALL · NO CUE", color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.labelLarge)
+                    Text("Write everything you can recall about this memory before checking the answer.",
+                        style = MaterialTheme.typography.bodyLarge)
+                    OutlinedTextField(
+                        value = response,
+                        onValueChange = { if (!revealed) response = it },
+                        label = { Text("What do you remember?") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                        enabled = !revealed,
+                    )
+                    if (revealed) {
+                        Text("EXPECTED PROMPT", color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.labelMedium)
+                        Text(item.prompt, fontWeight = FontWeight.SemiBold)
+                        Text("EXPECTED ANSWER", color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.labelMedium)
+                        Text(item.answer)
+                    } else {
+                        Button(onClick = { revealed = true }, modifier = Modifier.fillMaxWidth()) {
+                            Text("Reveal expected fact")
+                        }
+                    }
+                }
+            }
+            if (revealed) {
+                Text("Self-rate your recall. This rating is not an automatic correctness score.",
+                    fontWeight = FontWeight.SemiBold)
+                listOf(0 to "Forgot", 2 to "Difficult", 3 to "Partial", 4 to "Mostly recalled", 5 to "Fully recalled")
+                    .forEach { (score, label) ->
+                        TextButton(
+                            onClick = { onComplete(score, SystemClock.elapsedRealtime() - startedAt, response.trim().takeIf { it.isNotEmpty() }) },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text(label) }
+                    }
+            }
+        }
+    }
 }
 
 @Composable
