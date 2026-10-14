@@ -1437,15 +1437,21 @@ private fun RecallScreen(
                             Text(item.answer, style = MaterialTheme.typography.bodyLarge)
                         }
                     } else {
-                        if (mode == RecallMode.Free) {
-                            OutlinedTextField(
-                                value = recalledResponse,
-                                onValueChange = { recalledResponse = it },
-                                label = { Text("What do you remember?") },
-                                modifier = Modifier.fillMaxWidth(),
-                                minLines = 3,
-                            )
-                        }
+                        OutlinedTextField(
+                            value = recalledResponse,
+                            onValueChange = { recalledResponse = it },
+                            label = {
+                                Text(
+                                    when (mode) {
+                                        RecallMode.Free -> "What do you remember?"
+                                        RecallMode.Reverse -> "What is the original prompt?"
+                                        else -> "Your recalled answer"
+                                    },
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = if (mode == RecallMode.Free) 3 else 1,
+                        )
                         Spacer(Modifier.height(20.dp))
                         Button(onClick = onReveal) { Text("Reveal answer") }
                     }
@@ -1455,7 +1461,7 @@ private fun RecallScreen(
                 Text("How well did you retrieve it?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 listOf(0 to "Again", 2 to "Hard", 3 to "Got it", 5 to "Easy").forEach { (score, label) ->
                     TextButton(
-                        onClick = { onRate(score, SystemClock.elapsedRealtime() - recallStartedAt, recalledResponse.takeIf { mode == RecallMode.Free }?.trim()?.takeIf { it.isNotEmpty() }) },
+                        onClick = { onRate(score, SystemClock.elapsedRealtime() - recallStartedAt, recalledResponse.trim().takeIf { it.isNotEmpty() }) },
                         modifier = Modifier.fillMaxWidth(),
                     ) { Text(label) }
                 }
