@@ -141,6 +141,7 @@ private fun MemoryApp(
                                 itemId = current.id,
                                 mode = RecallMode.Cued,
                                 correct = score >= 3,
+                                score = score,
                                 latencyMs = latencyMs,
                             ),
                         )
