@@ -35,6 +35,13 @@ class MemoryRepository(context: Context) {
         )
     }
 
+    /** Deletes a memory and its associated review records atomically. */
+    suspend fun deleteMemory(itemId: String) = database.withTransaction {
+        dao.deleteCheckpointsForItem(itemId)
+        dao.deleteAttemptsForItem(itemId)
+        dao.deleteItem(itemId)
+    }
+
     suspend fun loadRetentionCheckpoints(): List<RetentionCheckpoint> =
         dao.getRetentionCheckpoints().map { it.toModel() }
 
