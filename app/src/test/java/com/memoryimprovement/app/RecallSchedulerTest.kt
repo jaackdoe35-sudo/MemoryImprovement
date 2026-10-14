@@ -428,6 +428,9 @@ class RecallSchedulerTest {
         assertEquals(2, day1.completed)
         assertEquals(3.0, day1.meanSelfRating!!, 0.001)
         assertEquals(50, day1.checkedAccuracyPercent)
+        assertEquals(1, day1.fullyCorrectCount)
+        assertEquals(0, day1.partiallyCorrectCount)
+        assertEquals(1, day1.incorrectCount)
         assertEquals(2, day1.checkedAccuracyCount)
         assertEquals(2000L, day1.meanLatencyMs)
         val day7 = summaries.single { it.delayDays == 7 }
