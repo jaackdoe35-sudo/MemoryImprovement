@@ -63,6 +63,12 @@ class MainActivity : ComponentActivity() {
                             initialAttempts = initialAttempts,
                             initialCheckpoints = initialCheckpoints,
                             onSave = { updated -> lifecycleScope.launch { repository.saveItems(updated) } },
+                            onDeleteMemory = { itemId, onDeleted ->
+                                lifecycleScope.launch {
+                                    repository.deleteMemory(itemId)
+                                    onDeleted()
+                                }
+                            },
                             onAttempt = { attempt -> lifecycleScope.launch { repository.saveAttempt(attempt) } },
                             onCompleteRetention = { id, score, latencyMs, response, accuracy, onLoaded ->
                                 lifecycleScope.launch {
@@ -96,6 +102,7 @@ private fun MemoryApp(
     initialAttempts: List<RecallAttempt>,
     initialCheckpoints: List<RetentionCheckpoint>,
     onSave: (List<MemoryItem>) -> Unit,
+    onDeleteMemory: (String, () -> Unit) -> Unit,
     onAttempt: (RecallAttempt) -> Unit,
     onCompleteRetention: (String, Int, Long, String?, Int, (List<RetentionCheckpoint>) -> Unit) -> Unit,
     onCreateNode: (String, PalaceNodeKind, String?, (List<PalaceNode>) -> Unit) -> Unit,
@@ -108,6 +115,7 @@ private fun MemoryApp(
     var tab by remember { mutableStateOf(AppTab.Today) }
     var adding by remember { mutableStateOf(false) }
     var editingMemory by remember { mutableStateOf<MemoryItem?>(null) }
+    var deletingMemory by remember { mutableStateOf<MemoryItem?>(null) }
     var active by remember { mutableStateOf<MemoryItem?>(null) }
     var revealed by remember { mutableStateOf(false) }
     var attempts by remember { mutableStateOf(initialAttempts.size) }
@@ -276,9 +284,35 @@ private fun MemoryApp(
                     memories = memories,
                     onAdd = { adding = true },
                     onEdit = { editingMemory = it },
+                    onDelete = { deletingMemory = it },
                 )
             }
         }
+    }
+
+    deletingMemory?.let { item ->
+        AlertDialog(
+            onDismissRequest = { deletingMemory = null },
+            title = { Text("Delete memory?") },
+            text = { Text("This permanently deletes this memory and its saved recall attempts and retention checkpoints. This cannot be undone.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    onDeleteMemory(item.id) {
+                        memories = memories.filterNot { it.id == item.id }
+                        attemptHistory = attemptHistory.filterNot { it.itemId == item.id }
+                        attempts = attemptHistory.size
+                        correct = attemptHistory.count { it.correct }
+                        checkpoints = checkpoints.filterNot { it.itemId == item.id }
+                        if (active?.id == item.id) active = null
+                        if (editingMemory?.id == item.id) editingMemory = null
+                        deletingMemory = null
+                    }
+                }) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { deletingMemory = null }) { Text("Cancel") }
+            },
+        )
     }
 
     if (adding || editingMemory != null) {
@@ -1195,7 +1229,7 @@ private fun RecallScreen(
 }
 
 @Composable
-private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit: (MemoryItem) -> Unit) {
+private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit: (MemoryItem) -> Unit, onDelete: (MemoryItem) -> Unit) {
     var searchQuery by remember { mutableStateOf("") }
     val filteredMemories = remember(memories, searchQuery) {
         val query = searchQuery.trim()
@@ -1244,7 +1278,10 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
                                     color = MaterialTheme.colorScheme.primary)
                             }
                             Text("Reviews: ${item.reviewCount}", style = MaterialTheme.typography.labelSmall)
-                            TextButton(onClick = { onEdit(item) }) { Text("Edit memory") }
+                            Row {
+                                TextButton(onClick = { onEdit(item) }) { Text("Edit memory") }
+                                TextButton(onClick = { onDelete(item) }) { Text("Delete") }
+                            }
                         }
                     }
                 }
