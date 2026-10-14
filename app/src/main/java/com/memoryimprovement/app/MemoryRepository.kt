@@ -16,15 +16,34 @@ class MemoryRepository(context: Context) {
     ).addMigrations(MemoryDatabase.MIGRATION_1_2, MemoryDatabase.MIGRATION_2_3, MemoryDatabase.MIGRATION_3_4, MemoryDatabase.MIGRATION_4_5, MemoryDatabase.MIGRATION_5_6).build()
     private val dao = database.memoryDao()
 
-    suspend fun loadItems(): List<MemoryItem> {
+    suspend fun loadItems(): List<MemoryItem> = loadItemsWithMigrationStatus().items
+
+    suspend fun loadItemsWithMigrationStatus(): LegacyMigrationResult {
+        val preferences = appContext.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
         val existing = dao.getItems()
-        if (existing.isEmpty()) migrateLegacyItems()
+        val retryPending = preferences.getBoolean(LEGACY_MIGRATION_PENDING_KEY, false)
+        var migrationResult = LegacyMigrationResult(items = emptyList())
+        if (existing.isEmpty() || retryPending) {
+            val raw = preferences.getString(LEGACY_ITEMS_KEY, null)
+            if (raw != null) {
+                migrationResult = LegacyMigrationPlan.decode(raw, ::parseLegacyItems)
+                if (migrationResult.errorMessage != null) {
+                    // Keep the original preference untouched and retry on the next launch.
+                    preferences.edit().putBoolean(LEGACY_MIGRATION_PENDING_KEY, true).apply()
+                } else {
+                    dao.insertLegacyItemsIfAbsent(migrationResult.items.map { it.toEntity() })
+                    preferences.edit().putBoolean(LEGACY_MIGRATION_PENDING_KEY, false).apply()
+                }
+            } else {
+                preferences.edit().putBoolean(LEGACY_MIGRATION_PENDING_KEY, false).apply()
+            }
+        }
         val items = dao.getItems().map { it.toModel() }
         dao.insertRetentionCheckpoints(
             items.flatMap { item -> RetentionCheckpointPlan.dueTimes(item.id, item.createdAt) }
                 .map { it.toEntity() },
         )
-        return items
+        return migrationResult.copy(items = items)
     }
 
     suspend fun saveItems(items: List<MemoryItem>) {
@@ -147,31 +166,26 @@ class MemoryRepository(context: Context) {
         }
     }
 
-    private suspend fun migrateLegacyItems() {
-        val raw = appContext.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
-            .getString(LEGACY_ITEMS_KEY, null) ?: return
-        val legacyItems = runCatching {
-            val array = JSONArray(raw)
-            buildList {
-                for (index in 0 until array.length()) {
-                    val value = array.getJSONObject(index)
-                    add(
-                        MemoryItem(
-                            id = value.getString("id"),
-                            prompt = value.getString("prompt"),
-                            answer = value.getString("answer"),
-                            palace = value.optString("palace"),
-                            locus = value.optString("locus"),
-                            createdAt = value.optLong("createdAt"),
-                            nextReviewAt = value.optLong("nextReviewAt"),
-                            lastScore = if (value.isNull("lastScore")) null else value.optInt("lastScore"),
-                            reviewCount = value.optInt("reviewCount"),
-                        ),
-                    )
-                }
+    private fun parseLegacyItems(raw: String): List<MemoryItem> {
+        val array = JSONArray(raw)
+        return buildList {
+            for (index in 0 until array.length()) {
+                val value = array.getJSONObject(index)
+                add(
+                    MemoryItem(
+                        id = value.getString("id"),
+                        prompt = value.getString("prompt"),
+                        answer = value.getString("answer"),
+                        palace = value.optString("palace"),
+                        locus = value.optString("locus"),
+                        createdAt = value.optLong("createdAt"),
+                        nextReviewAt = value.optLong("nextReviewAt"),
+                        lastScore = if (value.isNull("lastScore")) null else value.optInt("lastScore"),
+                        reviewCount = value.optInt("reviewCount"),
+                    ),
+                )
             }
-        }.getOrDefault(emptyList())
-        if (legacyItems.isNotEmpty()) dao.upsertItems(legacyItems.map { it.toEntity() })
+        }
     }
 
     private fun RetentionCheckpoint.toEntity() = RetentionCheckpointEntity(
@@ -224,5 +238,6 @@ class MemoryRepository(context: Context) {
     private companion object {
         const val PREFERENCES = "memory_improvement_local"
         const val LEGACY_ITEMS_KEY = "items_json"
+        const val LEGACY_MIGRATION_PENDING_KEY = "legacy_migration_pending"
     }
 }
