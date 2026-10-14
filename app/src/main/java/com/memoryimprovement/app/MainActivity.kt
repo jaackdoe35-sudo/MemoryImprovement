@@ -325,6 +325,7 @@ private fun TodayScreen(
         }
         item {
             Heading("Retention results")
+            val now = System.currentTimeMillis()
             val completed = checkpoints
                 .filter { it.completedAt != null }
                 .sortedByDescending { it.completedAt }
