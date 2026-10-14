@@ -134,6 +134,36 @@ class RecallSchedulerTest {
     }
 
     @Test
+    fun repeatedErrorPlanShowsOnlyMemoriesWithMultipleRecordedFailures() {
+        val memories = listOf(
+            MemoryItem(id = "a", prompt = "A", answer = "Alpha"),
+            MemoryItem(id = "b", prompt = "B", answer = "Beta"),
+        )
+        val attempts = listOf(
+            RecallAttempt("a", RecallMode.Free, false, 0, 1000L, "wrong one", reviewedAt = 10L),
+            RecallAttempt("a", RecallMode.Cued, false, 0, 1200L, "wrong two", reviewedAt = 20L),
+            RecallAttempt("b", RecallMode.Cued, false, 0, 1500L, "wrong once", reviewedAt = 15L),
+        )
+        val repeated = RepeatedErrorPlan.find(memories, attempts)
+        assertEquals(1, repeated.size)
+        assertEquals("a", repeated.single().item.id)
+        assertEquals(2, repeated.single().incorrectAttempts)
+        assertEquals("wrong two", repeated.single().lastIncorrectResponse)
+    }
+
+    @Test
+    fun repeatedErrorPlanHonorsLimitAndIgnoresDeletedMemoryIds() {
+        val memories = listOf(MemoryItem(id = "a", prompt = "A", answer = "Alpha"))
+        val attempts = listOf(
+            RecallAttempt("a", RecallMode.Free, false, 0, 1000L),
+            RecallAttempt("a", RecallMode.Cued, false, 0, 1000L),
+            RecallAttempt("deleted", RecallMode.Cued, false, 0, 1000L),
+            RecallAttempt("deleted", RecallMode.Cued, false, 0, 1000L),
+        )
+        assertEquals(1, RepeatedErrorPlan.find(memories, attempts, limit = 1).size)
+    }
+
+    @Test
     fun scoreIsClampedToSupportedRange() {
         assertEquals(5, RecallScheduler.schedule(0, 9, 0L).score)
         assertEquals(0, RecallScheduler.schedule(0, -3, 0L).score)
