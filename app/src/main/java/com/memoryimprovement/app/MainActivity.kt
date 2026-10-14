@@ -352,20 +352,15 @@ private fun TodayScreen(
             if (attemptHistory.isEmpty()) {
                 Text("Results will appear after your first recall attempt.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
-                RecallMode.entries.forEach { mode ->
-                    val modeAttempts = attemptHistory.filter { it.mode == mode }
-                    if (modeAttempts.isNotEmpty()) {
-                        val successRate = modeAttempts.count { it.correct } * 100 / modeAttempts.size
-                        val averageLatency = modeAttempts.map { it.latencyMs }.average().toLong()
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text(mode.label(), fontWeight = FontWeight.SemiBold)
-                                Text("$successRate% · ${modeAttempts.size} attempts")
-                            }
-                            Text("Mean retrieval time: ${averageLatency / 1000.0}s",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                RecallAnalytics.byMode(attemptHistory).forEach { summary ->
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text(summary.mode.label(), fontWeight = FontWeight.SemiBold)
+                            Text("${summary.accuracyPercent}% · ${summary.attempts} attempts")
                         }
+                        Text("Mean retrieval time: ${summary.meanLatencyMs / 1000.0}s",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 Text("Success is based on recorded scores/self-ratings, not independently verified correctness.",
