@@ -72,6 +72,25 @@ class RecallSchedulerTest {
     }
 
     @Test
+    fun recallAnalyticsSummarizesEachModeWithoutMixingGroups() {
+        val attempts = listOf(
+            RecallAttempt("a", RecallMode.Free, true, 4, 1000L),
+            RecallAttempt("b", RecallMode.Free, false, 2, 3000L),
+            RecallAttempt("c", RecallMode.Cued, true, 5, 2000L),
+        )
+        val summaries = RecallAnalytics.byMode(attempts)
+        val free = summaries.single { it.mode == RecallMode.Free }
+        val cued = summaries.single { it.mode == RecallMode.Cued }
+        assertEquals(2, free.attemptCount)
+        assertEquals(1, free.correctCount)
+        assertEquals(50, free.recordedCorrectPercent)
+        assertEquals(3.0, free.meanSelfRating!!, 0.001)
+        assertEquals(2000L, free.meanLatencyMs)
+        assertEquals(1, cued.attemptCount)
+        assertEquals(100, cued.recordedCorrectPercent)
+    }
+
+    @Test
     fun failedRecallSchedulesNextDay() {
         val now = 1_000_000L
         val result = RecallScheduler.schedule(previousReviews = 3, score = 0, now = now)
