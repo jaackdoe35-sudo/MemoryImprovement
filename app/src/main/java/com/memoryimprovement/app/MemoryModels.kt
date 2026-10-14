@@ -18,6 +18,7 @@ data class RecallAttempt(
     val itemId: String,
     val mode: RecallMode,
     val correct: Boolean,
+    val score: Int,
     val latencyMs: Long,
     val reviewedAt: Long = System.currentTimeMillis(),
 )
