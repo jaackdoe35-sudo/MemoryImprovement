@@ -138,6 +138,42 @@ object RepeatedErrorPlan {
 }
 
 
+data class MemoryProgressSummary(
+    val item: MemoryItem,
+    val attemptCount: Int,
+    val correctCount: Int,
+    val firstCorrect: Boolean,
+    val latestCorrect: Boolean,
+    val meanLatencyMs: Long,
+)
+
+object MemoryProgressPlan {
+    /** Summarizes recorded attempt labels only; two or more attempts are required to compare first vs latest. */
+    fun summarize(memories: List<MemoryItem>, attempts: List<RecallAttempt>, limit: Int = 10): List<MemoryProgressSummary> {
+        val byId = memories.associateBy { it.id }
+        return attempts.groupBy { it.itemId }
+            .mapNotNull { (itemId, history) ->
+                val item = byId[itemId] ?: return@mapNotNull null
+                if (history.size < 2) return@mapNotNull null
+                val ordered = history.sortedBy { it.reviewedAt }
+                MemoryProgressSummary(
+                    item = item,
+                    attemptCount = ordered.size,
+                    correctCount = ordered.count { it.correct },
+                    firstCorrect = ordered.first().correct,
+                    latestCorrect = ordered.last().correct,
+                    meanLatencyMs = ordered.map { it.latencyMs }.average().toLong(),
+                )
+            }
+            .sortedWith(compareByDescending<MemoryProgressSummary> { it.latestCorrect && !it.firstCorrect }
+                .thenByDescending { it.correctCount.toDouble() / it.attemptCount }
+                .thenByDescending { it.attemptCount })
+            .take(limit)
+    }
+}
+
+
+
 
 
 data class RecallAttempt(
