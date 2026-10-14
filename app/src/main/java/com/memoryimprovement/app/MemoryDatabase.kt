@@ -26,6 +26,9 @@ data class MemoryItemEntity(
     val lastScore: Int?,
     val reviewCount: Int,
     val palaceNodeId: String? = null,
+    val chunkLabel: String = "",
+    val association: String = "",
+    val sequenceOrder: Int? = null,
 )
 
 @Entity(
@@ -141,13 +144,21 @@ interface MemoryDao {
 
 @Database(
     entities = [MemoryItemEntity::class, RecallAttemptEntity::class, PalaceNodeEntity::class, RetentionCheckpointEntity::class],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 abstract class MemoryDatabase : RoomDatabase() {
     abstract fun memoryDao(): MemoryDao
 
     companion object {
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE memory_items ADD COLUMN chunkLabel TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE memory_items ADD COLUMN association TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE memory_items ADD COLUMN sequenceOrder INTEGER")
+            }
+        }
+
         val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE retention_checkpoints ADD COLUMN accuracy INTEGER")
