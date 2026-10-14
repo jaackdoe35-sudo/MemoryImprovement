@@ -39,6 +39,19 @@ class MemoryRepository(context: Context) {
         )
     }
 
+    suspend fun loadAttempts(): List<RecallAttempt> =
+        dao.getAttempts().map { attempt ->
+            RecallAttempt(
+                itemId = attempt.itemId,
+                mode = runCatching { RecallMode.valueOf(attempt.mode) }.getOrDefault(RecallMode.Cued),
+                correct = attempt.correct,
+                score = attempt.score,
+                latencyMs = attempt.latencyMs,
+                recalledResponse = attempt.recalledResponse,
+                reviewedAt = attempt.reviewedAt,
+            )
+        }
+
     suspend fun loadPalaceNodes(): List<PalaceNode> =
         dao.getPalaceNodes().map { it.toModel() }
 
