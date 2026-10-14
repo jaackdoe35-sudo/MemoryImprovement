@@ -7,13 +7,13 @@
 - [x] Initial palace/locus assignment.
 - [x] Transparent baseline review scheduler with unit tests.
 - [x] GitHub Actions build/test workflow.
-- [ ] Confirm CI build and unit tests pass on GitHub Actions.
+- [x] Confirm CI build and unit tests pass on GitHub Actions (latest verified run: #21).
 
 ## Milestone 1 — dependable learning records
 
-- [ ] Move from a single serialized preference value to a database-backed repository suitable for larger collections.
-- [ ] Persist recall attempts and timestamps, including retrieval latency.
-- [ ] Implement free recall and reverse/flexible recall modes.
+- [x] Move from a single serialized preference value to a database-backed repository suitable for larger collections.
+- [x] Persist recall attempts and timestamps, including retrieval latency; free-recall response capture is now stored as well.
+- [x] Implement initial cued, free, and reverse recall modes; manual ratings remain subjective.
 - [ ] Add editing, deletion, import/export, and safe backup.
 - [ ] Add automated repository and scheduler tests.
 
@@ -28,8 +28,8 @@
 
 ## Milestone 3 — retention measurement
 
-- [ ] Store immediate and delayed test outcomes.
-- [ ] Track accuracy, latency, order accuracy, and interference.
+- [ ] Store immediate and delayed test outcomes (free-recall responses are captured; scheduled delayed checkpoints remain unimplemented).
+- [ ] Track accuracy, latency, order accuracy, and interference; free-recall correctness is not yet independently scored.
 - [ ] Surface 24-hour, 7-day, and 30-day checkpoints.
 - [ ] Compare methods on comparable material and time invested.
 - [ ] Avoid declaring a method superior without enough comparable observations.
