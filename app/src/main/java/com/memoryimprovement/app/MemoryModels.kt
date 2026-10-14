@@ -32,85 +32,55 @@ data class MemoryImportRow(
 )
 
 object MemoryImportPlan {
-    /**
-     * Parses seven-column TSV. Backslash escapes (\t, \n, \r, \\) are decoded in cells.
-     * Literal backslashes must be escaped as \\; legacy TSV without escapes remains supported.
-     */
-    fun parseTsv(text: String): List<MemoryImportRow> {
-        val rows = mutableListOf<MemoryImportRow>()
-        var cells = mutableListOf(StringBuilder())
-        var line = 1
-        var rowStartLine = 1
-        var escaped = false
+    private const val ESCAPED_TSV_MARKER = "#MemoryImprovement-TSV-ESCAPED-1"
 
-        fun finishRow() {
-            val columns = cells.map { it.toString() }
-            if (columns.all { it.isBlank() }) {
-                cells = mutableListOf(StringBuilder())
-                rowStartLine = line + 1
-                return
+    /** Parses legacy TSV as before, or the versioned escaped format emitted by MemoryExportPlan. */
+    fun parseTsv(text: String): List<MemoryImportRow> {
+        val escapedFormat = text.lineSequence().firstOrNull() == ESCAPED_TSV_MARKER
+        val content = if (escapedFormat) text.substringAfter('\n', missingDelimiterValue = "") else text
+        val rows = content.lineSequence().mapIndexedNotNull { index, raw ->
+            if (raw.isBlank()) return@mapIndexedNotNull null
+            val columns = raw.split('\t')
+            val displayLine = index + if (escapedFormat) 2 else 1
+            require(columns.size in 2..7) { "Line " + displayLine + ": expected 2–7 tab-separated columns." }
+            fun decode(value: String): String {
+                if (!escapedFormat) return value.trim()
+                val out = StringBuilder()
+                var i = 0
+                while (i < value.length) {
+                    if (value[i] == '\\' && i + 1 < value.length) {
+                        when (value[i + 1]) {
+                            '\\' -> { out.append('\\'); i += 2 }
+                            't' -> { out.append('\t'); i += 2 }
+                            'n' -> { out.append('\n'); i += 2 }
+                            'r' -> { out.append('\r'); i += 2 }
+                            else -> { out.append('\\'); i++ }
+                        }
+                    } else {
+                        out.append(value[i])
+                        i++
+                    }
+                }
+                return out.toString()
             }
-            require(columns.size in 2..7) {
-                "Line $rowStartLine: expected 2–7 tab-separated columns."
+            val prompt = decode(columns[0])
+            val answer = decode(columns[1])
+            require(prompt.isNotBlank() && answer.isNotBlank()) {
+                "Line " + displayLine + ": prompt and answer are required."
             }
-            val prompt = columns[0]
-            val answer = columns[1]
-            require(prompt.isNotEmpty() && answer.isNotEmpty()) {
-                "Line $rowStartLine: prompt and answer are required."
-            }
-            val orderText = columns.getOrNull(6).orEmpty()
+            val orderText = decode(columns.getOrNull(6).orEmpty())
             val order = if (orderText.isEmpty()) null else orderText.toIntOrNull()?.takeIf { it > 0 }
-                ?: throw IllegalArgumentException("Line $rowStartLine: sequence order must be a positive integer.")
-            rows += MemoryImportRow(
+                ?: throw IllegalArgumentException("Line " + displayLine + ": sequence order must be a positive integer.")
+            MemoryImportRow(
                 prompt = prompt,
                 answer = answer,
-                palace = columns.getOrNull(2).orEmpty(),
-                locus = columns.getOrNull(3).orEmpty(),
-                chunkLabel = columns.getOrNull(4).orEmpty(),
-                association = columns.getOrNull(5).orEmpty(),
+                palace = decode(columns.getOrNull(2).orEmpty()),
+                locus = decode(columns.getOrNull(3).orEmpty()),
+                chunkLabel = decode(columns.getOrNull(4).orEmpty()),
+                association = decode(columns.getOrNull(5).orEmpty()),
                 sequenceOrder = order,
             )
-            cells = mutableListOf(StringBuilder())
-            rowStartLine = line + 1
-        }
-
-        var index = 0
-        while (index < text.length) {
-            val ch = text[index]
-            if (escaped) {
-                cells.last().append(
-                    when (ch) {
-                        't' -> '\t'
-                        'n' -> '\n'
-                        'r' -> '\r'
-                        '\\' -> '\\'
-                        else -> throw IllegalArgumentException("Line $line: unsupported escape sequence \\$ch.")
-                    }
-                )
-                escaped = false
-            } else {
-                when (ch) {
-                    '\\' -> escaped = true
-                    '\t' -> cells.add(StringBuilder())
-                    '\n' -> {
-                        finishRow()
-                        line++
-                    }
-                    '\r' -> {
-                        if (index + 1 < text.length && text[index + 1] == '\n') {
-                            // CRLF is one record separator.
-                        } else {
-                            finishRow()
-                            line++
-                        }
-                    }
-                    else -> cells.last().append(ch)
-                }
-            }
-            index++
-        }
-        require(!escaped) { "Line $line: trailing escape character." }
-        if (cells.size > 1 || cells.first().isNotEmpty()) finishRow()
+        }.toList()
         require(rows.isNotEmpty()) { "Paste at least one valid row." }
         return rows
     }
@@ -127,8 +97,11 @@ object MemoryImportPlan {
 data class MemoryImportBatch(val rows: List<MemoryImportRow>, val duplicatesSkipped: Int)
 
 object MemoryExportPlan {
-    /** Exports seven-column TSV; escapes special characters so import can restore exact cell content. */
+    private const val ESCAPED_TSV_MARKER = "#MemoryImprovement-TSV-ESCAPED-1"
+
+    /** Exports lossless, versioned TSV; the importer continues to accept legacy TSV unchanged. */
     fun toTsv(memories: List<MemoryItem>): String {
+        if (memories.isEmpty()) return ""
         fun cell(value: String) = buildString(value.length) {
             value.forEach { ch ->
                 append(
@@ -142,12 +115,13 @@ object MemoryExportPlan {
                 )
             }
         }
-        return memories.joinToString("\n") { item ->
+        val rows = memories.joinToString("\n") { item ->
             listOf(
                 item.prompt, item.answer, item.palace, item.locus, item.chunkLabel, item.association,
                 item.sequenceOrder?.toString().orEmpty(),
             ).joinToString("\t", transform = ::cell)
         }
+        return "$ESCAPED_TSV_MARKER\n$rows"
     }
 }
 
