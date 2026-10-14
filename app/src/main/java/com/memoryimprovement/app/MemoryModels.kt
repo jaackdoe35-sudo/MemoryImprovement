@@ -194,6 +194,23 @@ object PalaceHierarchyPlan {
     }
 }
 
+object PalaceMovePlan {
+    fun isValidParent(nodes: List<PalaceNode>, nodeId: String, newParentId: String?): Boolean {
+        val node = nodes.firstOrNull { it.id == nodeId } ?: return false
+        if (newParentId == nodeId) return false
+        val descendants = PalaceHierarchyPlan.descendantIds(nodes, nodeId)
+        if (newParentId != null && newParentId in descendants) return false
+        val parent = newParentId?.let { id -> nodes.firstOrNull { it.id == id } } ?: return newParentId == null && node.kind == PalaceNodeKind.Palace
+        return when (node.kind) {
+            PalaceNodeKind.Palace -> false
+            PalaceNodeKind.Route, PalaceNodeKind.Area ->
+                parent.kind in listOf(PalaceNodeKind.Palace, PalaceNodeKind.Route, PalaceNodeKind.Area)
+            PalaceNodeKind.Locus ->
+                parent.kind in listOf(PalaceNodeKind.Palace, PalaceNodeKind.Route, PalaceNodeKind.Area)
+        }
+    }
+}
+
 enum class RecallMode { Cued, Free, Reverse, Sequence, Discrimination, Retention }
 
 data class RecallSequence(val label: String, val items: List<MemoryItem>)
