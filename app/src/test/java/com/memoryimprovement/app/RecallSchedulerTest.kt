@@ -113,6 +113,27 @@ class RecallSchedulerTest {
     }
 
     @Test
+    fun recallAnalyticsSummarizesAccuracyAndLatencyPerMode() {
+        val attempts = listOf(
+            RecallAttempt(itemId = "a", mode = RecallMode.Cued, correct = true, score = 5, latencyMs = 1000L),
+            RecallAttempt(itemId = "b", mode = RecallMode.Cued, correct = false, score = 0, latencyMs = 3000L),
+            RecallAttempt(itemId = "c", mode = RecallMode.Free, correct = true, score = 5, latencyMs = 2000L),
+        )
+        val summaries = RecallAnalytics.byMode(attempts)
+        val cued = summaries.single { it.mode == RecallMode.Cued }
+        assertEquals(2, cued.attempts)
+        assertEquals(1, cued.correct)
+        assertEquals(50, cued.accuracyPercent)
+        assertEquals(2000L, cued.meanLatencyMs)
+        assertEquals(1, summaries.single { it.mode == RecallMode.Free }.attempts)
+    }
+
+    @Test
+    fun recallAnalyticsReturnsEmptyForNoAttempts() {
+        assertEquals(emptyList<RecallModeSummary>(), RecallAnalytics.byMode(emptyList()))
+    }
+
+    @Test
     fun scoreIsClampedToSupportedRange() {
         assertEquals(5, RecallScheduler.schedule(0, 9, 0L).score)
         assertEquals(0, RecallScheduler.schedule(0, -3, 0L).score)
