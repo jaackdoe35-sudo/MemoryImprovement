@@ -192,6 +192,31 @@ class RecallSchedulerTest {
     }
 
     @Test
+    fun schedulerShortensIntervalAfterTwoConsecutiveFailures() {
+        val now = 10_000L
+        val outcome = RecallScheduler.schedule(
+            previousReviews = 4,
+            score = 5,
+            now = now,
+            consecutiveFailures = 2,
+        )
+        assertEquals(1, outcome.intervalDays)
+        assertEquals(now + 24L * 60L * 60L * 1000L, outcome.nextReviewAt)
+        assertEquals(5, outcome.score)
+    }
+
+    @Test
+    fun schedulerKeepsNormalIntervalWhenFailuresAreNotConsecutive() {
+        val outcome = RecallScheduler.schedule(
+            previousReviews = 4,
+            score = 5,
+            now = 0L,
+            consecutiveFailures = 1,
+        )
+        assertEquals(30, outcome.intervalDays)
+    }
+
+    @Test
     fun weakMemoryPlanRaisesItemsWithRepeatedIncorrectAttempts() {
         val now = 100L * 24L * 60L * 60L * 1000L
         val repeated = MemoryItem(id = "repeat", prompt = "Repeat", answer = "A", reviewCount = 3, nextReviewAt = now + 2L * 24L * 60L * 60L * 1000L)
