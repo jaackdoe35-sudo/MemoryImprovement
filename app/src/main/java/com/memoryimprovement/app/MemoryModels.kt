@@ -49,6 +49,8 @@ data class RetentionCheckpoint(
     val score: Int? = null,
     val latencyMs: Long? = null,
     val recalledResponse: String? = null,
+    /** User-checked answer accuracy: 0 incorrect, 1 partial, 2 correct; null for legacy results. */
+    val accuracy: Int? = null,
 )
 
 object RetentionCheckpointPlan {
