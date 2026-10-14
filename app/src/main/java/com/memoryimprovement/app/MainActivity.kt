@@ -427,6 +427,36 @@ private fun TodayScreen(
             }
         }
         item {
+            Heading("Learning progress")
+            val progress = MemoryProgressPlan.summarize(memories, attemptHistory)
+            if (progress.isEmpty()) {
+                Text("Progress comparisons appear after a memory has at least two recorded attempts.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                progress.forEach { summary ->
+                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text(summary.item.prompt, fontWeight = FontWeight.SemiBold)
+                        val trajectory = when {
+                            !summary.firstCorrect && summary.latestCorrect -> "Improved: latest attempt marked correct"
+                            summary.firstCorrect && !summary.latestCorrect -> "Declined: latest attempt marked incorrect"
+                            summary.latestCorrect -> "Maintained: first and latest attempts marked correct"
+                            else -> "Still struggling: first and latest attempts marked incorrect"
+                        }
+                        Text(trajectory, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("${summary.correctCount}/${summary.attemptCount} marked correct · mean retrieval time ${summary.meanLatencyMs / 1000.0}s",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Button(onClick = { onStartPriority(summary.item) }, modifier = Modifier.fillMaxWidth()) {
+                            Text("Practise this memory")
+                        }
+                    }
+                }
+                Text("These trends compare saved first/latest correctness labels; they do not establish causation or independently grade answers.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        item {
             Heading("Priority practice")
             val priorities = WeakMemoryPlan.rank(memories)
             if (priorities.isEmpty()) {
