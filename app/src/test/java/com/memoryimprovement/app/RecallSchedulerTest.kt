@@ -83,6 +83,24 @@ class RecallSchedulerTest {
     }
 
     @Test
+    fun weakMemoryPlanPrioritizesLowScoresAndOverdueItems() {
+        val now = 100L * 24L * 60L * 60L * 1000L
+        val strong = MemoryItem(id = "strong", prompt = "Strong", answer = "A", lastScore = 5, reviewCount = 4, nextReviewAt = now + 5L * 24L * 60L * 60L * 1000L)
+        val weak = MemoryItem(id = "weak", prompt = "Weak", answer = "B", lastScore = 1, reviewCount = 2, nextReviewAt = now - 2L * 24L * 60L * 60L * 1000L)
+        val untested = MemoryItem(id = "new", prompt = "New", answer = "C", reviewCount = 0, nextReviewAt = now)
+        val ranked = WeakMemoryPlan.rank(listOf(strong, weak, untested), now)
+        assertEquals("weak", ranked.first().item.id)
+        assertEquals("Low last self-rating", ranked.first().reason)
+        assertEquals("strong", ranked.last().item.id)
+    }
+
+    @Test
+    fun weakMemoryPlanRespectsLimit() {
+        val items = (1..6).map { MemoryItem(id = "$it", prompt = "P$it", answer = "A$it") }
+        assertEquals(3, WeakMemoryPlan.rank(items, limit = 3).size)
+    }
+
+    @Test
     fun scoreIsClampedToSupportedRange() {
         assertEquals(5, RecallScheduler.schedule(0, 9, 0L).score)
         assertEquals(0, RecallScheduler.schedule(0, -3, 0L).score)
