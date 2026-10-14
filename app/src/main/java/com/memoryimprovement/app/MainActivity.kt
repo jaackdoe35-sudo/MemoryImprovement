@@ -346,6 +346,35 @@ private fun TodayScreen(
             }
         }
         item {
+            Heading("Potential memory interference")
+            val interference = MemoryInterferencePlan.find(memories)
+            if (interference.isEmpty()) {
+                Text(
+                    if (memories.size < 2) "Add more memory items to check for overlapping wording."
+                    else "No strong lexical overlaps found. This does not rule out conceptual confusion.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                Text("These items share important words. This is a wording-based warning, not proof that you confuse them.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                interference.forEach { pair ->
+                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("Shared terms: ${pair.sharedTerms.joinToString(", ")}",
+                                color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
+                            Text("A · ${pair.first.prompt}", fontWeight = FontWeight.SemiBold)
+                            Text(pair.first.answer, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            HorizontalDivider()
+                            Text("B · ${pair.second.prompt}", fontWeight = FontWeight.SemiBold)
+                            Text(pair.second.answer, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Discrimination cue: make each prompt specific and give the two facts distinct, vivid associations.",
+                                style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
+        }
+        item {
             Heading("Retention checkpoints")
             val now = System.currentTimeMillis()
             val pending = checkpoints.filter { it.completedAt == null }.sortedBy { it.dueAt }
