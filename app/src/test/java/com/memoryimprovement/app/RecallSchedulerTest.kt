@@ -83,9 +83,10 @@ class RecallSchedulerTest {
     }
 
     @Test
-    fun importRejectsUnknownAndTrailingEscapeSequences() {
-        assertEquals(true, runCatching { MemoryImportPlan.parseTsv("Q\\x\tA") }.exceptionOrNull() is IllegalArgumentException)
-        assertEquals(true, runCatching { MemoryImportPlan.parseTsv("Q\\") }.exceptionOrNull() is IllegalArgumentException)
+    fun legacyTsvPreservesLiteralBackslashSequences() {
+        val row = MemoryImportPlan.parseTsv("Question\\tmark\tAnswer\\n").single()
+        assertEquals("Question\\tmark", row.prompt)
+        assertEquals("Answer\\n", row.answer)
     }
 
     @Test
