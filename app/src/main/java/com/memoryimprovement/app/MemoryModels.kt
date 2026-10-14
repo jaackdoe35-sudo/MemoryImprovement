@@ -11,6 +11,9 @@ data class MemoryItem(
     val lastScore: Int? = null,
     val reviewCount: Int = 0,
     val palaceNodeId: String? = null,
+    val chunkLabel: String = "",
+    val association: String = "",
+    val sequenceOrder: Int? = null,
 )
 
 enum class PalaceNodeKind(val label: String) {
