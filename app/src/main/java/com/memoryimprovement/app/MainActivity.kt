@@ -163,6 +163,7 @@ private fun MemoryApp(
                     memories, attempts, correct, checkpoints,
                     onAdd = { adding = true }, onRecall = ::startRecall, onStartRetention = ::startRetention,
                     onStartSequence = { sequence -> activeSequence = sequence; activeCheckpoint = null; revealed = false; tab = AppTab.Recall },
+                    onStartPriority = { item -> activeCheckpoint = null; activeSequence = null; active = item; revealed = false; tab = AppTab.Recall },
                     onDiscriminationAttempt = { item, wasCorrect, latencyMs, response ->
                         attempts += 1
                         if (wasCorrect) correct += 1
@@ -304,6 +305,7 @@ private fun TodayScreen(
     onAdd: () -> Unit, onRecall: () -> Unit,
     onStartRetention: (RetentionCheckpoint) -> Unit,
     onStartSequence: (RecallSequence) -> Unit,
+    onStartPriority: (MemoryItem) -> Unit,
     onDiscriminationAttempt: (MemoryItem, Boolean, Long, String?) -> Unit,
 ) {
     var activeDrill by remember { mutableStateOf<InterferencePair?>(null) }
@@ -337,6 +339,28 @@ private fun TodayScreen(
                 MetricCard("Stored", memories.size.toString(), "memory units", Modifier.weight(1f))
                 MetricCard("Attempts", attempts.toString(), "all recorded", Modifier.weight(1f))
                 MetricCard("Self-rated success", if (attempts == 0) "—" else "${(correct * 100) / attempts}%", "all recorded attempts", Modifier.weight(1f))
+            }
+        }
+        item {
+            Heading("Priority practice")
+            val priorities = WeakMemoryPlan.rank(memories)
+            if (priorities.isEmpty()) {
+                Text("Add memory items to build a targeted practice queue.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                Text("Low previous ratings and overdue reviews rise to the top. Untested items are included until you have results.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                priorities.forEach { priority ->
+                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                            Text(priority.item.prompt, fontWeight = FontWeight.SemiBold)
+                            Text(priority.reason, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodySmall)
+                            Button(onClick = { onStartPriority(priority.item) }, modifier = Modifier.fillMaxWidth()) {
+                                Text("Practise this memory")
+                            }
+                        }
+                    }
+                }
             }
         }
         item { Heading("The system") }
