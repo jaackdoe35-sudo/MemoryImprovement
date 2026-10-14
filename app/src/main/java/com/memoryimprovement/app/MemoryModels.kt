@@ -21,6 +21,46 @@ object MemoryLibraryPlan {
     }
 }
 
+data class MemoryImportRow(
+    val prompt: String,
+    val answer: String,
+    val palace: String = "",
+    val locus: String = "",
+    val chunkLabel: String = "",
+    val association: String = "",
+    val sequenceOrder: Int? = null,
+)
+
+object MemoryImportPlan {
+    /** Parses tab-separated rows: prompt, answer, palace, locus, chunk, association, sequence order. */
+    fun parseTsv(text: String): List<MemoryImportRow> {
+        val rows = text.lineSequence().mapIndexedNotNull { index, raw ->
+            if (raw.isBlank()) return@mapIndexedNotNull null
+            val columns = raw.split('\t')
+            require(columns.size in 2..7) { "Line ${index + 1}: expected 2–7 tab-separated columns." }
+            val prompt = columns[0].trim()
+            val answer = columns[1].trim()
+            require(prompt.isNotEmpty() && answer.isNotEmpty()) {
+                "Line ${index + 1}: prompt and answer are required."
+            }
+            val orderText = columns.getOrNull(6)?.trim().orEmpty()
+            val order = if (orderText.isEmpty()) null else orderText.toIntOrNull()?.takeIf { it > 0 }
+                ?: throw IllegalArgumentException("Line ${index + 1}: sequence order must be a positive integer.")
+            MemoryImportRow(
+                prompt = prompt,
+                answer = answer,
+                palace = columns.getOrNull(2)?.trim().orEmpty(),
+                locus = columns.getOrNull(3)?.trim().orEmpty(),
+                chunkLabel = columns.getOrNull(4)?.trim().orEmpty(),
+                association = columns.getOrNull(5)?.trim().orEmpty(),
+                sequenceOrder = order,
+            )
+        }.toList()
+        require(rows.isNotEmpty()) { "Paste at least one valid row." }
+        return rows
+    }
+}
+
 data class MemoryItem(
     val id: String,
     val prompt: String,
