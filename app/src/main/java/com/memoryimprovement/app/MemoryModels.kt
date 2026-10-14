@@ -29,7 +29,24 @@ data class PalaceNode(
     val createdAt: Long = System.currentTimeMillis(),
 )
 
-enum class RecallMode { Cued, Free, Reverse }
+enum class RecallMode { Cued, Free, Reverse, Sequence }
+
+data class RecallSequence(val label: String, val items: List<MemoryItem>)
+
+object RecallSequencePlan {
+    /** Groups only explicitly numbered items; each group must contain at least two distinct facts. */
+    fun groups(memories: List<MemoryItem>): List<RecallSequence> = memories
+        .filter { it.chunkLabel.isNotBlank() && (it.sequenceOrder ?: 0) > 0 }
+        .groupBy { it.chunkLabel.trim().lowercase() }
+        .mapNotNull { (key, items) ->
+            val ordered = items.sortedWith(compareBy<MemoryItem> { it.sequenceOrder }.thenBy { it.createdAt }.thenBy { it.id })
+            if (ordered.size < 2) null else RecallSequence(
+                label = ordered.first().chunkLabel.trim().ifBlank { key },
+                items = ordered,
+            )
+        }
+        .sortedBy { it.label.lowercase() }
+}
 
 data class RecallAttempt(
     val itemId: String,
