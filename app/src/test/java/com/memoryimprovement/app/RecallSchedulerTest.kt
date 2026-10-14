@@ -192,6 +192,20 @@ class RecallSchedulerTest {
     }
 
     @Test
+    fun weakMemoryPlanRaisesItemsWithRepeatedIncorrectAttempts() {
+        val now = 100L * 24L * 60L * 60L * 1000L
+        val repeated = MemoryItem(id = "repeat", prompt = "Repeat", answer = "A", reviewCount = 3, nextReviewAt = now + 2L * 24L * 60L * 60L * 1000L)
+        val routine = MemoryItem(id = "routine", prompt = "Routine", answer = "B", reviewCount = 3, nextReviewAt = now + 2L * 24L * 60L * 60L * 1000L)
+        val attempts = listOf(
+            RecallAttempt(itemId = "repeat", mode = RecallMode.Free, correct = false, score = 0, latencyMs = 1000L, reviewedAt = 1L),
+            RecallAttempt(itemId = "repeat", mode = RecallMode.Free, correct = false, score = 0, latencyMs = 1200L, reviewedAt = 2L),
+        )
+        val ranked = WeakMemoryPlan.rank(listOf(routine, repeated), attempts, now)
+        assertEquals("repeat", ranked.first().item.id)
+        assertEquals("Repeated incorrect attempts (2)", ranked.first().reason)
+    }
+
+    @Test
     fun weakMemoryPlanRespectsLimit() {
         val items = (1..6).map { MemoryItem(id = "$it", prompt = "P$it", answer = "A$it") }
         assertEquals(3, WeakMemoryPlan.rank(items, limit = 3).size)
