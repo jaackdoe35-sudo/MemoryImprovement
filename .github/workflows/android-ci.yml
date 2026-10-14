@@ -38,6 +38,8 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
+          target: google_apis
+          arch: x86_64
           script: gradle connectedDebugAndroidTest
       - name: Assemble debug APK
         run: gradle assembleDebug
