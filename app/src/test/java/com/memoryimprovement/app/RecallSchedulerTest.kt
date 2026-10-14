@@ -14,6 +14,17 @@ class RecallSchedulerTest {
     }
 
     @Test
+    fun libraryPlanSearchesAndPrioritizesDueReviews() {
+        val now = 100_000L
+        val due = MemoryItem(id = "due", prompt = "Cell biology", answer = "Mitochondria", nextReviewAt = now - 1L, createdAt = 1L)
+        val future = MemoryItem(id = "future", prompt = "Cell division", answer = "Mitosis", nextReviewAt = now + 1L, createdAt = 2L)
+        val all = MemoryLibraryPlan.filterAndSort(listOf(future, due), "cell", dueOnly = false, now = now)
+        assertEquals(listOf("due", "future"), all.map { it.id })
+        val dueOnly = MemoryLibraryPlan.filterAndSort(listOf(future, due), "CELL", dueOnly = true, now = now)
+        assertEquals(listOf("due"), dueOnly.map { it.id })
+    }
+
+    @Test
     fun failedRecallSchedulesNextDay() {
         val now = 1_000_000L
         val result = RecallScheduler.schedule(previousReviews = 3, score = 0, now = now)
