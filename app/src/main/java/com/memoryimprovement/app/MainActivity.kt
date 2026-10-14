@@ -130,6 +130,12 @@ class MainActivity : ComponentActivity() {
                                     onLoaded(repository.loadPalaceNodes())
                                 }
                             },
+                            onRenameNode = { nodeId, name, onLoaded ->
+                                lifecycleScope.launch {
+                                    repository.renamePalaceNode(nodeId, name)
+                                    onLoaded(repository.loadPalaceNodes())
+                                }
+                            },
                         )
                     }
                 }
@@ -159,6 +165,7 @@ private fun MemoryApp(
     onCompleteRetention: (String, Int, Long, String?, Int, (List<RetentionCheckpoint>) -> Unit) -> Unit,
     onCreateNode: (String, PalaceNodeKind, String?, (List<PalaceNode>) -> Unit) -> Unit,
     onDeleteNode: (String, (List<PalaceNode>) -> Unit) -> Unit,
+    onRenameNode: (String, String, (List<PalaceNode>) -> Unit) -> Unit,
 ) {
     var memories by remember { mutableStateOf(initialItems) }
     var palaceNodes by remember { mutableStateOf(initialNodes) }
@@ -267,6 +274,12 @@ private fun MemoryApp(
                     },
                     onDeleteNode = { nodeId, onLoaded ->
                         onDeleteNode(nodeId) { refreshed ->
+                            palaceNodes = refreshed
+                            onLoaded(refreshed)
+                        }
+                    },
+                    onRenameNode = { nodeId, name, onLoaded ->
+                        onRenameNode(nodeId, name) { refreshed ->
                             palaceNodes = refreshed
                             onLoaded(refreshed)
                         }
@@ -1111,8 +1124,10 @@ private fun PalaceScreen(
     onAddMemory: () -> Unit,
     onCreateNode: (String, PalaceNodeKind, String?, (List<PalaceNode>) -> Unit) -> Unit,
     onDeleteNode: (String, (List<PalaceNode>) -> Unit) -> Unit,
+    onRenameNode: (String, String, (List<PalaceNode>) -> Unit) -> Unit,
 ) {
     var addParent by remember { mutableStateOf<PalaceNode?>(null) }
+    var renamingNode by remember { mutableStateOf<PalaceNode?>(null) }
     var deletingNode by remember { mutableStateOf<PalaceNode?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
     val flattened = remember(nodes) { flattenPalaceTree(nodes) }
@@ -1163,6 +1178,7 @@ private fun PalaceScreen(
                         if (allowedChildKinds(node).isNotEmpty()) {
                             TextButton(onClick = { addParent = node; showAddDialog = true }) { Text("+ Add child location") }
                         }
+                        TextButton(onClick = { renamingNode = node }) { Text("Rename") }
                         TextButton(onClick = { deletingNode = node }) { Text("Delete branch") }
                     }
                 }
@@ -1174,6 +1190,14 @@ private fun PalaceScreen(
                 Text("Add memory item")
             }
         }
+    }
+
+    renamingNode?.let { node ->
+        RenamePalaceNodeDialog(
+            node = node,
+            onDismiss = { renamingNode = null },
+            onRename = { name -> onRenameNode(node.id, name) { renamingNode = null } },
+        )
     }
 
     deletingNode?.let { node ->
@@ -1207,6 +1231,32 @@ private fun PalaceScreen(
             },
         )
     }
+}
+
+@Composable
+private fun RenamePalaceNodeDialog(
+    node: PalaceNode,
+    onDismiss: () -> Unit,
+    onRename: (String) -> Unit,
+) {
+    var name by remember(node.id) { mutableStateOf(node.name) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Rename ${node.kind.label.lowercase()}") },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Name") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = {
+            Button(onClick = { onRename(name.trim()) }, enabled = name.trim().isNotEmpty()) { Text("Save name") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
 }
 
 @Composable
