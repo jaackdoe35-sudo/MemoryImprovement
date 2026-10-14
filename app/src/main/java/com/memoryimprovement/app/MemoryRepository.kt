@@ -12,7 +12,7 @@ class MemoryRepository(context: Context) {
         appContext,
         MemoryDatabase::class.java,
         "memory_improvement.db",
-    ).addMigrations(MemoryDatabase.MIGRATION_1_2, MemoryDatabase.MIGRATION_2_3, MemoryDatabase.MIGRATION_3_4, MemoryDatabase.MIGRATION_4_5).build()
+    ).addMigrations(MemoryDatabase.MIGRATION_1_2, MemoryDatabase.MIGRATION_2_3, MemoryDatabase.MIGRATION_3_4, MemoryDatabase.MIGRATION_4_5, MemoryDatabase.MIGRATION_5_6).build()
     private val dao = database.memoryDao()
 
     suspend fun loadItems(): List<MemoryItem> {
@@ -166,12 +166,14 @@ class MemoryRepository(context: Context) {
         id = id, prompt = prompt, answer = answer, palace = palace, locus = locus,
         createdAt = createdAt, nextReviewAt = nextReviewAt, lastScore = lastScore,
         reviewCount = reviewCount, palaceNodeId = palaceNodeId,
+        chunkLabel = chunkLabel, association = association, sequenceOrder = sequenceOrder,
     )
 
     private fun MemoryItem.toEntity() = MemoryItemEntity(
         id = id, prompt = prompt, answer = answer, palace = palace, locus = locus,
         createdAt = createdAt, nextReviewAt = nextReviewAt, lastScore = lastScore,
         reviewCount = reviewCount, palaceNodeId = palaceNodeId,
+        chunkLabel = chunkLabel, association = association, sequenceOrder = sequenceOrder,
     )
 
     private fun PalaceNodeEntity.toModel() = PalaceNode(
