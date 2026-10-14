@@ -108,6 +108,37 @@ object RecallAnalytics {
         }.sortedBy { it.mode.ordinal }
 }
 
+data class RepeatedErrorSummary(
+    val item: MemoryItem,
+    val incorrectAttempts: Int,
+    val mostRecentFailureAt: Long,
+    val lastIncorrectResponse: String?,
+)
+
+object RepeatedErrorPlan {
+    /** Surfaces only items with at least two attempts marked incorrect; does not infer semantic error types. */
+    fun find(
+        memories: List<MemoryItem>,
+        attempts: List<RecallAttempt>,
+        limit: Int = 5,
+    ): List<RepeatedErrorSummary> {
+        val byId = memories.associateBy { it.id }
+        return attempts.filterNot { it.correct }
+            .groupBy { it.itemId }
+            .mapNotNull { (itemId, failures) ->
+                val item = byId[itemId] ?: return@mapNotNull null
+                if (failures.size < 2) return@mapNotNull null
+                val latest = failures.maxByOrNull { it.reviewedAt } ?: return@mapNotNull null
+                RepeatedErrorSummary(item, failures.size, latest.reviewedAt, latest.recalledResponse)
+            }
+            .sortedWith(compareByDescending<RepeatedErrorSummary> { it.incorrectAttempts }
+                .thenByDescending { it.mostRecentFailureAt })
+            .take(limit)
+    }
+}
+
+
+
 
 data class RecallAttempt(
     val itemId: String,
