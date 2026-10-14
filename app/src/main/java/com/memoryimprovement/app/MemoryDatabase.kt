@@ -144,6 +144,9 @@ interface MemoryDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertPalaceNode(node: PalaceNodeEntity)
 
+    @Query("UPDATE memory_items SET palaceNodeId = NULL WHERE palaceNodeId IN (:nodeIds)")
+    suspend fun clearMemoryPalaceNodeReferences(nodeIds: List<String>)
+
     @Query("DELETE FROM palace_nodes WHERE id = :id")
     suspend fun deletePalaceNode(id: String)
 }
