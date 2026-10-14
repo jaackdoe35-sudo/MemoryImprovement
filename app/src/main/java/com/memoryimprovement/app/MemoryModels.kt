@@ -29,7 +29,7 @@ data class PalaceNode(
     val createdAt: Long = System.currentTimeMillis(),
 )
 
-enum class RecallMode { Cued, Free, Reverse, Sequence, Discrimination }
+enum class RecallMode { Cued, Free, Reverse, Sequence, Discrimination, Retention }
 
 data class RecallSequence(val label: String, val items: List<MemoryItem>)
 
@@ -283,5 +283,17 @@ object RecallScheduler {
             else -> listOf(2, 5, 10, 21, 30)[previousReviews.coerceIn(0, 4)]
         }
         return RecallOutcome(now + interval * 24L * 60L * 60L * 1000L, interval, normalized)
+    }
+}
+
+/** Applies a delayed test's effort rating to the next review date; accuracy remains separately recorded. */
+object RetentionReviewPlan {
+    fun apply(item: MemoryItem, effortScore: Int, completedAt: Long): MemoryItem {
+        val outcome = RecallScheduler.schedule(item.reviewCount, effortScore, completedAt)
+        return item.copy(
+            nextReviewAt = outcome.nextReviewAt,
+            lastScore = outcome.score,
+            reviewCount = item.reviewCount + 1,
+        )
     }
 }
