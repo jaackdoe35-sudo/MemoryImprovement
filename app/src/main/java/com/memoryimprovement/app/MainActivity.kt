@@ -1231,12 +1231,10 @@ private fun RecallScreen(
 @Composable
 private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit: (MemoryItem) -> Unit, onDelete: (MemoryItem) -> Unit) {
     var searchQuery by remember { mutableStateOf("") }
-    val filteredMemories = remember(memories, searchQuery) {
-        val query = searchQuery.trim()
-        if (query.isEmpty()) memories else memories.filter { item ->
-            listOf(item.prompt, item.answer, item.palace, item.locus, item.chunkLabel, item.association)
-                .any { it.contains(query, ignoreCase = true) }
-        }
+    var dueOnly by remember { mutableStateOf(false) }
+    val now = System.currentTimeMillis()
+    val filteredMemories = remember(memories, searchQuery, dueOnly, now) {
+        MemoryLibraryPlan.filterAndSort(memories, searchQuery, dueOnly, now)
     }
     Column(Modifier.fillMaxSize().padding(horizontal = 18.dp)) {
         Spacer(Modifier.height(8.dp))
@@ -1255,6 +1253,12 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
                 label = { Text("Search memories") },
                 singleLine = true,
             )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("${filteredMemories.size} memories", style = MaterialTheme.typography.labelMedium)
+                TextButton(onClick = { dueOnly = !dueOnly }) {
+                    Text(if (dueOnly) "Show all" else "Due reviews only")
+                }
+            }
             if (filteredMemories.isEmpty()) {
                 Text("No memories match this search.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
