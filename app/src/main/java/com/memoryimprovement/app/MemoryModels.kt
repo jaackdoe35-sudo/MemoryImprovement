@@ -1,5 +1,27 @@
 package com.memoryimprovement.app
 
+/** Result of attempting to decode legacy preference data; failures retain the original raw value. */
+data class LegacyMigrationResult(
+    val items: List<MemoryItem>,
+    val errorMessage: String? = null,
+    val preservedRawData: String? = null,
+)
+
+object LegacyMigrationPlan {
+    fun decode(raw: String, decoder: (String) -> List<MemoryItem>): LegacyMigrationResult =
+        runCatching { decoder(raw) }
+            .fold(
+                onSuccess = { LegacyMigrationResult(items = it) },
+                onFailure = {
+                    LegacyMigrationResult(
+                        items = emptyList(),
+                        errorMessage = "Legacy memory data could not be imported: ${it.message ?: "invalid data"}. The original data has been preserved.",
+                        preservedRawData = raw,
+                    )
+                },
+            )
+}
+
 /** Search and due filtering for the library; ordering prioritizes due reviews. */
 object MemoryLibraryPlan {
     fun filterAndSort(
