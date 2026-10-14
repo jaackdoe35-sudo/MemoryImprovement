@@ -5,6 +5,27 @@ import org.junit.Test
 
 class RecallSchedulerTest {
     @Test
+    fun malformedLegacyJsonIsReportedAndOriginalDataPreserved() {
+        val raw = """[{"id":"broken""""
+        val result = LegacyMigrationPlan.decode(raw) { throw IllegalArgumentException("malformed JSON") }
+        assertEquals(emptyList<MemoryItem>(), result.items)
+        assertEquals(raw, result.preservedRawData)
+        assertEquals(
+            "Legacy memory data could not be imported: malformed JSON. The original data has been preserved.",
+            result.errorMessage,
+        )
+    }
+
+    @Test
+    fun validLegacyMigrationResultContainsDecodedItemsWithoutError() {
+        val item = MemoryItem(id = "legacy", prompt = "P", answer = "A")
+        val result = LegacyMigrationPlan.decode("valid") { listOf(item) }
+        assertEquals(listOf(item), result.items)
+        assertEquals(null, result.errorMessage)
+        assertEquals(null, result.preservedRawData)
+    }
+
+    @Test
     fun memoryDeletionRemovesOnlyMatchingItemFromInMemoryCollections() {
         val items = listOf(
             MemoryItem(id = "keep", prompt = "Keep", answer = "A"),
