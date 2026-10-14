@@ -124,6 +124,12 @@ class MainActivity : ComponentActivity() {
                                     onLoaded(repository.loadPalaceNodes())
                                 }
                             },
+                            onDeleteNode = { nodeId, onLoaded ->
+                                lifecycleScope.launch {
+                                    repository.deletePalaceNode(nodeId)
+                                    onLoaded(repository.loadPalaceNodes())
+                                }
+                            },
                         )
                     }
                 }
@@ -152,6 +158,7 @@ private fun MemoryApp(
     onAttempt: (RecallAttempt) -> Unit,
     onCompleteRetention: (String, Int, Long, String?, Int, (List<RetentionCheckpoint>) -> Unit) -> Unit,
     onCreateNode: (String, PalaceNodeKind, String?, (List<PalaceNode>) -> Unit) -> Unit,
+    onDeleteNode: (String, (List<PalaceNode>) -> Unit) -> Unit,
 ) {
     var memories by remember { mutableStateOf(initialItems) }
     var palaceNodes by remember { mutableStateOf(initialNodes) }
@@ -254,6 +261,12 @@ private fun MemoryApp(
                     onAddMemory = { adding = true },
                     onCreateNode = { name, kind, parentId, onLoaded ->
                         onCreateNode(name, kind, parentId) { refreshed ->
+                            palaceNodes = refreshed
+                            onLoaded(refreshed)
+                        }
+                    },
+                    onDeleteNode = { nodeId, onLoaded ->
+                        onDeleteNode(nodeId) { refreshed ->
                             palaceNodes = refreshed
                             onLoaded(refreshed)
                         }
@@ -1097,8 +1110,10 @@ private fun PalaceScreen(
     nodes: List<PalaceNode>,
     onAddMemory: () -> Unit,
     onCreateNode: (String, PalaceNodeKind, String?, (List<PalaceNode>) -> Unit) -> Unit,
+    onDeleteNode: (String, (List<PalaceNode>) -> Unit) -> Unit,
 ) {
     var addParent by remember { mutableStateOf<PalaceNode?>(null) }
+    var deletingNode by remember { mutableStateOf<PalaceNode?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
     val flattened = remember(nodes) { flattenPalaceTree(nodes) }
     LazyColumn(
@@ -1144,8 +1159,11 @@ private fun PalaceScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall,
                     )
-                    if (allowedChildKinds(node).isNotEmpty()) {
-                        TextButton(onClick = { addParent = node; showAddDialog = true }) { Text("+ Add child location") }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (allowedChildKinds(node).isNotEmpty()) {
+                            TextButton(onClick = { addParent = node; showAddDialog = true }) { Text("+ Add child location") }
+                        }
+                        TextButton(onClick = { deletingNode = node }) { Text("Delete branch") }
                     }
                 }
             }
@@ -1156,6 +1174,24 @@ private fun PalaceScreen(
                 Text("Add memory item")
             }
         }
+    }
+
+    deletingNode?.let { node ->
+        AlertDialog(
+            onDismissRequest = { deletingNode = null },
+            title = { Text("Delete ${node.kind.label.lowercase()} branch?") },
+            text = {
+                Text("This permanently removes this location and all child locations. Linked memories and their review history are kept, but their palace-location links are cleared.")
+            },
+            confirmButton = {
+                Button(onClick = {
+                    onDeleteNode(node.id) { deletingNode = null }
+                }) { Text("Delete branch") }
+            },
+            dismissButton = {
+                TextButton(onClick = { deletingNode = null }) { Text("Cancel") }
+            },
+        )
     }
 
     if (showAddDialog) {
