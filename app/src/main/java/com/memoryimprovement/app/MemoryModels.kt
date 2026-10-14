@@ -126,6 +126,29 @@ object RetentionCheckpointPlan {
 }
 
 /** Transparent baseline; evaluate against measured delayed recall before claiming it is optimal. */
+data class WeakMemoryPriority(val item: MemoryItem, val priority: Int, val reason: String)
+
+object WeakMemoryPlan {
+    /** Prioritizes low last scores and overdue review dates; this is a transparent baseline, not an ML prediction. */
+    fun rank(memories: List<MemoryItem>, now: Long = System.currentTimeMillis(), limit: Int = 5): List<WeakMemoryPriority> =
+        memories.map { item ->
+            val lowScore = item.lastScore?.let { (5 - it.coerceIn(0, 5)) * 3 } ?: 0
+            val overdueDays = ((now - item.nextReviewAt).coerceAtLeast(0L) / (24L * 60L * 60L * 1000L)).coerceAtMost(30L).toInt()
+            val untested = if (item.reviewCount == 0) 2 else 0
+            val priority = lowScore + overdueDays + untested
+            val reason = when {
+                item.lastScore != null && item.lastScore <= 2 -> "Low last self-rating"
+                overdueDays > 0 -> "Overdue by $overdueDays day(s)"
+                item.reviewCount == 0 -> "Not yet practised"
+                else -> "Routine review"
+            }
+            WeakMemoryPriority(item, priority, reason)
+        }
+            .sortedWith(compareByDescending<WeakMemoryPriority> { it.priority }.thenBy { it.item.nextReviewAt }.thenBy { it.item.prompt.lowercase() })
+            .take(limit)
+
+}
+
 object RecallScheduler {
     fun schedule(previousReviews: Int, score: Int, now: Long = System.currentTimeMillis()): RecallOutcome {
         val normalized = score.coerceIn(0, 5)
