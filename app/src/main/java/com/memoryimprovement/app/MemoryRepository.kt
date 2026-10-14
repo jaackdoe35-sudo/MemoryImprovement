@@ -12,7 +12,7 @@ class MemoryRepository(context: Context) {
         appContext,
         MemoryDatabase::class.java,
         "memory_improvement.db",
-    ).addMigrations(MemoryDatabase.MIGRATION_1_2, MemoryDatabase.MIGRATION_2_3, MemoryDatabase.MIGRATION_3_4).build()
+    ).addMigrations(MemoryDatabase.MIGRATION_1_2, MemoryDatabase.MIGRATION_2_3, MemoryDatabase.MIGRATION_3_4, MemoryDatabase.MIGRATION_4_5).build()
     private val dao = database.memoryDao()
 
     suspend fun loadItems(): List<MemoryItem> {
@@ -42,6 +42,7 @@ class MemoryRepository(context: Context) {
         score: Int,
         latencyMs: Long,
         recalledResponse: String?,
+        accuracy: Int,
         completedAt: Long = System.currentTimeMillis(),
     ): Boolean = dao.completeRetentionCheckpoint(
         id = id,
@@ -49,6 +50,7 @@ class MemoryRepository(context: Context) {
         score = score.coerceIn(0, 5),
         latencyMs = latencyMs.coerceAtLeast(0L),
         recalledResponse = recalledResponse?.trim()?.takeIf { it.isNotEmpty() },
+        accuracy = accuracy.coerceIn(0, 2),
     ) == 1
 
     suspend fun saveAttempt(attempt: RecallAttempt) {
@@ -145,6 +147,7 @@ class MemoryRepository(context: Context) {
         score = score,
         latencyMs = latencyMs,
         recalledResponse = recalledResponse,
+        accuracy = accuracy,
     )
 
     private fun RetentionCheckpointEntity.toModel() = RetentionCheckpoint(
@@ -156,6 +159,7 @@ class MemoryRepository(context: Context) {
         score = score,
         latencyMs = latencyMs,
         recalledResponse = recalledResponse,
+        accuracy = accuracy,
     )
 
     private fun MemoryItemEntity.toModel() = MemoryItem(
