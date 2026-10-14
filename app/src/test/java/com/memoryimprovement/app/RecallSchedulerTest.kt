@@ -35,6 +35,20 @@ class RecallSchedulerTest {
     }
 
     @Test
+    fun bulkImportSkipsExistingAndRepeatedPromptAnswerPairs() {
+        val existing = listOf(MemoryItem(id = "existing", prompt = "Capital?", answer = "Lagos"))
+        val imported = listOf(
+            MemoryImportRow(prompt = " capital? ", answer = "LAGOS"),
+            MemoryImportRow(prompt = "Capital?", answer = "Lagos"),
+            MemoryImportRow(prompt = "Largest ocean?", answer = "Pacific"),
+        )
+        val result = MemoryImportPlan.excludeDuplicates(imported, existing)
+        assertEquals(1, result.rows.size)
+        assertEquals("Largest ocean?", result.rows.single().prompt)
+        assertEquals(2, result.duplicatesSkipped)
+    }
+
+    @Test
     fun bulkImportRejectsMissingAnswer() {
         val error = runCatching { MemoryImportPlan.parseTsv("Prompt only\t") }.exceptionOrNull()
         assertEquals(true, error is IllegalArgumentException)
