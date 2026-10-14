@@ -63,9 +63,9 @@ class MainActivity : ComponentActivity() {
                             initialCheckpoints = initialCheckpoints,
                             onSave = { updated -> lifecycleScope.launch { repository.saveItems(updated) } },
                             onAttempt = { attempt -> lifecycleScope.launch { repository.saveAttempt(attempt) } },
-                            onCompleteRetention = { id, score, latencyMs, response, onLoaded ->
+                            onCompleteRetention = { id, score, latencyMs, response, accuracy, onLoaded ->
                                 lifecycleScope.launch {
-                                    repository.completeRetentionCheckpoint(id, score, latencyMs, response)
+                                    repository.completeRetentionCheckpoint(id, score, latencyMs, response, accuracy)
                                     onLoaded(repository.loadRetentionCheckpoints())
                                 }
                             },
@@ -96,7 +96,7 @@ private fun MemoryApp(
     initialCheckpoints: List<RetentionCheckpoint>,
     onSave: (List<MemoryItem>) -> Unit,
     onAttempt: (RecallAttempt) -> Unit,
-    onCompleteRetention: (String, Int, Long, String?, (List<RetentionCheckpoint>) -> Unit) -> Unit,
+    onCompleteRetention: (String, Int, Long, String?, Int, (List<RetentionCheckpoint>) -> Unit) -> Unit,
     onCreateNode: (String, PalaceNodeKind, String?, (List<PalaceNode>) -> Unit) -> Unit,
 ) {
     var memories by remember { mutableStateOf(initialItems) }
@@ -172,9 +172,9 @@ private fun MemoryApp(
                     RetentionTestScreen(
                         item = active,
                         checkpoint = activeCheckpoint!!,
-                        onComplete = { score, latencyMs, response ->
+                        onComplete = { score, latencyMs, response, accuracy ->
                             val checkpointId = activeCheckpoint!!.id
-                            onCompleteRetention(checkpointId, score, latencyMs, response) { refreshed ->
+                            onCompleteRetention(checkpointId, score, latencyMs, response, accuracy) { refreshed ->
                                 checkpoints = refreshed
                                 activeCheckpoint = null
                                 tab = AppTab.Today
@@ -350,6 +350,14 @@ private fun TodayScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
+                                val accuracyRatings = group.mapNotNull { it.accuracy }
+                                if (accuracyRatings.isNotEmpty()) {
+                                    val accuracyPercent = accuracyRatings.count { it == 2 } * 100 / accuracyRatings.size
+                                    Text(
+                                        "Fully correct by self-check: $accuracyPercent% (${accuracyRatings.size} rated)",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                                 if (timed.isNotEmpty()) {
                                     Text(
                                         "Mean retrieval time: ${"%.1f".format(timed.average() / 1000.0)} s",
@@ -373,8 +381,14 @@ private fun TodayScreen(
                             } else {
                                 Text("The original memory item is no longer available.")
                             }
+                            val accuracyLabel = when (checkpoint.accuracy) {
+                                0 -> "Incorrect"
+                                1 -> "Partially correct"
+                                2 -> "Correct"
+                                else -> "Not checked"
+                            }
                             Text(
-                                "Self-rating: ${checkpoint.score?.let { "$it / 5" } ?: "not recorded"} · Retrieval time: ${checkpoint.latencyMs?.let { "${"%.1f".format(it / 1000.0)} s" } ?: "not recorded"}",
+                                "Answer accuracy: $accuracyLabel · Self-rating: ${checkpoint.score?.let { "$it / 5" } ?: "not recorded"} · Retrieval time: ${checkpoint.latencyMs?.let { "${"%.1f".format(it / 1000.0)} s" } ?: "not recorded"}",
                                 style = MaterialTheme.typography.bodySmall,
                             )
                             Text(
@@ -598,15 +612,17 @@ private fun RecallMode.label(): String = when (this) {
 private fun RetentionTestScreen(
     item: MemoryItem?,
     checkpoint: RetentionCheckpoint,
-    onComplete: (Int, Long, String?) -> Unit,
+    onComplete: (Int, Long, String?, Int) -> Unit,
 ) {
     var response by remember(checkpoint.id) { mutableStateOf("") }
     var revealed by remember(checkpoint.id) { mutableStateOf(false) }
+    var selectedAccuracy by remember(checkpoint.id) { mutableStateOf<Int?>(null) }
+    var selectedEffort by remember(checkpoint.id) { mutableStateOf<Int?>(null) }
     val startedAt = remember(checkpoint.id) { SystemClock.elapsedRealtime() }
     Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Heading("${checkpoint.delayDays}-day retention test")
         Text(
-            "Delayed recall · Attempt the answer before revealing the stored fact. Your self-rating is recorded separately from the written response.",
+            "Recall first, then reveal the stored fact. Record answer accuracy separately from how easy recall felt.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         if (item == null) {
@@ -641,15 +657,35 @@ private fun RetentionTestScreen(
                 }
             }
             if (revealed) {
-                Text("Self-rate your recall. This rating is not an automatic correctness score.",
-                    fontWeight = FontWeight.SemiBold)
+                Text("1. Compare your response with the stored answer", fontWeight = FontWeight.SemiBold)
+                Text("This is a manual check, not AI grading. Choose the closest match.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                listOf(0 to "Incorrect", 1 to "Partially correct", 2 to "Correct")
+                    .forEach { (value, label) ->
+                        TextButton(onClick = { selectedAccuracy = value }, modifier = Modifier.fillMaxWidth()) {
+                            Text(if (selectedAccuracy == value) "✓ $label" else label)
+                        }
+                    }
+                Spacer(Modifier.height(4.dp))
+                Text("2. How did retrieval feel?", fontWeight = FontWeight.SemiBold)
                 listOf(0 to "Forgot", 2 to "Difficult", 3 to "Partial", 4 to "Mostly recalled", 5 to "Fully recalled")
                     .forEach { (score, label) ->
-                        TextButton(
-                            onClick = { onComplete(score, SystemClock.elapsedRealtime() - startedAt, response.trim().takeIf { it.isNotEmpty() }) },
-                            modifier = Modifier.fillMaxWidth(),
-                        ) { Text(label) }
+                        TextButton(onClick = { selectedEffort = score }, modifier = Modifier.fillMaxWidth()) {
+                            Text(if (selectedEffort == score) "✓ $label" else label)
+                        }
                     }
+                Button(
+                    onClick = {
+                        onComplete(
+                            selectedEffort!!,
+                            SystemClock.elapsedRealtime() - startedAt,
+                            response.trim().takeIf { it.isNotEmpty() },
+                            selectedAccuracy!!,
+                        )
+                    },
+                    enabled = selectedAccuracy != null && selectedEffort != null,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Save retention result") }
             }
         }
     }
