@@ -95,6 +95,12 @@ interface MemoryDao {
     @Query("DELETE FROM memory_items WHERE id = :itemId")
     suspend fun deleteItem(itemId: String)
 
+    @Query("DELETE FROM retention_checkpoints WHERE itemId = :itemId")
+    suspend fun deleteCheckpointsForItem(itemId: String)
+
+    @Query("DELETE FROM recall_attempts WHERE itemId = :itemId")
+    suspend fun deleteAttemptsForItem(itemId: String)
+
     @Insert
     suspend fun insertAttempt(attempt: RecallAttemptEntity)
 
