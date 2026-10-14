@@ -49,7 +49,7 @@ import java.util.UUID
 
 class MainActivity : ComponentActivity() {
     private var pendingExport: String = ""
-    private var pendingImportConsumer: ((String) -> Unit)? = null
+    private var pendingImportConsumer: ((Result<String>) -> Unit)? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,7 +63,11 @@ class MainActivity : ComponentActivity() {
                 runCatching {
                     contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
                         ?: throw IllegalStateException("Could not read the selected file.")
-                }.onSuccess { content -> pendingImportConsumer?.invoke(content) }
+                }.onSuccess { content ->
+                    pendingImportConsumer?.invoke(Result.success(content))
+                }.onFailure { error ->
+                    pendingImportConsumer?.invoke(Result.failure(error))
+                }
             }
             pendingImportConsumer = null
         }
@@ -130,7 +134,7 @@ private fun MemoryApp(
     initialCheckpoints: List<RetentionCheckpoint>,
     onSave: (List<MemoryItem>) -> Unit,
     onExportMemories: (List<MemoryItem>) -> Unit,
-    onChooseImportFile: (((String) -> Unit) -> Unit),
+    onChooseImportFile: (((Result<String>) -> Unit) -> Unit),
     onDeleteMemory: (String, () -> Unit) -> Unit,
     onAttempt: (RecallAttempt) -> Unit,
     onCompleteRetention: (String, Int, Long, String?, Int, (List<RetentionCheckpoint>) -> Unit) -> Unit,
@@ -367,11 +371,17 @@ private fun MemoryApp(
                         maxLines = 10,
                     )
                     TextButton(onClick = {
-                        onChooseImportFile { content ->
-                            bulkImportText = content
-                            bulkImportPreview = null
-                            bulkImportError = null
-                            bulkImportStatus = null
+                        onChooseImportFile { result ->
+                            result.onSuccess { content ->
+                                bulkImportText = content
+                                bulkImportPreview = null
+                                bulkImportError = null
+                                bulkImportStatus = null
+                            }.onFailure { error ->
+                                bulkImportError = error.message?.takeIf { it.isNotBlank() }
+                                    ?: "Could not read the selected file."
+                                bulkImportPreview = null
+                            }
                         }
                     }) { Text("Choose TSV file") }
                     bulkImportError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
