@@ -49,6 +49,7 @@ import java.util.UUID
 
 class MainActivity : ComponentActivity() {
     private var pendingExport: String = ""
+    private var pendingImportConsumer: ((String) -> Unit)? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,6 +57,15 @@ class MainActivity : ComponentActivity() {
             if (uri != null) {
                 contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { it.write(pendingExport) }
             }
+        }
+        val openImportFile = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+            if (uri != null) {
+                runCatching {
+                    contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+                        ?: throw IllegalStateException("Could not read the selected file.")
+                }.onSuccess { content -> pendingImportConsumer?.invoke(content) }
+            }
+            pendingImportConsumer = null
         }
         val repository = MemoryRepository(applicationContext)
         lifecycleScope.launch {
@@ -75,6 +85,10 @@ class MainActivity : ComponentActivity() {
                             onExportMemories = { items ->
                                 pendingExport = MemoryExportPlan.toTsv(items)
                                 createExportFile.launch("memory-improvement-memories.tsv")
+                            },
+                            onChooseImportFile = { consume ->
+                                pendingImportConsumer = consume
+                                openImportFile.launch(arrayOf("text/tab-separated-values", "text/*", "application/octet-stream"))
                             },
                             onDeleteMemory = { itemId, onDeleted ->
                                 lifecycleScope.launch {
@@ -116,6 +130,7 @@ private fun MemoryApp(
     initialCheckpoints: List<RetentionCheckpoint>,
     onSave: (List<MemoryItem>) -> Unit,
     onExportMemories: (List<MemoryItem>) -> Unit,
+    onChooseImportFile: (((String) -> Unit) -> Unit),
     onDeleteMemory: (String, () -> Unit) -> Unit,
     onAttempt: (RecallAttempt) -> Unit,
     onCompleteRetention: (String, Int, Long, String?, Int, (List<RetentionCheckpoint>) -> Unit) -> Unit,
@@ -351,6 +366,14 @@ private fun MemoryApp(
                         minLines = 5,
                         maxLines = 10,
                     )
+                    TextButton(onClick = {
+                        onChooseImportFile { content ->
+                            bulkImportText = content
+                            bulkImportPreview = null
+                            bulkImportError = null
+                            bulkImportStatus = null
+                        }
+                    }) { Text("Choose TSV file") }
                     bulkImportError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                     bulkImportStatus?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
                     bulkImportPreview?.let { preview ->
