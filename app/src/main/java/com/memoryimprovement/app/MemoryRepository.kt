@@ -137,8 +137,14 @@ class MemoryRepository(context: Context) {
         )
     }
 
-    suspend fun deletePalaceNode(id: String) {
-        dao.deletePalaceNode(id)
+    /** Deletes a palace branch and atomically unlinks memories assigned anywhere in that branch. */
+    suspend fun deletePalaceNode(id: String) = database.withTransaction {
+        val nodes = dao.getPalaceNodes().map { it.toModel() }
+        val nodeIds = PalaceHierarchyPlan.descendantIds(nodes, id)
+        if (nodeIds.isNotEmpty()) {
+            dao.clearMemoryPalaceNodeReferences(nodeIds.toList())
+            dao.deletePalaceNode(id)
+        }
     }
 
     private suspend fun migrateLegacyItems() {
