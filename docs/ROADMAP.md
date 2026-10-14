@@ -17,10 +17,12 @@
 - [ ] Add editing, deletion, import/export, and safe backup.
 - [ ] Add automated repository and scheduler tests.
 
-## Milestone 2 — navigable memory palaces
+## Milestone 2 — navigable memory palaces (in progress)
 
-- [ ] Model nested palaces, routes/areas, loci, and fact links using stable IDs.
-- [ ] Provide palace overview, route view, locus view, and zoom/drill-down navigation.
+- [x] Model nested palaces, routes/areas, loci, and fact links using stable IDs.
+- [x] Provide a basic indented hierarchy view and create-child flow.
+- [x] Allow memory items to link to a stable locus ID.
+- [ ] Add focused route/locus drill-down, editing, and safe node deletion.
 - [ ] Detect duplicate or potentially confusable cues and let the user resolve them.
 - [ ] Support ordered sequences and test order accuracy.
 
