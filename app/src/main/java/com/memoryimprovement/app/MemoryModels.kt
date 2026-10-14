@@ -10,6 +10,20 @@ data class MemoryItem(
     val nextReviewAt: Long = createdAt,
     val lastScore: Int? = null,
     val reviewCount: Int = 0,
+    val palaceNodeId: String? = null,
+)
+
+enum class PalaceNodeKind(val label: String) {
+    Palace("Palace"), Route("Route"), Area("Area"), Locus("Locus")
+}
+
+data class PalaceNode(
+    val id: String,
+    val name: String,
+    val kind: PalaceNodeKind,
+    val parentId: String?,
+    val position: Int = 0,
+    val createdAt: Long = System.currentTimeMillis(),
 )
 
 enum class RecallMode { Cued, Free, Reverse }
