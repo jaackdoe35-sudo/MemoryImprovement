@@ -224,7 +224,7 @@ private fun MemoryApp(
         AddMemoryDialog(
             onDismiss = { adding = false },
             nodes = palaceNodes,
-            onCreate = { prompt, answer, palace, locus, palaceNodeId ->
+            onCreate = { prompt, answer, palace, locus, palaceNodeId, chunkLabel, association, sequenceOrder ->
                 val now = System.currentTimeMillis()
                 val selectedNode = palaceNodes.firstOrNull { it.id == palaceNodeId }
                 val item = MemoryItem(
@@ -235,6 +235,9 @@ private fun MemoryApp(
                     } ?: palace.trim(),
                     locus = selectedNode?.name ?: locus.trim(),
                     palaceNodeId = palaceNodeId,
+                    chunkLabel = chunkLabel.trim(),
+                    association = association.trim(),
+                    sequenceOrder = sequenceOrder,
                     createdAt = now, nextReviewAt = now,
                 )
                 save(memories + item)
@@ -810,6 +813,13 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit) {
                             Text(item.prompt, fontWeight = FontWeight.SemiBold)
                             Spacer(Modifier.height(4.dp))
                             Text(item.answer, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            if (item.chunkLabel.isNotBlank()) {
+                                Text("Chunk: ${item.chunkLabel}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                            }
+                            if (item.association.isNotBlank()) {
+                                Text("Association: ${item.association}", style = MaterialTheme.typography.bodySmall)
+                            }
+                            item.sequenceOrder?.let { order -> Text("Sequence position: $order", style = MaterialTheme.typography.labelSmall) }
                             if (item.palace.isNotBlank()) {
                                 Spacer(Modifier.height(8.dp))
                                 Text("${item.palace} / ${item.locus}", style = MaterialTheme.typography.labelSmall,
@@ -828,13 +838,16 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit) {
 private fun AddMemoryDialog(
     nodes: List<PalaceNode>,
     onDismiss: () -> Unit,
-    onCreate: (String, String, String, String, String?) -> Unit,
+    onCreate: (String, String, String, String, String?, String, String, Int?) -> Unit,
 ) {
     var prompt by remember { mutableStateOf("") }
     var answer by remember { mutableStateOf("") }
     var palace by remember { mutableStateOf("") }
     var locus by remember { mutableStateOf("") }
     var selectedNodeId by remember { mutableStateOf<String?>(null) }
+    var chunkLabel by remember { mutableStateOf("") }
+    var association by remember { mutableStateOf("") }
+    var sequenceOrderText by remember { mutableStateOf("") }
     var nodeMenuExpanded by remember { mutableStateOf(false) }
     val locusNodes = nodes.filter { it.kind == PalaceNodeKind.Locus }
     val selectedNodeName = locusNodes.firstOrNull { it.id == selectedNodeId }?.let { node ->
@@ -849,6 +862,11 @@ private fun AddMemoryDialog(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(prompt, { prompt = it }, label = { Text("Prompt or cue") })
                 OutlinedTextField(answer, { answer = it }, label = { Text("Answer or fact") })
+                Text("Encode for fast, durable recall", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                OutlinedTextField(chunkLabel, { chunkLabel = it }, label = { Text("Chunk / topic (optional)") }, singleLine = true)
+                OutlinedTextField(association, { association = it }, label = { Text("Vivid image or action association (optional)") }, minLines = 2)
+                OutlinedTextField(sequenceOrderText, { value -> sequenceOrderText = value.filter(Char::isDigit).take(4) }, label = { Text("Sequence position (optional, e.g. 1)") }, singleLine = true)
+                Text("Group related facts under one chunk. Use a concrete, unusual image or action. Number items only when order matters.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                 OutlinedTextField(palace, { palace = it }, label = { Text("Palace / building (optional)") }, singleLine = true)
                 OutlinedTextField(locus, { locus = it }, label = { Text("Locus / location (optional)") }, singleLine = true)
                 if (locusNodes.isNotEmpty()) {
@@ -877,7 +895,7 @@ private fun AddMemoryDialog(
             }
         },
         confirmButton = {
-            Button(onClick = { onCreate(prompt, answer, palace, locus, selectedNodeId) },
+            Button(onClick = { onCreate(prompt, answer, palace, locus, selectedNodeId, chunkLabel, association, sequenceOrderText.toIntOrNull()?.takeIf { it > 0 }) },
                 enabled = prompt.isNotBlank() && answer.isNotBlank()) { Text("Save locally") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
