@@ -163,6 +163,14 @@ class MemoryRepository(
         )
     }
 
+    suspend fun movePalaceNode(id: String, newParentId: String?) = database.withTransaction {
+        val nodes = dao.getPalaceNodes().map { it.toModel() }
+        require(PalaceMovePlan.isValidParent(nodes, id, newParentId)) {
+            "This location cannot be moved to the selected parent."
+        }
+        dao.movePalaceNode(id, newParentId)
+    }
+
     suspend fun renamePalaceNode(id: String, name: String) {
         val normalizedName = name.trim()
         require(normalizedName.isNotEmpty()) { "Node name cannot be empty." }
