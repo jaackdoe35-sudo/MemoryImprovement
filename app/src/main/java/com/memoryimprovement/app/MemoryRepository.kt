@@ -2,6 +2,7 @@ package com.memoryimprovement.app
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.withTransaction
 import org.json.JSONArray
 import java.util.UUID
 
@@ -44,14 +45,36 @@ class MemoryRepository(context: Context) {
         recalledResponse: String?,
         accuracy: Int,
         completedAt: Long = System.currentTimeMillis(),
-    ): Boolean = dao.completeRetentionCheckpoint(
-        id = id,
-        completedAt = completedAt,
-        score = score.coerceIn(0, 5),
-        latencyMs = latencyMs.coerceAtLeast(0L),
-        recalledResponse = recalledResponse?.trim()?.takeIf { it.isNotEmpty() },
-        accuracy = accuracy.coerceIn(0, 2),
-    ) == 1
+    ): Boolean = database.withTransaction {
+        val checkpoint = dao.getRetentionCheckpoints().firstOrNull { it.id == id } ?: return@withTransaction false
+        val itemEntity = dao.getItems().firstOrNull { it.id == checkpoint.itemId } ?: return@withTransaction false
+        val normalizedScore = score.coerceIn(0, 5)
+        val normalizedAccuracy = accuracy.coerceIn(0, 2)
+        val changed = dao.completeRetentionCheckpoint(
+            id = id,
+            completedAt = completedAt,
+            score = normalizedScore,
+            latencyMs = latencyMs.coerceAtLeast(0L),
+            recalledResponse = recalledResponse?.trim()?.takeIf { it.isNotEmpty() },
+            accuracy = normalizedAccuracy,
+        )
+        if (changed != 1) return@withTransaction false
+
+        val updatedItem = RetentionReviewPlan.apply(itemEntity.toModel(), normalizedScore, completedAt)
+        dao.upsertItems(listOf(updatedItem.toEntity()))
+        dao.insertAttempt(
+            RecallAttemptEntity(
+                itemId = checkpoint.itemId,
+                mode = RecallMode.Retention.name,
+                correct = normalizedAccuracy == 2,
+                score = normalizedScore,
+                latencyMs = latencyMs.coerceAtLeast(0L),
+                recalledResponse = recalledResponse?.trim()?.takeIf { it.isNotEmpty() },
+                reviewedAt = completedAt,
+            ),
+        )
+        true
+    }
 
     suspend fun saveAttempt(attempt: RecallAttempt) {
         dao.insertAttempt(
