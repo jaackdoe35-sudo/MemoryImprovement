@@ -270,6 +270,32 @@ data class RecallAttempt(
     val reviewedAt: Long = System.currentTimeMillis(),
 )
 
+data class RecallModeSummary(
+    val mode: RecallMode,
+    val attemptCount: Int,
+    val correctCount: Int,
+    val meanSelfRating: Double?,
+    val meanLatencyMs: Long?,
+) {
+    val recordedCorrectPercent: Int
+        get() = if (attemptCount == 0) 0 else correctCount * 100 / attemptCount
+}
+
+/** Descriptive summaries only; modes are not randomized or controlled experiments. */
+object RecallAnalytics {
+    fun byMode(attempts: List<RecallAttempt>): List<RecallModeSummary> =
+        RecallMode.entries.mapNotNull { mode ->
+            val group = attempts.filter { it.mode == mode }
+            if (group.isEmpty()) null else RecallModeSummary(
+                mode = mode,
+                attemptCount = group.size,
+                correctCount = group.count { it.correct },
+                meanSelfRating = group.map { it.score }.average(),
+                meanLatencyMs = group.map { it.latencyMs }.average().toLong(),
+            )
+        }
+}
+
 data class RecallOutcome(val nextReviewAt: Long, val intervalDays: Int, val score: Int)
 
 data class RetentionCheckpoint(
