@@ -25,6 +25,22 @@ class RecallSchedulerTest {
     }
 
     @Test
+    fun bulkImportParsesRequiredAndOptionalColumns() {
+        val rows = MemoryImportPlan.parseTsv("Cell question\\tMitochondria\\tBiology\\tDesk\\tCell\\tPowerhouse\\t2")
+        assertEquals(1, rows.size)
+        assertEquals("Cell question", rows.single().prompt)
+        assertEquals("Mitochondria", rows.single().answer)
+        assertEquals("Biology", rows.single().palace)
+        assertEquals(2, rows.single().sequenceOrder)
+    }
+
+    @Test
+    fun bulkImportRejectsMissingAnswer() {
+        val error = runCatching { MemoryImportPlan.parseTsv("Prompt only\\t") }.exceptionOrNull()
+        assertEquals(true, error is IllegalArgumentException)
+    }
+
+    @Test
     fun failedRecallSchedulesNextDay() {
         val now = 1_000_000L
         val result = RecallScheduler.schedule(previousReviews = 3, score = 0, now = now)
