@@ -154,6 +154,25 @@ class RecallSchedulerTest {
     }
 
     @Test
+    fun palaceDeletionPlanIncludesOnlyTheSelectedBranch() {
+        val nodes = listOf(
+            PalaceNode("home", "Home", PalaceNodeKind.Palace, null),
+            PalaceNode("route", "Route", PalaceNodeKind.Route, "home"),
+            PalaceNode("room", "Room", PalaceNodeKind.Area, "route"),
+            PalaceNode("desk", "Desk", PalaceNodeKind.Locus, "room"),
+            PalaceNode("other", "Other palace", PalaceNodeKind.Palace, null),
+            PalaceNode("other-locus", "Other locus", PalaceNodeKind.Locus, "other"),
+        )
+        assertEquals(setOf("home", "route", "room", "desk"), PalaceHierarchyPlan.descendantIds(nodes, "home"))
+        assertEquals(setOf("other", "other-locus"), PalaceHierarchyPlan.descendantIds(nodes, "other"))
+    }
+
+    @Test
+    fun palaceDeletionPlanReturnsEmptyForMissingNode() {
+        assertEquals(emptySet<String>(), PalaceHierarchyPlan.descendantIds(emptyList(), "missing"))
+    }
+
+    @Test
     fun orderedSequenceGroupsOnlyItemsWithSharedChunkAndSequencePositions() {
         val items = listOf(
             MemoryItem(id = "b", prompt = "Second", answer = "B", chunkLabel = "Protocol", sequenceOrder = 2),
