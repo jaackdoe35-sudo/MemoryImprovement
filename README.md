@@ -1,33 +1,69 @@
 # MemoryImprovement
 
-A native Android app for encoding large amounts of information and retrieving it reliably over time.
+MemoryImprovement is an offline-first Android app for organizing facts, practising active recall, and tracking memory performance over time.
 
-## Product principles
+The app is under development. A successful build confirms that a commit compiles; it does not prove every feature is complete or that the learning methods improve retention for every user.
 
-- **Encode efficiently:** structure information into chunks, connect new facts to existing knowledge, and use vivid, distinctive associations.
-- **Organize for capacity:** build nested memory palaces with routes, loci, and indexed facts.
-- **Retrieve on demand:** practise cued recall, free recall, reverse/flexible recall, mixed and timed recall.
-- **Prove retention:** track retrieval latency, accuracy, order, interference, and delayed recall—not only immediate quiz scores.
-- **Offline-first:** core study sessions and local progress must work without network access. AI-assisted features are a later, optional layer.
+## Current features
 
-## First milestone
+- Local memory library: create, edit, search, sort, import, and export study items.
+- Encoding support: prompts, answers, topic chunks, distinctive associations, optional palace locations, and optional sequence positions.
+- Live encoding checklist: a local 0–4 completeness check flags missing prompt, answer, chunk, or association details. It is a writing aid, not a validated measure of memory strength.
+- Memory palaces: nested palaces, routes, areas, and loci; create, rename, move, and delete branches. Branch deletion clears location links while preserving associated memories.
+- Recall practice: cued, free, reverse, sequence, discrimination, and delayed-retention modes.
+- Review scheduling: review dates are updated from practice outcomes.
+- Progress tracking: recall attempts, self-ratings, response latency, performance by recall mode, repeated errors, sequence practice, and lexical overlap alerts.
+- Delayed-retention checkpoints: 1-day, 7-day, and 30-day follow-ups. Results distinguish fully correct, partially correct, incorrect, and not-yet-tested checkpoints.
+- Legacy-data recovery: malformed legacy data is reported instead of silently discarded, with original content preserved for recovery/export.
 
-The initial Android foundation will establish a Compose UI, domain models for material and recall attempts, and a local-first study flow. It is a foundation, not a claim that long-term memory outcomes have already been validated.
+## Offline and privacy scope
 
-## Planned learning loop
+The Android manifest currently declares no permissions. The app's core study data is stored locally using Room and local preferences. No account, cloud sync, or AI service is required by the current core workflow.
 
-1. Import or enter material.
-2. Structure it into meaningful chunks and relationships.
-3. Optionally place facts in a palace, route, and locus.
-4. Practise immediate retrieval in more than one direction.
-5. Schedule reviews based on performance.
-6. Measure delayed recall (initial targets: 24 hours, 7 days, and 30 days) and flag likely interference.
-7. Compare methods using correct, durable retrieval per time invested.
+This source-level description is not a substitute for a network-traffic audit or a full privacy/security review.
 
-## Build
+## Build and test
 
-Open the project in a recent Android Studio version. The GitHub Actions workflow checks the Android Gradle build on pushes and pull requests. A successful workflow run is the source of truth for build status.
+The project uses Kotlin, Jetpack Compose, Room, Gradle, and JDK 17.
 
-## Current status
+GitHub Actions uses separate workflows:
 
-The repository is being bootstrapped. Research-backed learning principles are design hypotheses to evaluate in-app, not promises of unlimited or perfect memory.
+- **Android CI** runs unit tests, assembles the debug APK, and uploads it as the `MemoryImprovement-debug-apk` artifact.
+- **Android instrumentation tests** runs Room migration integration tests on an Android emulator.
+
+See the [Android CI runs](https://github.com/jaackdoe35-sudo/MemoryImprovement/actions/workflows/android-ci.yml) and [instrumentation runs](https://github.com/jaackdoe35-sudo/MemoryImprovement/actions/workflows/android-instrumentation.yml).
+
+In an Android development environment, run:
+
+```bash
+gradle testDebugUnitTest
+gradle assembleDebug
+```
+
+To run Room instrumentation tests with a configured Android emulator:
+
+```bash
+gradle connectedDebugAndroidTest
+```
+
+A successful CI build is the source of truth for whether a particular commit compiled and produced the APK. Instrumentation tests must also pass before the database recovery path should be considered validated. Download the debug APK artifact from a successful CI run to install it on a physical device.
+
+## Limitations and remaining validation
+
+- Emulator integration tests must pass consistently; APK assembly and instrumentation testing are reported separately.
+- The app still needs a complete acceptance test on a physical Android device.
+- Interference detection is a lexical-overlap heuristic. It does not identify conceptual similarity, synonyms, or causal relationships.
+- The encoding checklist is a completeness check, not a scientifically validated predictor of retention.
+- Memory outcomes depend on the material and study conditions. The app does not promise perfect or unlimited memory.
+
+## Product loop
+
+1. Enter or import material.
+2. Chunk facts and add distinctive associations.
+3. Optionally place facts in a palace or numbered sequence.
+4. Practise retrieval in different modes.
+5. Schedule reviews from practice performance.
+6. Measure delayed recall and inspect recurring errors.
+7. Use the evidence to adjust study effort and encoding strategy.
+
+The project remains offline-first. Cloud sync, accounts, and AI-assisted features are intentionally deferred.
