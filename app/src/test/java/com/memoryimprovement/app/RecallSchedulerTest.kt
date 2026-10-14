@@ -35,6 +35,23 @@ class RecallSchedulerTest {
     }
 
     @Test
+    fun exportTsvRoundTripsThroughImportParser() {
+        val item = MemoryItem(
+            id = "export", prompt = "What is ATP?", answer = "Cell energy",
+            palace = "Biology", locus = "Desk", chunkLabel = "Cell", association = "Battery",
+            sequenceOrder = 3,
+        )
+        val row = MemoryImportPlan.parseTsv(MemoryExportPlan.toTsv(listOf(item))).single()
+        assertEquals(item.prompt, row.prompt)
+        assertEquals(item.answer, row.answer)
+        assertEquals(item.palace, row.palace)
+        assertEquals(item.locus, row.locus)
+        assertEquals(item.chunkLabel, row.chunkLabel)
+        assertEquals(item.association, row.association)
+        assertEquals(item.sequenceOrder, row.sequenceOrder)
+    }
+
+    @Test
     fun bulkImportSkipsExistingAndRepeatedPromptAnswerPairs() {
         val existing = listOf(MemoryItem(id = "existing", prompt = "Capital?", answer = "Lagos"))
         val imported = listOf(
