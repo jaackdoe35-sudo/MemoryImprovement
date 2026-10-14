@@ -1,9 +1,28 @@
 package com.memoryimprovement.app
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RecallSchedulerTest {
+    @Test
+    fun palaceMovePlanAllowsValidMoveAndRejectsCyclesOrInvalidParents() {
+        val nodes = listOf(
+            PalaceNode(id = "palaceA", name = "Home", kind = PalaceNodeKind.Palace, parentId = null),
+            PalaceNode(id = "routeA", name = "Hall", kind = PalaceNodeKind.Route, parentId = "palaceA"),
+            PalaceNode(id = "areaA", name = "Kitchen", kind = PalaceNodeKind.Area, parentId = "routeA"),
+            PalaceNode(id = "locusA", name = "Fridge", kind = PalaceNodeKind.Locus, parentId = "areaA"),
+            PalaceNode(id = "palaceB", name = "Office", kind = PalaceNodeKind.Palace, parentId = null),
+        )
+        assertTrue(PalaceMovePlan.isValidParent(nodes, "routeA", "palaceB"))
+        assertTrue(PalaceMovePlan.isValidParent(nodes, "locusA", "palaceB"))
+        assertFalse(PalaceMovePlan.isValidParent(nodes, "routeA", "locusA"))
+        assertFalse(PalaceMovePlan.isValidParent(nodes, "routeA", "routeA"))
+        assertFalse(PalaceMovePlan.isValidParent(nodes, "palaceA", "palaceB"))
+        assertFalse(PalaceMovePlan.isValidParent(nodes, "missing", "palaceB"))
+    }
+
     @Test
     fun malformedLegacyJsonIsReportedAndOriginalDataPreserved() {
         val raw = """[{"id":"broken""""
