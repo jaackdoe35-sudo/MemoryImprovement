@@ -85,6 +85,29 @@ object RecallSequencePlan {
         }
         .sortedBy { it.label.lowercase() }
 }
+/** Pure summary model for longitudinal recall history; correctness reflects saved attempt labels. */
+data class RecallModeSummary(
+    val mode: RecallMode,
+    val attempts: Int,
+    val correct: Int,
+    val accuracyPercent: Int,
+    val meanLatencyMs: Long,
+)
+
+object RecallAnalytics {
+    fun byMode(attempts: List<RecallAttempt>): List<RecallModeSummary> =
+        attempts.groupBy { it.mode }.map { (mode, values) ->
+            val correct = values.count { it.correct }
+            RecallModeSummary(
+                mode = mode,
+                attempts = values.size,
+                correct = correct,
+                accuracyPercent = correct * 100 / values.size,
+                meanLatencyMs = values.map { it.latencyMs }.average().toLong(),
+            )
+        }.sortedBy { it.mode.ordinal }
+}
+
 
 data class RecallAttempt(
     val itemId: String,
