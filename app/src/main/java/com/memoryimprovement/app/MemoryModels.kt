@@ -371,6 +371,14 @@ object WeakMemoryPlan {
     }
 }
 
+/** Computes the failure streak after applying the current recall result. Attempts must be newest first. */
+object RecallFailurePlan {
+    fun consecutiveFailuresAfter(recentAttempts: List<RecallAttempt>, currentCorrect: Boolean): Int {
+        if (currentCorrect) return 0
+        return recentAttempts.takeWhile { !it.correct }.size + 1
+    }
+}
+
 object RecallScheduler {
     fun schedule(
         previousReviews: Int,
