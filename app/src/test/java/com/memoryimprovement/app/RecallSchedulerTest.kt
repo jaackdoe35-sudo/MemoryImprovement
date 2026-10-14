@@ -164,6 +164,28 @@ class RecallSchedulerTest {
     }
 
     @Test
+    fun retentionAnalyticsSeparatesSelfRatingFromUserCheckedAccuracy() {
+        val checkpoints = listOf(
+            RetentionCheckpoint("a-1", "a", 1, 10L, completedAt = 20L, score = 4, latencyMs = 1000L, accuracy = 2),
+            RetentionCheckpoint("b-1", "b", 1, 10L, completedAt = 21L, score = 2, latencyMs = 3000L, accuracy = 0),
+            RetentionCheckpoint("a-7", "a", 7, 20L),
+        )
+        val summaries = RetentionAnalytics.byDelay(checkpoints)
+        val day1 = summaries.single { it.delayDays == 1 }
+        assertEquals(2, day1.total)
+        assertEquals(2, day1.completed)
+        assertEquals(3.0, day1.meanSelfRating!!, 0.001)
+        assertEquals(50, day1.checkedAccuracyPercent)
+        assertEquals(2, day1.checkedAccuracyCount)
+        assertEquals(2000L, day1.meanLatencyMs)
+        val day7 = summaries.single { it.delayDays == 7 }
+        assertEquals(0, day7.completed)
+        assertEquals(null, day7.meanSelfRating)
+        assertEquals(null, day7.checkedAccuracyPercent)
+        assertEquals(3, summaries.size)
+    }
+
+    @Test
     fun scoreIsClampedToSupportedRange() {
         assertEquals(5, RecallScheduler.schedule(0, 9, 0L).score)
         assertEquals(0, RecallScheduler.schedule(0, -3, 0L).score)
