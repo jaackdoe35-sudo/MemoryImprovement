@@ -82,6 +82,9 @@ interface MemoryDao {
     @Query("SELECT * FROM recall_attempts ORDER BY reviewedAt DESC")
     fun observeAttempts(): Flow<List<RecallAttemptEntity>>
 
+    @Query("SELECT * FROM recall_attempts ORDER BY reviewedAt DESC")
+    suspend fun getAttempts(): List<RecallAttemptEntity>
+
     @Query("SELECT COUNT(*) FROM recall_attempts")
     fun observeAttemptCount(): Flow<Int>
 
