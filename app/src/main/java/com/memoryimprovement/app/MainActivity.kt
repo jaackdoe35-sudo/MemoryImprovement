@@ -306,7 +306,7 @@ private fun MemoryApp(
                     mode = recallMode,
                     onModeChange = { recallMode = it; revealed = false },
                     onReveal = { revealed = true },
-                    onRate = { score, latencyMs, recalledResponse ->
+                    onRate = { score, userCheckedCorrect, latencyMs, recalledResponse ->
                         val current = active ?: return@RecallScreen
                         val recentAttempts = attemptHistory
                             .asSequence()
@@ -316,7 +316,7 @@ private fun MemoryApp(
                             .toList()
                         val consecutiveFailures = RecallFailurePlan.consecutiveFailuresAfter(
                             recentAttempts = recentAttempts,
-                            currentCorrect = score >= 3,
+                            currentCorrect = userCheckedCorrect,
                         )
                         val outcome = RecallScheduler.schedule(
                             previousReviews = current.reviewCount,
@@ -337,7 +337,7 @@ private fun MemoryApp(
                             RecallAttempt(
                                 itemId = current.id,
                                 mode = recallMode,
-                                correct = score >= 3,
+                                correct = userCheckedCorrect,
                                 score = score,
                                 latencyMs = latencyMs,
                                 recalledResponse = recalledResponse,
@@ -1371,10 +1371,11 @@ private fun RecallScreen(
     mode: RecallMode,
     onModeChange: (RecallMode) -> Unit,
     onReveal: () -> Unit,
-    onRate: (Int, Long, String?) -> Unit,
+    onRate: (Int, Boolean, Long, String?) -> Unit,
     onAdd: () -> Unit,
 ) {
     var recalledResponse by remember(item?.id, mode) { mutableStateOf("") }
+    var userCheckedCorrect by remember(item?.id, mode) { mutableStateOf<Boolean?>(null) }
     val recallStartedAt = remember(item?.id, mode) { SystemClock.elapsedRealtime() }
     Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Heading("Retrieval practice")
@@ -1458,10 +1459,21 @@ private fun RecallScreen(
                 }
             }
             if (revealed) {
-                Text("How well did you retrieve it?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text("Check your answer against the revealed answer.", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text("Your correctness check and your effort rating are recorded separately. This is self-checked, not automatic grading.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    TextButton(onClick = { userCheckedCorrect = false }, modifier = Modifier.weight(1f)) {
+                        Text(if (userCheckedCorrect == false) "✓ Incorrect" else "Incorrect")
+                    }
+                    TextButton(onClick = { userCheckedCorrect = true }, modifier = Modifier.weight(1f)) {
+                        Text(if (userCheckedCorrect == true) "✓ Correct" else "Correct")
+                    }
+                }
+                Text("How much effort did retrieval require?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 listOf(0 to "Again", 2 to "Hard", 3 to "Got it", 5 to "Easy").forEach { (score, label) ->
                     TextButton(
-                        onClick = { onRate(score, SystemClock.elapsedRealtime() - recallStartedAt, recalledResponse.trim().takeIf { it.isNotEmpty() }) },
+                        enabled = userCheckedCorrect != null,
+                        onClick = { onRate(score, userCheckedCorrect == true, SystemClock.elapsedRealtime() - recallStartedAt, recalledResponse.trim().takeIf { it.isNotEmpty() }) },
                         modifier = Modifier.fillMaxWidth(),
                     ) { Text(label) }
                 }
