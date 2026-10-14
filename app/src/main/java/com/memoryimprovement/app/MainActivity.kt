@@ -110,6 +110,11 @@ private fun MemoryApp(
     var revealed by remember { mutableStateOf(false) }
     var attempts by remember { mutableStateOf(initialAttempts.size) }
     var correct by remember { mutableStateOf(initialAttempts.count { it.correct }) }
+    var attemptHistory by remember { mutableStateOf(initialAttempts) }
+    fun recordAttempt(attempt: RecallAttempt) {
+        attemptHistory = attemptHistory + attempt
+        onAttempt(attempt)
+    }
     var recallMode by remember { mutableStateOf(RecallMode.Cued) }
 
     fun save(updated: List<MemoryItem>) {
@@ -160,14 +165,14 @@ private fun MemoryApp(
         Column(Modifier.fillMaxSize().padding(padding)) {
             when (tab) {
                 AppTab.Today -> TodayScreen(
-                    memories, attempts, correct, checkpoints,
+                    memories, attempts, correct, checkpoints, attemptHistory,
                     onAdd = { adding = true }, onRecall = ::startRecall, onStartRetention = ::startRetention,
                     onStartSequence = { sequence -> activeSequence = sequence; activeCheckpoint = null; revealed = false; tab = AppTab.Recall },
                     onStartPriority = { item -> activeCheckpoint = null; activeSequence = null; active = item; revealed = false; tab = AppTab.Recall },
                     onDiscriminationAttempt = { item, wasCorrect, latencyMs, response ->
                         attempts += 1
                         if (wasCorrect) correct += 1
-                        onAttempt(
+                        recordAttempt(
                             RecallAttempt(
                                 itemId = item.id,
                                 mode = RecallMode.Discrimination,
@@ -217,7 +222,7 @@ private fun MemoryApp(
                             }
                             save(updated)
                             sequence.items.forEach { memory ->
-                                onAttempt(RecallAttempt(
+                                recordAttempt(RecallAttempt(
                                     itemId = memory.id, mode = RecallMode.Sequence, correct = score >= 3,
                                     score = score, latencyMs = latencyMs, recalledResponse = response,
                                 ))
@@ -250,7 +255,7 @@ private fun MemoryApp(
                         save(updated)
                         attempts += 1
                         if (score >= 3) correct += 1
-                        onAttempt(
+                        recordAttempt(
                             RecallAttempt(
                                 itemId = current.id,
                                 mode = recallMode,
@@ -302,6 +307,7 @@ private fun MemoryApp(
 private fun TodayScreen(
     memories: List<MemoryItem>, attempts: Int, correct: Int,
     checkpoints: List<RetentionCheckpoint>,
+    attemptHistory: List<RecallAttempt>,
     onAdd: () -> Unit, onRecall: () -> Unit,
     onStartRetention: (RetentionCheckpoint) -> Unit,
     onStartSequence: (RecallSequence) -> Unit,
@@ -339,6 +345,36 @@ private fun TodayScreen(
                 MetricCard("Stored", memories.size.toString(), "memory units", Modifier.weight(1f))
                 MetricCard("Attempts", attempts.toString(), "all recorded", Modifier.weight(1f))
                 MetricCard("Self-rated success", if (attempts == 0) "—" else "${(correct * 100) / attempts}%", "all recorded attempts", Modifier.weight(1f))
+            }
+        }
+        item {
+            Heading("Performance by recall mode")
+            if (attemptHistory.isEmpty()) {
+                Text("Results will appear after your first recall attempt.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                RecallMode.entries.forEach { mode ->
+                    val modeAttempts = attemptHistory.filter { it.mode == mode }
+                    if (modeAttempts.isNotEmpty()) {
+                        val successRate = modeAttempts.count { it.correct } * 100 / modeAttempts.size
+                        val averageLatency = modeAttempts.map { it.latencyMs }.average().toLong()
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(mode.label(), fontWeight = FontWeight.SemiBold)
+                                Text("$successRate% · ${modeAttempts.size} attempts")
+                            }
+                            LinearProgressIndicator(
+                                progress = { successRate / 100f },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Text("Mean retrieval time: ${averageLatency / 1000.0}s",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+                Text("Success is based on recorded scores/self-ratings, not independently verified correctness.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         item {
