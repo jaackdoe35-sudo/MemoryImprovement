@@ -107,6 +107,7 @@ private fun MemoryApp(
     var activeSequence by remember { mutableStateOf<RecallSequence?>(null) }
     var tab by remember { mutableStateOf(AppTab.Today) }
     var adding by remember { mutableStateOf(false) }
+    var editingMemory by remember { mutableStateOf<MemoryItem?>(null) }
     var active by remember { mutableStateOf<MemoryItem?>(null) }
     var revealed by remember { mutableStateOf(false) }
     var attempts by remember { mutableStateOf(initialAttempts.size) }
@@ -271,34 +272,48 @@ private fun MemoryApp(
                     },
                     onAdd = { adding = true },
                 )
-                AppTab.Library -> LibraryScreen(memories, { adding = true })
+                AppTab.Library -> LibraryScreen(
+                    memories = memories,
+                    onAdd = { adding = true },
+                    onEdit = { editingMemory = it },
+                )
             }
         }
     }
 
-    if (adding) {
+    if (adding || editingMemory != null) {
+        val existing = editingMemory
         AddMemoryDialog(
-            onDismiss = { adding = false },
+            initialItem = existing,
+            onDismiss = { adding = false; editingMemory = null },
             nodes = palaceNodes,
             onCreate = { prompt, answer, palace, locus, palaceNodeId, chunkLabel, association, sequenceOrder ->
-                val now = System.currentTimeMillis()
                 val selectedNode = palaceNodes.firstOrNull { it.id == palaceNodeId }
-                val item = MemoryItem(
-                    id = UUID.randomUUID().toString(), prompt = prompt.trim(), answer = answer.trim(),
-                    palace = selectedNode?.let { node ->
-                        generateSequence(node) { current -> palaceNodes.firstOrNull { it.id == current.parentId } }
-                            .lastOrNull { it.kind == PalaceNodeKind.Palace }?.name
-                    } ?: palace.trim(),
-                    locus = selectedNode?.name ?: locus.trim(),
-                    palaceNodeId = palaceNodeId,
-                    chunkLabel = chunkLabel.trim(),
-                    association = association.trim(),
-                    sequenceOrder = sequenceOrder,
-                    createdAt = now, nextReviewAt = now,
-                )
-                save(memories + item)
+                val resolvedPalace = selectedNode?.let { node ->
+                    generateSequence(node) { current -> palaceNodes.firstOrNull { it.id == current.parentId } }
+                        .lastOrNull { it.kind == PalaceNodeKind.Palace }?.name
+                } ?: palace.trim()
+                val resolvedLocus = selectedNode?.name ?: locus.trim()
+                val item = if (existing != null) {
+                    existing.copy(
+                        prompt = prompt.trim(), answer = answer.trim(), palace = resolvedPalace,
+                        locus = resolvedLocus, palaceNodeId = palaceNodeId,
+                        chunkLabel = chunkLabel.trim(), association = association.trim(), sequenceOrder = sequenceOrder,
+                    )
+                } else {
+                    val now = System.currentTimeMillis()
+                    MemoryItem(
+                        id = UUID.randomUUID().toString(), prompt = prompt.trim(), answer = answer.trim(),
+                        palace = resolvedPalace, locus = resolvedLocus, palaceNodeId = palaceNodeId,
+                        chunkLabel = chunkLabel.trim(), association = association.trim(), sequenceOrder = sequenceOrder,
+                        createdAt = now, nextReviewAt = now,
+                    )
+                }
+                if (existing != null) save(memories.map { if (it.id == existing.id) item else it })
+                else save(memories + item)
                 adding = false
-                if (tab == AppTab.Recall) { active = item; revealed = false }
+                editingMemory = null
+                if (active?.id == item.id) { active = item; revealed = false }
             },
         )
     }
@@ -1180,7 +1195,7 @@ private fun RecallScreen(
 }
 
 @Composable
-private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit) {
+private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit: (MemoryItem) -> Unit) {
     Column(Modifier.fillMaxSize().padding(horizontal = 18.dp)) {
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -1211,6 +1226,7 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit) {
                                     color = MaterialTheme.colorScheme.primary)
                             }
                             Text("Reviews: ${item.reviewCount}", style = MaterialTheme.typography.labelSmall)
+                            TextButton(onClick = { onEdit(item) }) { Text("Edit memory") }
                         }
                     }
                 }
@@ -1222,17 +1238,18 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit) {
 @Composable
 private fun AddMemoryDialog(
     nodes: List<PalaceNode>,
+    initialItem: MemoryItem? = null,
     onDismiss: () -> Unit,
     onCreate: (String, String, String, String, String?, String, String, Int?) -> Unit,
 ) {
-    var prompt by remember { mutableStateOf("") }
-    var answer by remember { mutableStateOf("") }
-    var palace by remember { mutableStateOf("") }
-    var locus by remember { mutableStateOf("") }
-    var selectedNodeId by remember { mutableStateOf<String?>(null) }
-    var chunkLabel by remember { mutableStateOf("") }
-    var association by remember { mutableStateOf("") }
-    var sequenceOrderText by remember { mutableStateOf("") }
+    var prompt by remember(initialItem?.id) { mutableStateOf(initialItem?.prompt.orEmpty()) }
+    var answer by remember(initialItem?.id) { mutableStateOf(initialItem?.answer.orEmpty()) }
+    var palace by remember(initialItem?.id) { mutableStateOf(initialItem?.palace.orEmpty()) }
+    var locus by remember(initialItem?.id) { mutableStateOf(initialItem?.locus.orEmpty()) }
+    var selectedNodeId by remember(initialItem?.id) { mutableStateOf(initialItem?.palaceNodeId) }
+    var chunkLabel by remember(initialItem?.id) { mutableStateOf(initialItem?.chunkLabel.orEmpty()) }
+    var association by remember(initialItem?.id) { mutableStateOf(initialItem?.association.orEmpty()) }
+    var sequenceOrderText by remember(initialItem?.id) { mutableStateOf(initialItem?.sequenceOrder?.toString().orEmpty()) }
     var nodeMenuExpanded by remember { mutableStateOf(false) }
     val locusNodes = nodes.filter { it.kind == PalaceNodeKind.Locus }
     val selectedNodeName = locusNodes.firstOrNull { it.id == selectedNodeId }?.let { node ->
@@ -1242,7 +1259,7 @@ private fun AddMemoryDialog(
     } ?: "No locus selected"
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add a memory unit") },
+        title = { Text(if (initialItem == null) "Add a memory unit" else "Edit memory unit") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(prompt, { prompt = it }, label = { Text("Prompt or cue") })
@@ -1281,7 +1298,7 @@ private fun AddMemoryDialog(
         },
         confirmButton = {
             Button(onClick = { onCreate(prompt, answer, palace, locus, selectedNodeId, chunkLabel, association, sequenceOrderText.toIntOrNull()?.takeIf { it > 0 }) },
-                enabled = prompt.isNotBlank() && answer.isNotBlank()) { Text("Save locally") }
+                enabled = prompt.isNotBlank() && answer.isNotBlank()) { Text(if (initialItem == null) "Save locally" else "Save changes") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
