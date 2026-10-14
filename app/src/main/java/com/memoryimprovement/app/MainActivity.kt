@@ -298,7 +298,10 @@ private fun MemoryApp(
                             .sortedByDescending { it.reviewedAt }
                             .take(2)
                             .toList()
-                        val consecutiveFailures = recentAttempts.takeWhile { !it.correct }.size
+                        val consecutiveFailures = RecallFailurePlan.consecutiveFailuresAfter(
+                            recentAttempts = recentAttempts,
+                            currentCorrect = score >= 3,
+                        )
                         val outcome = RecallScheduler.schedule(
                             previousReviews = current.reviewCount,
                             score = score,
