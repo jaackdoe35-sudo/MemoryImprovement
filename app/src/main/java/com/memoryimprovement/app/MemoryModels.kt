@@ -405,6 +405,9 @@ data class RetentionDelaySummary(
     val completed: Int,
     val meanSelfRating: Double?,
     val checkedAccuracyPercent: Int?,
+    val fullyCorrectCount: Int,
+    val partiallyCorrectCount: Int,
+    val incorrectCount: Int,
     val checkedAccuracyCount: Int,
     val meanLatencyMs: Long?,
 )
@@ -426,6 +429,9 @@ object RetentionAnalytics {
             meanSelfRating = scores.takeIf { it.isNotEmpty() }?.average(),
             checkedAccuracyPercent = checked.takeIf { it.isNotEmpty() }
                 ?.let { it.count { accuracy -> accuracy == 2 } * 100 / it.size },
+            fullyCorrectCount = checked.count { it == 2 },
+            partiallyCorrectCount = checked.count { it == 1 },
+            incorrectCount = checked.count { it == 0 },
             checkedAccuracyCount = checked.size,
             meanLatencyMs = latencies.takeIf { it.isNotEmpty() }?.average()?.toLong(),
         )
