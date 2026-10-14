@@ -163,6 +163,20 @@ private fun MemoryApp(
                     memories, attempts, correct, checkpoints,
                     onAdd = { adding = true }, onRecall = ::startRecall, onStartRetention = ::startRetention,
                     onStartSequence = { sequence -> activeSequence = sequence; activeCheckpoint = null; revealed = false; tab = AppTab.Recall },
+                    onDiscriminationAttempt = { item, wasCorrect, latencyMs, response ->
+                        attempts += 1
+                        if (wasCorrect) correct += 1
+                        onAttempt(
+                            RecallAttempt(
+                                itemId = item.id,
+                                mode = RecallMode.Discrimination,
+                                correct = wasCorrect,
+                                score = if (wasCorrect) 5 else 0,
+                                latencyMs = latencyMs,
+                                recalledResponse = response,
+                            ),
+                        )
+                    },
                 )
                 AppTab.Palace -> PalaceScreen(
                     memories = memories,
@@ -290,7 +304,12 @@ private fun TodayScreen(
     onAdd: () -> Unit, onRecall: () -> Unit,
     onStartRetention: (RetentionCheckpoint) -> Unit,
     onStartSequence: (RecallSequence) -> Unit,
+    onDiscriminationAttempt: (MemoryItem, Boolean, Long, String?) -> Unit,
 ) {
+    var activeDrill by remember { mutableStateOf<InterferencePair?>(null) }
+    var selectedAnswerId by remember { mutableStateOf<String?>(null) }
+    var drillChecked by remember { mutableStateOf(false) }
+    var drillStartedAt by remember { mutableLongStateOf(0L) }
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 18.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { Spacer(Modifier.height(4.dp)) }
@@ -369,6 +388,57 @@ private fun TodayScreen(
                             Text(pair.second.answer, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text("Discrimination cue: make each prompt specific and give the two facts distinct, vivid associations.",
                                 style = MaterialTheme.typography.bodySmall)
+                            Button(
+                                onClick = {
+                                    activeDrill = pair
+                                    selectedAnswerId = null
+                                    drillChecked = false
+                                    drillStartedAt = SystemClock.elapsedRealtime()
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) { Text(if (activeDrill == pair) "Restart discrimination drill" else "Practise distinction") }
+                            if (activeDrill == pair) {
+                                Divider()
+                                Text("Which answer belongs to this cue?", fontWeight = FontWeight.SemiBold)
+                                Text(pair.first.prompt, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                TextButton(
+                                    onClick = { if (!drillChecked) selectedAnswerId = pair.first.id },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Text((if (selectedAnswerId == pair.first.id) "✓ " else "") + pair.first.answer)
+                                }
+                                TextButton(
+                                    onClick = { if (!drillChecked) selectedAnswerId = pair.second.id },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Text((if (selectedAnswerId == pair.second.id) "✓ " else "") + pair.second.answer)
+                                }
+                                if (!drillChecked) {
+                                    Button(
+                                        onClick = {
+                                            val isCorrect = selectedAnswerId == pair.first.id
+                                            onDiscriminationAttempt(
+                                                pair.first,
+                                                isCorrect,
+                                                (SystemClock.elapsedRealtime() - drillStartedAt).coerceAtLeast(0L),
+                                                if (selectedAnswerId == pair.first.id) pair.first.answer else pair.second.answer,
+                                            )
+                                            drillChecked = true
+                                        },
+                                        enabled = selectedAnswerId != null,
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) { Text("Check answer") }
+                                } else {
+                                    Text(
+                                        if (selectedAnswerId == pair.first.id) "Correct. The cue matches this fact."
+                                        else "Not quite. The correct answer is: ${pair.first.answer}",
+                                        color = if (selectedAnswerId == pair.first.id) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                                    )
+                                    TextButton(onClick = { activeDrill = null; selectedAnswerId = null; drillChecked = false }) {
+                                        Text("Finish drill")
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -695,6 +765,7 @@ private fun RecallMode.label(): String = when (this) {
     RecallMode.Free -> "Free"
     RecallMode.Reverse -> "Reverse"
     RecallMode.Sequence -> "Sequence"
+    RecallMode.Discrimination -> "Discrimination"
 }
 
 @Composable
