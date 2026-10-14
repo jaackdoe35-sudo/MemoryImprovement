@@ -60,6 +60,29 @@ class RecallSchedulerTest {
     }
 
     @Test
+    fun interferencePlanFindsItemsWithStrongSharedTerms() {
+        val items = listOf(
+            MemoryItem(id = "a", prompt = "What does access control protect?", answer = "Access control protects restricted resources"),
+            MemoryItem(id = "b", prompt = "What does access control enforce?", answer = "Access control enforces approved permissions"),
+            MemoryItem(id = "c", prompt = "How does photosynthesis work?", answer = "Plants convert sunlight into chemical energy"),
+        )
+        val pairs = MemoryInterferencePlan.find(items)
+        assertEquals(1, pairs.size)
+        assertEquals(setOf("access", "control"), pairs.single().sharedTerms.toSet())
+        assertEquals("a", pairs.single().first.id)
+        assertEquals("b", pairs.single().second.id)
+    }
+
+    @Test
+    fun interferencePlanIgnoresSingleSharedWord() {
+        val items = listOf(
+            MemoryItem(id = "a", prompt = "Explain network routing", answer = "Packets follow a path"),
+            MemoryItem(id = "b", prompt = "Explain network security", answer = "Traffic is filtered"),
+        )
+        assertEquals(0, MemoryInterferencePlan.find(items).size)
+    }
+
+    @Test
     fun scoreIsClampedToSupportedRange() {
         assertEquals(5, RecallScheduler.schedule(0, 9, 0L).score)
         assertEquals(0, RecallScheduler.schedule(0, -3, 0L).score)
