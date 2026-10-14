@@ -103,6 +103,7 @@ private fun MemoryApp(
     var palaceNodes by remember { mutableStateOf(initialNodes) }
     var checkpoints by remember { mutableStateOf(initialCheckpoints) }
     var activeCheckpoint by remember { mutableStateOf<RetentionCheckpoint?>(null) }
+    var activeSequence by remember { mutableStateOf<RecallSequence?>(null) }
     var tab by remember { mutableStateOf(AppTab.Today) }
     var adding by remember { mutableStateOf(false) }
     var active by remember { mutableStateOf<MemoryItem?>(null) }
@@ -117,12 +118,14 @@ private fun MemoryApp(
     }
     fun startRecall() {
         activeCheckpoint = null
+        activeSequence = null
         active = memories.minByOrNull { it.nextReviewAt }
         revealed = false
         tab = AppTab.Recall
     }
     fun startRetention(checkpoint: RetentionCheckpoint) {
         activeCheckpoint = checkpoint
+        activeSequence = null
         active = memories.firstOrNull { it.id == checkpoint.itemId }
         revealed = false
         tab = AppTab.Recall
@@ -156,7 +159,11 @@ private fun MemoryApp(
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             when (tab) {
-                AppTab.Today -> TodayScreen(memories, attempts, correct, checkpoints, { adding = true }, ::startRecall, ::startRetention)
+                AppTab.Today -> TodayScreen(
+                    memories, attempts, correct, checkpoints,
+                    onAdd = { adding = true }, onRecall = ::startRecall, onStartRetention = ::startRetention,
+                    onStartSequence = { sequence -> activeSequence = sequence; activeCheckpoint = null; revealed = false; tab = AppTab.Recall },
+                )
                 AppTab.Palace -> PalaceScreen(
                     memories = memories,
                     nodes = palaceNodes,
@@ -179,6 +186,34 @@ private fun MemoryApp(
                                 activeCheckpoint = null
                                 tab = AppTab.Today
                             }
+                        },
+                    )
+                } else if (activeSequence != null) {
+                    SequenceRecallScreen(
+                        sequence = activeSequence!!,
+                        onComplete = { score, latencyMs, response ->
+                            val sequence = activeSequence ?: return@SequenceRecallScreen
+                            val now = System.currentTimeMillis()
+                            val updated = memories.map { memory ->
+                                if (sequence.items.any { it.id == memory.id }) {
+                                    val outcome = RecallScheduler.schedule(memory.reviewCount, score, now)
+                                    memory.copy(nextReviewAt = outcome.nextReviewAt, lastScore = outcome.score, reviewCount = memory.reviewCount + 1)
+                                } else memory
+                            }
+                            save(updated)
+                            sequence.items.forEach { memory ->
+                                onAttempt(RecallAttempt(
+                                    itemId = memory.id, mode = RecallMode.Sequence, correct = score >= 3,
+                                    score = score, latencyMs = latencyMs, recalledResponse = response,
+                                ))
+                            }
+                            attempts += sequence.items.size
+                            if (score >= 3) correct += sequence.items.size
+                            activeSequence = null
+                            active = updated.filter { candidate -> sequence.items.none { it.id == candidate.id } }
+                                .minByOrNull { it.nextReviewAt }
+                            revealed = false
+                            tab = AppTab.Today
                         },
                     )
                 } else RecallScreen(
@@ -254,6 +289,7 @@ private fun TodayScreen(
     checkpoints: List<RetentionCheckpoint>,
     onAdd: () -> Unit, onRecall: () -> Unit,
     onStartRetention: (RetentionCheckpoint) -> Unit,
+    onStartSequence: (RecallSequence) -> Unit,
 ) {
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 18.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -289,6 +325,26 @@ private fun TodayScreen(
         item { PrincipleCard("02", "Place", "Put facts into a navigable palace, route, and locus.") }
         item { PrincipleCard("03", "Retrieve", "Practise cues, free recall, and reverse connections.") }
         item { PrincipleCard("04", "Verify", "Measure delayed recall, retrieval speed, and interference.") }
+        item {
+            Heading("Ordered-sequence practice")
+            val sequences = RecallSequencePlan.groups(memories)
+            if (sequences.isEmpty()) {
+                Text("Add at least two items with the same chunk label and different sequence positions to practise an ordered list.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                sequences.forEach { sequence ->
+                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(sequence.label, fontWeight = FontWeight.SemiBold)
+                            Text("${sequence.items.size} ordered items", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Button(onClick = { onStartSequence(sequence) }, modifier = Modifier.fillMaxWidth()) {
+                                Text("Practise sequence")
+                            }
+                        }
+                    }
+                }
+            }
+        }
         item {
             Heading("Retention checkpoints")
             val now = System.currentTimeMillis()
@@ -609,6 +665,7 @@ private fun RecallMode.label(): String = when (this) {
     RecallMode.Cued -> "Cued"
     RecallMode.Free -> "Free"
     RecallMode.Reverse -> "Reverse"
+    RecallMode.Sequence -> "Sequence"
 }
 
 @Composable
@@ -690,6 +747,61 @@ private fun RetentionTestScreen(
                     modifier = Modifier.fillMaxWidth(),
                 ) { Text("Save retention result") }
             }
+        }
+    }
+}
+
+@Composable
+private fun SequenceRecallScreen(
+    sequence: RecallSequence,
+    onComplete: (Int, Long, String?) -> Unit,
+) {
+    var response by remember(sequence.label, sequence.items.map { it.id }) { mutableStateOf("") }
+    var revealed by remember(sequence.label, sequence.items.map { it.id }) { mutableStateOf(false) }
+    var selectedScore by remember(sequence.label, sequence.items.map { it.id }) { mutableStateOf<Int?>(null) }
+    val startedAt = remember(sequence.label, sequence.items.map { it.id }) { SystemClock.elapsedRealtime() }
+    Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Heading("Ordered recall")
+        Text("Sequence: ${sequence.label}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Text("Recall the items in order without looking. Include the sequence numbers if useful, then reveal and compare.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Card(shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (!revealed) {
+                    OutlinedTextField(
+                        value = response,
+                        onValueChange = { response = it },
+                        label = { Text("Write the sequence from memory") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 5,
+                    )
+                    Button(onClick = { revealed = true }, modifier = Modifier.fillMaxWidth()) { Text("Reveal expected order") }
+                } else {
+                    Text("EXPECTED ORDER", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+                    sequence.items.forEachIndexed { index, item ->
+                        Text("${item.sequenceOrder ?: index + 1}. ${item.prompt} — ${item.answer}",
+                            style = MaterialTheme.typography.bodyLarge)
+                        if (item.association.isNotBlank()) {
+                            Text("Association: ${item.association}", style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+        }
+        if (revealed) {
+            Text("Rate the sequence as a whole after comparing your response.", fontWeight = FontWeight.SemiBold)
+            listOf(0 to "Could not recall", 2 to "Several errors", 3 to "Mostly correct", 5 to "Correct in order")
+                .forEach { (score, label) ->
+                    TextButton(onClick = { selectedScore = score }, modifier = Modifier.fillMaxWidth()) {
+                        Text(if (selectedScore == score) "✓ $label" else label)
+                    }
+                }
+            Button(
+                onClick = { onComplete(selectedScore!!, SystemClock.elapsedRealtime() - startedAt, response.trim().takeIf { it.isNotEmpty() }) },
+                enabled = selectedScore != null,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Save sequence result") }
         }
     }
 }
