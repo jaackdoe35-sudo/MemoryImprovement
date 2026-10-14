@@ -420,18 +420,19 @@ class RecallSchedulerTest {
         val checkpoints = listOf(
             RetentionCheckpoint("a-1", "a", 1, 10L, completedAt = 20L, score = 4, latencyMs = 1000L, accuracy = 2),
             RetentionCheckpoint("b-1", "b", 1, 10L, completedAt = 21L, score = 2, latencyMs = 3000L, accuracy = 0),
+            RetentionCheckpoint("c-1", "c", 1, 10L, completedAt = 22L, score = 3, latencyMs = 2000L, accuracy = 1),
             RetentionCheckpoint("a-7", "a", 7, 20L),
         )
         val summaries = RetentionAnalytics.byDelay(checkpoints)
         val day1 = summaries.single { it.delayDays == 1 }
-        assertEquals(2, day1.total)
-        assertEquals(2, day1.completed)
+        assertEquals(3, day1.total)
+        assertEquals(3, day1.completed)
         assertEquals(3.0, day1.meanSelfRating!!, 0.001)
-        assertEquals(50, day1.checkedAccuracyPercent)
+        assertEquals(33, day1.checkedAccuracyPercent)
         assertEquals(1, day1.fullyCorrectCount)
-        assertEquals(0, day1.partiallyCorrectCount)
+        assertEquals(1, day1.partiallyCorrectCount)
         assertEquals(1, day1.incorrectCount)
-        assertEquals(2, day1.checkedAccuracyCount)
+        assertEquals(3, day1.checkedAccuracyCount)
         assertEquals(2000L, day1.meanLatencyMs)
         val day7 = summaries.single { it.delayDays == 7 }
         assertEquals(0, day7.completed)
