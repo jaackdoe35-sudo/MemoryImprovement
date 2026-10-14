@@ -1196,6 +1196,14 @@ private fun RecallScreen(
 
 @Composable
 private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit: (MemoryItem) -> Unit) {
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredMemories = remember(memories, searchQuery) {
+        val query = searchQuery.trim()
+        if (query.isEmpty()) memories else memories.filter { item ->
+            listOf(item.prompt, item.answer, item.palace, item.locus, item.chunkLabel, item.association)
+                .any { it.contains(query, ignoreCase = true) }
+        }
+    }
     Column(Modifier.fillMaxSize().padding(horizontal = 18.dp)) {
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -1206,8 +1214,18 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
             Text("Your saved facts stay on this device. Add one to begin.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Search memories") },
+                singleLine = true,
+            )
+            if (filteredMemories.isEmpty()) {
+                Text("No memories match this search.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(memories, key = { it.id }) { item ->
+                items(filteredMemories, key = { it.id }) { item ->
                     Card(shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(16.dp)) {
                             Text(item.prompt, fontWeight = FontWeight.SemiBold)
