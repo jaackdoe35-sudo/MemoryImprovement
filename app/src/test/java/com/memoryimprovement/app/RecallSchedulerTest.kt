@@ -68,7 +68,7 @@ class RecallSchedulerTest {
         )
         val pairs = MemoryInterferencePlan.find(items)
         assertEquals(1, pairs.size)
-        assertEquals(setOf("access", "control"), pairs.single().sharedTerms.toSet())
+        assertEquals(setOf("access", "control", "protect", "resources"), pairs.single().sharedTerms.toSet())
         assertEquals("a", pairs.single().first.id)
         assertEquals("b", pairs.single().second.id)
     }
