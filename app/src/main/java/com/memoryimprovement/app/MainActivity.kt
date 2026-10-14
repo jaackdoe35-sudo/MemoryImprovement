@@ -887,13 +887,8 @@ private fun TodayScreen(
                         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(summary.mode.name.lowercase().replaceFirstChar { it.uppercase() },
                                 fontWeight = FontWeight.SemiBold)
-                            Text("${summary.attemptCount} attempts · ${summary.recordedCorrectPercent}% marked correct (${summary.correctCount})")
-                            summary.meanSelfRating?.let {
-                                Text("Mean self-rating: ${"%.1f".format(it)} / 5")
-                            }
-                            summary.meanLatencyMs?.let {
-                                Text("Mean retrieval time: ${"%.1f".format(it / 1000.0)} s")
-                            }
+                            Text("${summary.attempts} attempts · ${summary.accuracyPercent}% marked correct (${summary.correct})")
+                            Text("Mean retrieval time: ${"%.1f".format(summary.meanLatencyMs / 1000.0)} s")
                         }
                     }
                 }
