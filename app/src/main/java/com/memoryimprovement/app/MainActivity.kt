@@ -872,6 +872,34 @@ private fun TodayScreen(
             }
         }
         item {
+            Heading("Recall method comparison")
+            Text(
+                "Descriptive history, not a controlled experiment. Correctness reflects saved attempt labels; ratings are self-reported.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall,
+            )
+            val summaries = RecallAnalytics.byMode(attemptHistory)
+            if (summaries.isEmpty()) {
+                Text("Complete recall sessions to compare methods.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                summaries.forEach { summary ->
+                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(summary.mode.name.lowercase().replaceFirstChar { it.uppercase() },
+                                fontWeight = FontWeight.SemiBold)
+                            Text("${summary.attemptCount} attempts · ${summary.recordedCorrectPercent}% marked correct (${summary.correctCount})")
+                            summary.meanSelfRating?.let {
+                                Text("Mean self-rating: ${"%.1f".format(it)} / 5")
+                            }
+                            summary.meanLatencyMs?.let {
+                                Text("Mean retrieval time: ${"%.1f".format(it / 1000.0)} s")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        item {
             Heading("Review queue")
             val due = memories.count { it.nextReviewAt <= System.currentTimeMillis() }
             Text(if (memories.isEmpty()) "Your first memory unit starts the review system."
