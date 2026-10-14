@@ -7,6 +7,32 @@ import org.junit.Test
 
 class RecallSchedulerTest {
     @Test
+    fun encodingQualityPlanRewardsCompleteEncodingAndHasNoSuggestions() {
+        val result = EncodingQualityPlan.evaluate(
+            prompt = "What is photosynthesis?",
+            answer = "Plants convert light into chemical energy.",
+            chunkLabel = "Biology",
+            association = "A bright green leaf powering a tiny solar lamp",
+        )
+        assertEquals(4, result.score)
+        assertTrue(result.suggestions.isEmpty())
+    }
+
+    @Test
+    fun encodingQualityPlanGivesActionableGuidanceForMissingDetails() {
+        val result = EncodingQualityPlan.evaluate(
+            prompt = "Q",
+            answer = "",
+            chunkLabel = " ",
+            association = "green",
+        )
+        assertEquals(0, result.score)
+        assertEquals(4, result.suggestions.size)
+        assertTrue(result.suggestions.any { it.contains("specific question") })
+        assertTrue(result.suggestions.any { it.contains("topic or chunk") })
+    }
+
+    @Test
     fun palaceMovePlanAllowsValidMoveAndRejectsCyclesOrInvalidParents() {
         val nodes = listOf(
             PalaceNode(id = "palaceA", name = "Home", kind = PalaceNodeKind.Palace, parentId = null),
