@@ -179,6 +179,40 @@ object RetentionCheckpointPlan {
         }
 }
 
+data class RetentionDelaySummary(
+    val delayDays: Int,
+    val total: Int,
+    val completed: Int,
+    val meanSelfRating: Double?,
+    val checkedAccuracyPercent: Int?,
+    val checkedAccuracyCount: Int,
+    val meanLatencyMs: Long?,
+)
+
+object RetentionAnalytics {
+    fun byDelay(
+        checkpoints: List<RetentionCheckpoint>,
+        delays: List<Int> = RetentionCheckpointPlan.delaysDays,
+    ): List<RetentionDelaySummary> = delays.map { delay ->
+        val group = checkpoints.filter { it.delayDays == delay }
+        val completed = group.filter { it.completedAt != null }
+        val scores = completed.mapNotNull { it.score }
+        val checked = completed.mapNotNull { it.accuracy }
+        val latencies = completed.mapNotNull { it.latencyMs }
+        RetentionDelaySummary(
+            delayDays = delay,
+            total = group.size,
+            completed = completed.size,
+            meanSelfRating = scores.takeIf { it.isNotEmpty() }?.average(),
+            checkedAccuracyPercent = checked.takeIf { it.isNotEmpty() }
+                ?.let { it.count { accuracy -> accuracy == 2 } * 100 / it.size },
+            checkedAccuracyCount = checked.size,
+            meanLatencyMs = latencies.takeIf { it.isNotEmpty() }?.average()?.toLong(),
+        )
+    }
+}
+
+
 /** Transparent baseline; evaluate against measured delayed recall before claiming it is optimal. */
 data class WeakMemoryPriority(val item: MemoryItem, val priority: Int, val reason: String)
 
