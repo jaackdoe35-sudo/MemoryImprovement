@@ -33,6 +33,44 @@ enum class RecallMode { Cued, Free, Reverse, Sequence }
 
 data class RecallSequence(val label: String, val items: List<MemoryItem>)
 
+data class InterferencePair(
+    val first: MemoryItem,
+    val second: MemoryItem,
+    val sharedTerms: List<String>,
+    val overlap: Double,
+)
+
+/** Lexical heuristic only; this does not detect synonym or conceptual similarity. */
+object MemoryInterferencePlan {
+    private val ignored = setOf("about", "after", "also", "been", "being", "between", "could", "does", "each", "from", "have", "into", "more", "most", "only", "other", "over", "same", "some", "such", "than", "that", "their", "them", "then", "there", "these", "they", "this", "those", "through", "under", "very", "what", "when", "where", "which", "while", "with", "would", "your", "will", "must", "should", "using", "used")
+
+    private fun terms(item: MemoryItem): Set<String> =
+        (item.prompt + " " + item.answer).lowercase()
+            .split(Regex("[^a-z0-9]+"))
+            .filter { it.length >= 4 && it !in ignored }
+            .toSet()
+
+    fun find(memories: List<MemoryItem>, limit: Int = 8): List<InterferencePair> {
+        val candidates = memories.map { it to terms(it) }.filter { it.second.size >= 2 }
+        val pairs = mutableListOf<InterferencePair>()
+        for (i in candidates.indices) {
+            for (j in i + 1 until candidates.size) {
+                val (first, a) = candidates[i]
+                val (second, b) = candidates[j]
+                val shared = a.intersect(b).sorted()
+                val overlap = shared.size.toDouble() / minOf(a.size, b.size).coerceAtLeast(1)
+                if (shared.size >= 2 && overlap >= 0.5) {
+                    pairs += InterferencePair(first, second, shared, overlap)
+                }
+            }
+        }
+        return pairs.sortedWith(compareByDescending<InterferencePair> { it.overlap }
+            .thenByDescending { it.sharedTerms.size }
+            .thenBy { it.first.prompt.lowercase() })
+            .take(limit)
+    }
+}
+
 object RecallSequencePlan {
     /** Groups only explicitly numbered items; each group must contain at least two distinct facts. */
     fun groups(memories: List<MemoryItem>): List<RecallSequence> = memories
