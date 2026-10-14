@@ -41,7 +41,7 @@ class LegacyMigrationIntegrationTest {
 
     @Test
     fun malformedLegacyJsonIsPreservedAndCanBeRetriedAfterCorrection() = runBlocking {
-        val malformed = """[{"id":"broken""""
+        val malformed = "[{\"id\":\"broken\""
         preferences.edit().putString("items_json", malformed).commit()
 
         val failed = repository.loadItemsWithMigrationStatus()
