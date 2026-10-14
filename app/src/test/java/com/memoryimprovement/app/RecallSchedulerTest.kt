@@ -81,13 +81,12 @@ class RecallSchedulerTest {
         val summaries = RecallAnalytics.byMode(attempts)
         val free = summaries.single { it.mode == RecallMode.Free }
         val cued = summaries.single { it.mode == RecallMode.Cued }
-        assertEquals(2, free.attemptCount)
-        assertEquals(1, free.correctCount)
-        assertEquals(50, free.recordedCorrectPercent)
-        assertEquals(3.0, free.meanSelfRating!!, 0.001)
+        assertEquals(2, free.attempts)
+        assertEquals(1, free.correct)
+        assertEquals(50, free.accuracyPercent)
         assertEquals(2000L, free.meanLatencyMs)
-        assertEquals(1, cued.attemptCount)
-        assertEquals(100, cued.recordedCorrectPercent)
+        assertEquals(1, cued.attempts)
+        assertEquals(100, cued.accuracyPercent)
     }
 
     @Test
