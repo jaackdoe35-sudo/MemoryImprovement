@@ -117,6 +117,7 @@ private fun MemoryApp(
     var bulkImportOpen by remember { mutableStateOf(false) }
     var bulkImportText by remember { mutableStateOf("") }
     var bulkImportError by remember { mutableStateOf<String?>(null) }
+    var bulkImportStatus by remember { mutableStateOf<String?>(null) }
     var editingMemory by remember { mutableStateOf<MemoryItem?>(null) }
     var deletingMemory by remember { mutableStateOf<MemoryItem?>(null) }
     var active by remember { mutableStateOf<MemoryItem?>(null) }
@@ -321,28 +322,34 @@ private fun MemoryApp(
 
     if (bulkImportOpen) {
         AlertDialog(
-            onDismissRequest = { bulkImportOpen = false; bulkImportError = null },
+            onDismissRequest = { bulkImportOpen = false; bulkImportError = null; bulkImportStatus = null },
             title = { Text("Bulk import memories") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Paste tab-separated rows: prompt, answer, palace, locus, chunk, association, sequence order. The first two columns are required.")
                     OutlinedTextField(
                         value = bulkImportText,
-                        onValueChange = { bulkImportText = it; bulkImportError = null },
+                        onValueChange = { bulkImportText = it; bulkImportError = null; bulkImportStatus = null },
                         label = { Text("TSV rows") },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 5,
                         maxLines = 10,
                     )
                     bulkImportError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    bulkImportStatus?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
+                    Text("Duplicate prompt + answer pairs are skipped automatically.", style = MaterialTheme.typography.bodySmall)
                 }
             },
             confirmButton = {
                 TextButton(onClick = {
                     val rows = runCatching { MemoryImportPlan.parseTsv(bulkImportText) }
                     rows.onSuccess { imported ->
+                        val batch = MemoryImportPlan.excludeDuplicates(imported, memories)
+                        if (batch.rows.isEmpty()) {
+                            bulkImportError = "Every imported row duplicates an existing memory or another row."
+                        } else {
                         val now = System.currentTimeMillis()
-                        val newItems = imported.map { row ->
+                        val newItems = batch.rows.map { row ->
                             MemoryItem(
                                 id = UUID.randomUUID().toString(),
                                 prompt = row.prompt,
@@ -358,7 +365,14 @@ private fun MemoryApp(
                         }
                         save(memories + newItems)
                         bulkImportText = ""
-                        bulkImportOpen = false
+                        bulkImportError = null
+                        if (batch.duplicatesSkipped > 0) {
+                            bulkImportStatus = "Imported ${batch.rows.size}; skipped ${batch.duplicatesSkipped} duplicate row(s)."
+                        } else {
+                            bulkImportOpen = false
+                            bulkImportStatus = null
+                        }
+                        }
                     }.onFailure { bulkImportError = it.message ?: "Could not parse import data." }
                 }) { Text("Import") }
             },
