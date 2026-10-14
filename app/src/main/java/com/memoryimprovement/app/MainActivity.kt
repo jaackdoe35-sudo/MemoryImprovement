@@ -114,6 +114,9 @@ private fun MemoryApp(
     var activeSequence by remember { mutableStateOf<RecallSequence?>(null) }
     var tab by remember { mutableStateOf(AppTab.Today) }
     var adding by remember { mutableStateOf(false) }
+    var bulkImportOpen by remember { mutableStateOf(false) }
+    var bulkImportText by remember { mutableStateOf("") }
+    var bulkImportError by remember { mutableStateOf<String?>(null) }
     var editingMemory by remember { mutableStateOf<MemoryItem?>(null) }
     var deletingMemory by remember { mutableStateOf<MemoryItem?>(null) }
     var active by remember { mutableStateOf<MemoryItem?>(null) }
@@ -285,6 +288,7 @@ private fun MemoryApp(
                     onAdd = { adding = true },
                     onEdit = { editingMemory = it },
                     onDelete = { deletingMemory = it },
+                    onImport = { bulkImportOpen = true; bulkImportError = null },
                 )
             }
         }
@@ -311,6 +315,55 @@ private fun MemoryApp(
             },
             dismissButton = {
                 TextButton(onClick = { deletingMemory = null }) { Text("Cancel") }
+            },
+        )
+    }
+
+    if (bulkImportOpen) {
+        AlertDialog(
+            onDismissRequest = { bulkImportOpen = false; bulkImportError = null },
+            title = { Text("Bulk import memories") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Paste tab-separated rows: prompt, answer, palace, locus, chunk, association, sequence order. The first two columns are required.")
+                    OutlinedTextField(
+                        value = bulkImportText,
+                        onValueChange = { bulkImportText = it; bulkImportError = null },
+                        label = { Text("TSV rows") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 5,
+                        maxLines = 10,
+                    )
+                    bulkImportError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val rows = runCatching { MemoryImportPlan.parseTsv(bulkImportText) }
+                    rows.onSuccess { imported ->
+                        val now = System.currentTimeMillis()
+                        val newItems = imported.map { row ->
+                            MemoryItem(
+                                id = UUID.randomUUID().toString(),
+                                prompt = row.prompt,
+                                answer = row.answer,
+                                palace = row.palace,
+                                locus = row.locus,
+                                chunkLabel = row.chunkLabel,
+                                association = row.association,
+                                sequenceOrder = row.sequenceOrder,
+                                createdAt = now,
+                                nextReviewAt = now,
+                            )
+                        }
+                        save(memories + newItems)
+                        bulkImportText = ""
+                        bulkImportOpen = false
+                    }.onFailure { bulkImportError = it.message ?: "Could not parse import data." }
+                }) { Text("Import") }
+            },
+            dismissButton = {
+                TextButton(onClick = { bulkImportOpen = false; bulkImportError = null }) { Text("Cancel") }
             },
         )
     }
@@ -1229,7 +1282,7 @@ private fun RecallScreen(
 }
 
 @Composable
-private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit: (MemoryItem) -> Unit, onDelete: (MemoryItem) -> Unit) {
+private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit: (MemoryItem) -> Unit, onDelete: (MemoryItem) -> Unit, onImport: () -> Unit) {
     var searchQuery by remember { mutableStateOf("") }
     var dueOnly by remember { mutableStateOf(false) }
     val now = System.currentTimeMillis()
@@ -1240,7 +1293,10 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
         Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Heading("Memory library")
-            TextButton(onClick = onAdd) { Text("+ Add") }
+            Row {
+                TextButton(onClick = onImport) { Text("Import TSV") }
+                TextButton(onClick = onAdd) { Text("+ Add") }
+            }
         }
         if (memories.isEmpty()) {
             Text("Your saved facts stay on this device. Add one to begin.",
