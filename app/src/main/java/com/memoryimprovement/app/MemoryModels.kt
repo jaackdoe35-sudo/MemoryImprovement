@@ -59,7 +59,17 @@ object MemoryImportPlan {
         require(rows.isNotEmpty()) { "Paste at least one valid row." }
         return rows
     }
+
+    /** Skips repeated prompt+answer pairs, including duplicates within the import batch. */
+    fun excludeDuplicates(imported: List<MemoryImportRow>, existing: List<MemoryItem>): MemoryImportBatch {
+        fun key(prompt: String, answer: String) = prompt.trim().lowercase() to answer.trim().lowercase()
+        val seen = existing.mapTo(mutableSetOf()) { key(it.prompt, it.answer) }
+        val unique = imported.filter { seen.add(key(it.prompt, it.answer)) }
+        return MemoryImportBatch(unique, imported.size - unique.size)
+    }
 }
+
+data class MemoryImportBatch(val rows: List<MemoryImportRow>, val duplicatesSkipped: Int)
 
 data class MemoryItem(
     val id: String,
