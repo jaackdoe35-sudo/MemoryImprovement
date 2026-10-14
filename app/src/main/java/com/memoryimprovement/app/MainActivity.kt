@@ -252,44 +252,153 @@ private fun PrincipleCard(number: String, title: String, detail: String) {
     }
 }
 
-@Composable
-private fun PalaceScreen(memories: List<MemoryItem>, onAdd: () -> Unit) {
-    LazyColumn(Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { Heading("Memory palace") }
-        item { Text("Organize facts by building → route → locus. Distinct locations help keep similar facts separate.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        val groups = memories.filter { it.palace.isNotBlank() }.groupBy { it.palace }
-        if (groups.isEmpty()) {
-            item {
-                Card(shape = RoundedCornerShape(20.dp)) {
-                    Column(Modifier.padding(20.dp)) {
-                        Text("No palaces yet", fontWeight = FontWeight.SemiBold)
-                        Spacer(Modifier.height(6.dp))
-                        Text("Give a memory a palace name and a specific locus.")
-                        Spacer(Modifier.height(12.dp))
-                        Button(onClick = onAdd) { Text("Add palace memory") }
-                    }
-                }
+private data class PalaceNodeDepth(val node: PalaceNode, val depth: Int)
+
+private fun flattenPalaceTree(nodes: List<PalaceNode>): List<PalaceNodeDepth> {
+    val byParent = nodes.groupBy { it.parentId }
+    val result = mutableListOf<PalaceNodeDepth>()
+    val visited = mutableSetOf<String>()
+    fun visit(parentId: String?, depth: Int) {
+        byParent[parentId].orEmpty().forEach { node ->
+            if (visited.add(node.id)) {
+                result += PalaceNodeDepth(node, depth)
+                visit(node.id, depth + 1)
             }
-        } else {
-            groups.forEach { (name, entries) ->
-                item(key = name) {
-                    Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(16.dp)) {
-                            Text(name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            Text("${entries.size} memory units", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            entries.forEach { entry ->
-                                Spacer(Modifier.height(10.dp))
-                                Text("⌖  ${entry.locus.ifBlank { "Unassigned locus" }}",
-                                    fontWeight = FontWeight.SemiBold)
-                                Text(entry.prompt, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
+        }
+    }
+    visit(null, 0)
+    return result
+}
+
+private fun allowedChildKinds(node: PalaceNode?): List<PalaceNodeKind> = when (node?.kind) {
+    null -> listOf(PalaceNodeKind.Palace)
+    PalaceNodeKind.Palace -> listOf(PalaceNodeKind.Route, PalaceNodeKind.Area, PalaceNodeKind.Locus)
+    PalaceNodeKind.Route, PalaceNodeKind.Area -> listOf(PalaceNodeKind.Route, PalaceNodeKind.Area, PalaceNodeKind.Locus)
+    PalaceNodeKind.Locus -> emptyList()
+}
+
+@Composable
+private fun PalaceScreen(
+    memories: List<MemoryItem>,
+    nodes: List<PalaceNode>,
+    onAddMemory: () -> Unit,
+    onCreateNode: (String, PalaceNodeKind, String?, (List<PalaceNode>) -> Unit) -> Unit,
+) {
+    var addParent by remember { mutableStateOf<PalaceNode?>(null) }
+    val flattened = remember(nodes) { flattenPalaceTree(nodes) }
+    LazyColumn(
+        Modifier.fillMaxSize().padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Heading("Memory palace")
+                TextButton(onClick = { addParent = null }) { Text("+ Palace") }
+            }
+            Text(
+                "Build a navigable hierarchy: palace → route or area → locus. Each node has a stable ID.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (flattened.isEmpty()) {
+            item {
+                Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(18.dp)) {
+                        Text("Start with a palace", fontWeight = FontWeight.SemiBold)
+                        Text("Create a familiar building, then add routes, areas, and distinct loci.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.height(10.dp))
+                        Button(onClick = { addParent = null }) { Text("Create first palace") }
                     }
                 }
             }
         }
+        items(flattened, key = { it.node.id }) { entry ->
+            val node = entry.node
+            val itemCount = memories.count { it.palaceNodeId == node.id }
+            Card(
+                shape = RoundedCornerShape(18.dp),
+                modifier = Modifier.fillMaxWidth().padding(start = (entry.depth * 12).dp),
+            ) {
+                Column(Modifier.padding(14.dp)) {
+                    Text(node.kind.label.uppercase(), color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.labelSmall)
+                    Text(node.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        if (itemCount == 1) "1 linked memory" else "$itemCount linked memories",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    if (allowedChildKinds(node).isNotEmpty()) {
+                        TextButton(onClick = { addParent = node }) { Text("+ Add child location") }
+                    }
+                }
+            }
+        }
+        item {
+            Spacer(Modifier.height(4.dp))
+            Button(onClick = onAddMemory, modifier = Modifier.fillMaxWidth()) {
+                Text("Add memory item")
+            }
+        }
     }
+
+    if (addParent != null || nodes.isEmpty()) {
+        AddPalaceNodeDialog(
+            parent = addParent,
+            allowedKinds = allowedChildKinds(addParent),
+            onDismiss = { addParent = null },
+            onCreate = { name, kind ->
+                onCreateNode(name, kind, addParent?.id) { refreshed ->
+                    addParent = null
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun AddPalaceNodeDialog(
+    parent: PalaceNode?,
+    allowedKinds: List<PalaceNodeKind>,
+    onDismiss: () -> Unit,
+    onCreate: (String, PalaceNodeKind) -> Unit,
+) {
+    var name by remember(parent?.id) { mutableStateOf("") }
+    var kind by remember(parent?.id, allowedKinds) { mutableStateOf(allowedKinds.firstOrNull() ?: PalaceNodeKind.Palace) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (parent == null) "Create palace" else "Add location") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (parent != null) {
+                    Text("Parent: \${parent.name}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Name") },
+                    singleLine = true,
+                )
+                Text("Location type", style = MaterialTheme.typography.labelLarge)
+                allowedKinds.forEach { option ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        androidx.compose.material3.RadioButton(
+                            selected = kind == option,
+                            onClick = { kind = option },
+                        )
+                        Text(option.label, modifier = Modifier.padding(top = 12.dp))
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onCreate(name.trim(), kind) }, enabled = name.isNotBlank() && allowedKinds.isNotEmpty()) {
+                Text("Create")
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
 }
 
 @Composable
