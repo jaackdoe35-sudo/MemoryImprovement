@@ -52,6 +52,18 @@ class RecallSchedulerTest {
     }
 
     @Test
+    fun importPreviewCountsNewRowsAndDuplicatesBeforeSaving() {
+        val existing = listOf(MemoryItem(id = "old", prompt = "Capital?", answer = "Lagos"))
+        val parsed = MemoryImportPlan.parseTsv(
+            "Capital?\\tLagos\\nLargest ocean?\\tPacific\\nHighest mountain?\\tEverest"
+        )
+        val preview = MemoryImportPlan.excludeDuplicates(parsed, existing)
+        assertEquals(2, preview.rows.size)
+        assertEquals(1, preview.duplicatesSkipped)
+        assertEquals("Largest ocean?", preview.rows.first().prompt)
+    }
+
+    @Test
     fun bulkImportSkipsExistingAndRepeatedPromptAnswerPairs() {
         val existing = listOf(MemoryItem(id = "existing", prompt = "Capital?", answer = "Lagos"))
         val imported = listOf(
