@@ -63,6 +63,7 @@ data class RetentionCheckpointEntity(
     val score: Int?,
     val latencyMs: Long?,
     val recalledResponse: String?,
+    val accuracy: Int? = null,
 )
 
 @Entity(tableName = "recall_attempts")
@@ -100,13 +101,14 @@ interface MemoryDao {
     @Query("SELECT * FROM retention_checkpoints ORDER BY dueAt")
     suspend fun getRetentionCheckpoints(): List<RetentionCheckpointEntity>
 
-    @Query("UPDATE retention_checkpoints SET completedAt = :completedAt, score = :score, latencyMs = :latencyMs, recalledResponse = :recalledResponse WHERE id = :id AND completedAt IS NULL")
+    @Query("UPDATE retention_checkpoints SET completedAt = :completedAt, score = :score, latencyMs = :latencyMs, recalledResponse = :recalledResponse, accuracy = :accuracy WHERE id = :id AND completedAt IS NULL")
     suspend fun completeRetentionCheckpoint(
         id: String,
         completedAt: Long,
         score: Int,
         latencyMs: Long,
         recalledResponse: String?,
+        accuracy: Int,
     ): Int
 
     @Query("SELECT * FROM recall_attempts ORDER BY reviewedAt DESC")
@@ -139,13 +141,19 @@ interface MemoryDao {
 
 @Database(
     entities = [MemoryItemEntity::class, RecallAttemptEntity::class, PalaceNodeEntity::class, RetentionCheckpointEntity::class],
-    version = 4,
+    version = 5,
     exportSchema = false,
 )
 abstract class MemoryDatabase : RoomDatabase() {
     abstract fun memoryDao(): MemoryDao
 
     companion object {
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE retention_checkpoints ADD COLUMN accuracy INTEGER")
+            }
+        }
+
         val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("""CREATE TABLE IF NOT EXISTS retention_checkpoints (
