@@ -73,7 +73,8 @@ class MainActivity : ComponentActivity() {
         }
         val repository = MemoryRepository(applicationContext)
         lifecycleScope.launch {
-            val initialItems = repository.loadItems()
+            val initialMigrationResult = repository.loadItemsWithMigrationStatus()
+            val initialItems = initialMigrationResult.items
             val initialNodes = repository.loadPalaceNodes()
             val initialAttempts = repository.loadAttempts()
             val initialCheckpoints = repository.loadRetentionCheckpoints()
@@ -85,10 +86,15 @@ class MainActivity : ComponentActivity() {
                             initialNodes = initialNodes,
                             initialAttempts = initialAttempts,
                             initialCheckpoints = initialCheckpoints,
+                            initialMigrationResult = initialMigrationResult,
                             onSave = { updated -> lifecycleScope.launch { repository.saveItems(updated) } },
                             onExportMemories = { items ->
                                 pendingExport = MemoryExportPlan.toTsv(items)
                                 createExportFile.launch("memory-improvement-memories.tsv")
+                            },
+                            onExportLegacyData = { raw ->
+                                pendingExport = raw
+                                createExportFile.launch("memory-improvement-legacy-backup.json")
                             },
                             onChooseImportFile = { consume ->
                                 pendingImportConsumer = consume
@@ -132,8 +138,10 @@ private fun MemoryApp(
     initialNodes: List<PalaceNode>,
     initialAttempts: List<RecallAttempt>,
     initialCheckpoints: List<RetentionCheckpoint>,
+    initialMigrationResult: LegacyMigrationResult,
     onSave: (List<MemoryItem>) -> Unit,
     onExportMemories: (List<MemoryItem>) -> Unit,
+    onExportLegacyData: (String) -> Unit,
     onChooseImportFile: (((Result<String>) -> Unit) -> Unit),
     onDeleteMemory: (String, () -> Unit) -> Unit,
     onAttempt: (RecallAttempt) -> Unit,
@@ -143,6 +151,7 @@ private fun MemoryApp(
     var memories by remember { mutableStateOf(initialItems) }
     var palaceNodes by remember { mutableStateOf(initialNodes) }
     var checkpoints by remember { mutableStateOf(initialCheckpoints) }
+    var migrationResult by remember { mutableStateOf(initialMigrationResult) }
     var activeCheckpoint by remember { mutableStateOf<RetentionCheckpoint?>(null) }
     var activeSequence by remember { mutableStateOf<RecallSequence?>(null) }
     var tab by remember { mutableStateOf(AppTab.Today) }
@@ -214,6 +223,8 @@ private fun MemoryApp(
             when (tab) {
                 AppTab.Today -> TodayScreen(
                     memories, attempts, correct, checkpoints, attemptHistory,
+                    migrationResult = migrationResult,
+                    onExportLegacyData = onExportLegacyData,
                     onAdd = { adding = true }, onRecall = ::startRecall, onStartRetention = ::startRetention,
                     onStartSequence = { sequence -> activeSequence = sequence; activeCheckpoint = null; revealed = false; tab = AppTab.Recall },
                     onStartPriority = { item -> activeCheckpoint = null; activeSequence = null; active = item; revealed = false; tab = AppTab.Recall },
@@ -505,6 +516,8 @@ private fun TodayScreen(
     memories: List<MemoryItem>, attempts: Int, correct: Int,
     checkpoints: List<RetentionCheckpoint>,
     attemptHistory: List<RecallAttempt>,
+    migrationResult: LegacyMigrationResult,
+    onExportLegacyData: (String) -> Unit,
     onAdd: () -> Unit, onRecall: () -> Unit,
     onStartRetention: (RetentionCheckpoint) -> Unit,
     onStartSequence: (RecallSequence) -> Unit,
@@ -518,6 +531,24 @@ private fun TodayScreen(
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 18.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { Spacer(Modifier.height(4.dp)) }
+        if (migrationResult.errorMessage != null) {
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Legacy data needs recovery", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onErrorContainer)
+                        Text(migrationResult.errorMessage, color = MaterialTheme.colorScheme.onErrorContainer)
+                        Text("The original JSON is still preserved. Export a backup before editing or replacing it.",
+                            color = MaterialTheme.colorScheme.onErrorContainer, style = MaterialTheme.typography.bodySmall)
+                        migrationResult.preservedRawData?.let { raw ->
+                            Button(onClick = { onExportLegacyData(raw) }) { Text("Export legacy JSON backup") }
+                        }
+                    }
+                }
+            }
+        }
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF202C4A)),
