@@ -324,6 +324,78 @@ private fun TodayScreen(
             }
         }
         item {
+            Heading("Retention results")
+            val completed = checkpoints
+                .filter { it.completedAt != null }
+                .sortedByDescending { it.completedAt }
+            if (completed.isEmpty()) {
+                Text(
+                    "Completed delayed tests will appear here. Each result keeps your written response, self-rating, and retrieval time.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(1, 7, 30).forEach { delayDays ->
+                        val group = completed.filter { it.delayDays == delayDays }
+                        val rated = group.mapNotNull { it.score }
+                        val timed = group.mapNotNull { it.latencyMs }
+                        Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text("${delayDays}-day checkpoint", fontWeight = FontWeight.SemiBold)
+                                Text("${group.size} completed")
+                                if (rated.isNotEmpty()) {
+                                    Text(
+                                        "Mean self-rating: ${"%.1f".format(rated.average())} / 5",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                if (timed.isNotEmpty()) {
+                                    Text(
+                                        "Mean retrieval time: ${"%.1f".format(timed.average() / 1000.0)} s",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
+                Text("Recent completed tests", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                completed.take(12).forEach { checkpoint ->
+                    val memory = memories.firstOrNull { it.id == checkpoint.itemId }
+                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                            Text("${checkpoint.delayDays}-day test", fontWeight = FontWeight.SemiBold)
+                            if (memory != null) {
+                                Text(memory.prompt)
+                                Text("Stored answer: ${memory.answer}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            } else {
+                                Text("The original memory item is no longer available.")
+                            }
+                            Text(
+                                "Self-rating: ${checkpoint.score?.let { "$it / 5" } ?: "not recorded"} · Retrieval time: ${checkpoint.latencyMs?.let { "${"%.1f".format(it / 1000.0)} s" } ?: "not recorded"}",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                            Text(
+                                "Completed ${android.text.format.DateUtils.getRelativeTimeSpanString(checkpoint.completedAt!!, now, android.text.format.DateUtils.MINUTE_IN_MILLIS)}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Text(
+                                "Your response: ${checkpoint.recalledResponse?.takeIf { it.isNotBlank() } ?: "No written response"}",
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            Text(
+                                "Compare your response with the stored answer; correctness is not scored automatically.",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        item {
             Heading("Review queue")
             val due = memories.count { it.nextReviewAt <= System.currentTimeMillis() }
             Text(if (memories.isEmpty()) "Your first memory unit starts the review system."
