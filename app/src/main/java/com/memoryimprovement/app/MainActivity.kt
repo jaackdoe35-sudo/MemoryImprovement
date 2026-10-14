@@ -1,8 +1,11 @@
 package com.memoryimprovement.app
 
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -42,10 +45,17 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val repository = MemoryRepository(applicationContext)
-        setContent {
-            MaterialTheme {
-                Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    MemoryApp(repository.loadItems(), repository::saveItems)
+        lifecycleScope.launch {
+            val initialItems = repository.loadItems()
+            setContent {
+                MaterialTheme {
+                    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                        MemoryApp(
+                            initialItems = initialItems,
+                            onSave = { updated -> lifecycleScope.launch { repository.saveItems(updated) } },
+                            onAttempt = { attempt -> lifecycleScope.launch { repository.saveAttempt(attempt) } },
+                        )
+                    }
                 }
             }
         }
@@ -58,7 +68,11 @@ private enum class AppTab(val label: String) {
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-private fun MemoryApp(initialItems: List<MemoryItem>, onSave: (List<MemoryItem>) -> Unit) {
+private fun MemoryApp(
+    initialItems: List<MemoryItem>,
+    onSave: (List<MemoryItem>) -> Unit,
+    onAttempt: (RecallAttempt) -> Unit,
+) {
     var memories by remember { mutableStateOf(initialItems) }
     var tab by remember { mutableStateOf(AppTab.Today) }
     var adding by remember { mutableStateOf(false) }
@@ -109,7 +123,7 @@ private fun MemoryApp(initialItems: List<MemoryItem>, onSave: (List<MemoryItem>)
                 AppTab.Palace -> PalaceScreen(memories, { adding = true })
                 AppTab.Recall -> RecallScreen(
                     active, revealed, { revealed = true },
-                    { score ->
+                    { score, latencyMs ->
                         val current = active ?: return@RecallScreen
                         val outcome = RecallScheduler.schedule(current.reviewCount, score)
                         val updated = memories.map { memory ->
@@ -122,6 +136,14 @@ private fun MemoryApp(initialItems: List<MemoryItem>, onSave: (List<MemoryItem>)
                         save(updated)
                         attempts += 1
                         if (score >= 3) correct += 1
+                        onAttempt(
+                            RecallAttempt(
+                                itemId = current.id,
+                                mode = RecallMode.Cued,
+                                correct = score >= 3,
+                                latencyMs = latencyMs,
+                            ),
+                        )
                         active = updated.filter { it.id != current.id }.minByOrNull { it.nextReviewAt }
                         revealed = false
                     },
@@ -272,8 +294,9 @@ private fun PalaceScreen(memories: List<MemoryItem>, onAdd: () -> Unit) {
 @Composable
 private fun RecallScreen(
     item: MemoryItem?, revealed: Boolean, onReveal: () -> Unit,
-    onRate: (Int) -> Unit, onAdd: () -> Unit,
+    onRate: (Int, Long) -> Unit, onAdd: () -> Unit,
 ) {
+    val recallStartedAt = remember(item?.id) { SystemClock.elapsedRealtime() }
     Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Heading("Retrieval practice")
         Text("Try to retrieve the answer before revealing it. Rate the effort honestly; difficulty is useful data.",
@@ -313,7 +336,10 @@ private fun RecallScreen(
             if (revealed) {
                 Text("How well did you retrieve it?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 listOf(0 to "Again", 2 to "Hard", 3 to "Got it", 5 to "Easy").forEach { (score, label) ->
-                    TextButton(onClick = { onRate(score) }, modifier = Modifier.fillMaxWidth()) { Text(label) }
+                    TextButton(
+                        onClick = { onRate(score, SystemClock.elapsedRealtime() - recallStartedAt) },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text(label) }
                 }
             }
         }
