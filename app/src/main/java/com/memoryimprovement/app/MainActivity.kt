@@ -383,7 +383,7 @@ private fun TodayScreen(
                                 color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
                             Text("A · ${pair.first.prompt}", fontWeight = FontWeight.SemiBold)
                             Text(pair.first.answer, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Divider()
+                            Surface(modifier = Modifier.fillMaxWidth().height(1.dp), color = MaterialTheme.colorScheme.outlineVariant) {}
                             Text("B · ${pair.second.prompt}", fontWeight = FontWeight.SemiBold)
                             Text(pair.second.answer, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text("Discrimination cue: make each prompt specific and give the two facts distinct, vivid associations.",
@@ -398,7 +398,7 @@ private fun TodayScreen(
                                 modifier = Modifier.fillMaxWidth(),
                             ) { Text(if (activeDrill == pair) "Restart discrimination drill" else "Practise distinction") }
                             if (activeDrill == pair) {
-                                Divider()
+                                Surface(modifier = Modifier.fillMaxWidth().height(1.dp), color = MaterialTheme.colorScheme.outlineVariant) {}
                                 Text("Which answer belongs to this cue?", fontWeight = FontWeight.SemiBold)
                                 Text(pair.first.prompt, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 TextButton(
