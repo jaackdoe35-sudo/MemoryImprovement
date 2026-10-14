@@ -1,5 +1,26 @@
 package com.memoryimprovement.app
 
+/** Search and due filtering for the library; ordering prioritizes due reviews. */
+object MemoryLibraryPlan {
+    fun filterAndSort(
+        memories: List<MemoryItem>,
+        query: String,
+        dueOnly: Boolean,
+        now: Long,
+    ): List<MemoryItem> {
+        val normalizedQuery = query.trim()
+        return memories.asSequence()
+            .filter { !dueOnly || it.nextReviewAt <= now }
+            .filter { item ->
+                normalizedQuery.isEmpty() || listOf(
+                    item.prompt, item.answer, item.palace, item.locus, item.chunkLabel, item.association,
+                ).any { it.contains(normalizedQuery, ignoreCase = true) }
+            }
+            .sortedWith(compareBy<MemoryItem> { it.nextReviewAt }.thenByDescending { it.createdAt })
+            .toList()
+    }
+}
+
 data class MemoryItem(
     val id: String,
     val prompt: String,
