@@ -7,13 +7,20 @@ import org.json.JSONArray
 import java.util.UUID
 
 /** Offline-first Room persistence, with one-time migration from the original preference store. */
-class MemoryRepository(context: Context) {
+class MemoryRepository(
+    context: Context,
+    databaseName: String = DATABASE_NAME,
+) : AutoCloseable {
     private val appContext = context.applicationContext
     private val database = Room.databaseBuilder(
         appContext,
         MemoryDatabase::class.java,
-        "memory_improvement.db",
+        databaseName,
     ).addMigrations(MemoryDatabase.MIGRATION_1_2, MemoryDatabase.MIGRATION_2_3, MemoryDatabase.MIGRATION_3_4, MemoryDatabase.MIGRATION_4_5, MemoryDatabase.MIGRATION_5_6).build()
+
+    override fun close() {
+        database.close()
+    }
     private val dao = database.memoryDao()
 
     suspend fun loadItems(): List<MemoryItem> = loadItemsWithMigrationStatus().items
@@ -236,6 +243,7 @@ class MemoryRepository(context: Context) {
     )
 
     private companion object {
+        const val DATABASE_NAME = "memory_improvement.db"
         const val PREFERENCES = "memory_improvement_local"
         const val LEGACY_ITEMS_KEY = "items_json"
         const val LEGACY_MIGRATION_PENDING_KEY = "legacy_migration_pending"
