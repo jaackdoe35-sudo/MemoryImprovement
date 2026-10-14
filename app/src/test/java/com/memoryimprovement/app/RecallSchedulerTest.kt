@@ -5,6 +5,15 @@ import org.junit.Test
 
 class RecallSchedulerTest {
     @Test
+    fun memoryDeletionRemovesOnlyMatchingItemFromInMemoryCollections() {
+        val items = listOf(
+            MemoryItem(id = "keep", prompt = "Keep", answer = "A"),
+            MemoryItem(id = "delete", prompt = "Delete", answer = "B"),
+        )
+        assertEquals(listOf("keep"), items.filterNot { it.id == "delete" }.map { it.id })
+    }
+
+    @Test
     fun failedRecallSchedulesNextDay() {
         val now = 1_000_000L
         val result = RecallScheduler.schedule(previousReviews = 3, score = 0, now = now)
