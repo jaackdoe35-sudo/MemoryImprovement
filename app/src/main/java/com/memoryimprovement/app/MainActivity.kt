@@ -905,6 +905,7 @@ private fun RecallMode.label(): String = when (this) {
     RecallMode.Reverse -> "Reverse"
     RecallMode.Sequence -> "Sequence"
     RecallMode.Discrimination -> "Discrimination"
+    RecallMode.Retention -> "Retention"
 }
 
 @Composable
