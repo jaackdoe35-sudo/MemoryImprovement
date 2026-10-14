@@ -34,6 +34,11 @@ jobs:
         run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
       - name: Run unit tests
         run: gradle testDebugUnitTest
+      - name: Run Room migration integration tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          script: gradle connectedDebugAndroidTest
       - name: Assemble debug APK
         run: gradle assembleDebug
       - name: Upload debug APK
