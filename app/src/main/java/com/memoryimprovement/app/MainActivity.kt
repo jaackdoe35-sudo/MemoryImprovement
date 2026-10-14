@@ -120,7 +120,17 @@ private fun MemoryApp(
         Column(Modifier.fillMaxSize().padding(padding)) {
             when (tab) {
                 AppTab.Today -> TodayScreen(memories, attempts, correct, { adding = true }, ::startRecall)
-                AppTab.Palace -> PalaceScreen(memories, { adding = true })
+                AppTab.Palace -> PalaceScreen(
+                    memories = memories,
+                    nodes = palaceNodes,
+                    onAddMemory = { adding = true },
+                    onCreateNode = { name, kind, parentId, onLoaded ->
+                        onCreateNode(name, kind, parentId) { refreshed ->
+                            palaceNodes = refreshed
+                            onLoaded(refreshed)
+                        }
+                    },
+                )
                 AppTab.Recall -> RecallScreen(
                     active, revealed, { revealed = true },
                     { score, latencyMs ->
@@ -285,6 +295,7 @@ private fun PalaceScreen(
     onCreateNode: (String, PalaceNodeKind, String?, (List<PalaceNode>) -> Unit) -> Unit,
 ) {
     var addParent by remember { mutableStateOf<PalaceNode?>(null) }
+    var showAddDialog by remember { mutableStateOf(false) }
     val flattened = remember(nodes) { flattenPalaceTree(nodes) }
     LazyColumn(
         Modifier.fillMaxSize().padding(18.dp),
@@ -293,7 +304,7 @@ private fun PalaceScreen(
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Heading("Memory palace")
-                TextButton(onClick = { addParent = null }) { Text("+ Palace") }
+                TextButton(onClick = { addParent = null; showAddDialog = true }) { Text("+ Palace") }
             }
             Text(
                 "Build a navigable hierarchy: palace → route or area → locus. Each node has a stable ID.",
@@ -308,7 +319,7 @@ private fun PalaceScreen(
                         Text("Create a familiar building, then add routes, areas, and distinct loci.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(10.dp))
-                        Button(onClick = { addParent = null }) { Text("Create first palace") }
+                        Button(onClick = { addParent = null; showAddDialog = true }) { Text("Create first palace") }
                     }
                 }
             }
@@ -330,7 +341,7 @@ private fun PalaceScreen(
                         style = MaterialTheme.typography.bodySmall,
                     )
                     if (allowedChildKinds(node).isNotEmpty()) {
-                        TextButton(onClick = { addParent = node }) { Text("+ Add child location") }
+                        TextButton(onClick = { addParent = node; showAddDialog = true }) { Text("+ Add child location") }
                     }
                 }
             }
@@ -343,13 +354,14 @@ private fun PalaceScreen(
         }
     }
 
-    if (addParent != null || nodes.isEmpty()) {
+    if (showAddDialog) {
         AddPalaceNodeDialog(
             parent = addParent,
             allowedKinds = allowedChildKinds(addParent),
-            onDismiss = { addParent = null },
+            onDismiss = { showAddDialog = false; addParent = null },
             onCreate = { name, kind ->
-                onCreateNode(name, kind, addParent?.id) { refreshed ->
+                onCreateNode(name, kind, addParent?.id) {
+                    showAddDialog = false
                     addParent = null
                 }
             },
