@@ -457,6 +457,38 @@ private fun TodayScreen(
             }
         }
         item {
+            Heading("Recent recall history")
+            val recentAttempts = attemptHistory.sortedByDescending { it.reviewedAt }.take(10)
+            if (recentAttempts.isEmpty()) {
+                Text("Completed recall attempts will appear here.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                val itemById = memories.associateBy { it.id }
+                recentAttempts.forEach { attempt ->
+                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text(itemById[attempt.itemId]?.prompt ?: "Memory no longer in library",
+                            fontWeight = FontWeight.SemiBold)
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("${attempt.mode.label()} · ${if (attempt.correct) "Marked correct" else "Marked incorrect"}",
+                                color = if (attempt.correct) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
+                            Text("${attempt.latencyMs / 1000.0}s",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Text("Rating ${attempt.score}/5 · ${android.text.format.DateUtils.getRelativeTimeSpanString(attempt.reviewedAt, System.currentTimeMillis(), android.text.format.DateUtils.MINUTE_IN_MILLIS)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        attempt.recalledResponse?.takeIf { it.isNotBlank() }?.let { response ->
+                            Text("Response: $response", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                    Divider(color = MaterialTheme.colorScheme.outlineVariant)
+                }
+            }
+            Text("History displays saved correctness labels and responses; it does not independently evaluate free-text answers.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        item {
             Heading("Priority practice")
             val priorities = WeakMemoryPlan.rank(memories)
             if (priorities.isEmpty()) {
