@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,6 +22,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -168,11 +171,19 @@ private fun MemoryApp(
     if (adding) {
         AddMemoryDialog(
             onDismiss = { adding = false },
-            onCreate = { prompt, answer, palace, locus ->
+            nodes = palaceNodes,
+            onCreate = { prompt, answer, palace, locus, palaceNodeId ->
                 val now = System.currentTimeMillis()
+                val selectedNode = palaceNodes.firstOrNull { it.id == palaceNodeId }
                 val item = MemoryItem(
                     id = UUID.randomUUID().toString(), prompt = prompt.trim(), answer = answer.trim(),
-                    palace = palace.trim(), locus = locus.trim(), createdAt = now, nextReviewAt = now,
+                    palace = selectedNode?.let { node ->
+                        generateSequence(node) { current -> palaceNodes.firstOrNull { it.id == current.parentId } }
+                            .lastOrNull { it.kind == PalaceNodeKind.Palace }?.name
+                    } ?: palace.trim(),
+                    locus = selectedNode?.name ?: locus.trim(),
+                    palaceNodeId = palaceNodeId,
+                    createdAt = now, nextReviewAt = now,
                 )
                 save(memories + item)
                 adding = false
@@ -503,13 +514,22 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit) {
 
 @Composable
 private fun AddMemoryDialog(
+    nodes: List<PalaceNode>,
     onDismiss: () -> Unit,
-    onCreate: (String, String, String, String) -> Unit,
+    onCreate: (String, String, String, String, String?) -> Unit,
 ) {
     var prompt by remember { mutableStateOf("") }
     var answer by remember { mutableStateOf("") }
     var palace by remember { mutableStateOf("") }
     var locus by remember { mutableStateOf("") }
+    var selectedNodeId by remember { mutableStateOf<String?>(null) }
+    var nodeMenuExpanded by remember { mutableStateOf(false) }
+    val locusNodes = nodes.filter { it.kind == PalaceNodeKind.Locus }
+    val selectedNodeName = locusNodes.firstOrNull { it.id == selectedNodeId }?.let { node ->
+        val parentNames = generateSequence(node) { current -> nodes.firstOrNull { it.id == current.parentId } }
+            .toList().asReversed().joinToString(" / ") { it.name }
+        parentNames
+    } ?: "No locus selected"
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add a memory unit") },
@@ -519,10 +539,33 @@ private fun AddMemoryDialog(
                 OutlinedTextField(answer, { answer = it }, label = { Text("Answer or fact") })
                 OutlinedTextField(palace, { palace = it }, label = { Text("Palace / building (optional)") }, singleLine = true)
                 OutlinedTextField(locus, { locus = it }, label = { Text("Locus / location (optional)") }, singleLine = true)
+                if (locusNodes.isNotEmpty()) {
+                    Text("Link to a palace locus", style = MaterialTheme.typography.labelMedium)
+                    Box {
+                        TextButton(onClick = { nodeMenuExpanded = true }) { Text(selectedNodeName) }
+                        DropdownMenu(
+                            expanded = nodeMenuExpanded,
+                            onDismissRequest = { nodeMenuExpanded = false },
+                        ) {
+                            locusNodes.forEach { node ->
+                                val path = generateSequence(node) { current ->
+                                    nodes.firstOrNull { it.id == current.parentId }
+                                }.toList().asReversed().joinToString(" / ") { it.name }
+                                DropdownMenuItem(
+                                    text = { Text(path) },
+                                    onClick = {
+                                        selectedNodeId = node.id
+                                        nodeMenuExpanded = false
+                                    },
+                                )
+                            }
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
-            Button(onClick = { onCreate(prompt, answer, palace, locus) },
+            Button(onClick = { onCreate(prompt, answer, palace, locus, selectedNodeId) },
                 enabled = prompt.isNotBlank() && answer.isNotBlank()) { Text("Save locally") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
