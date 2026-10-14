@@ -1751,6 +1751,20 @@ private fun AddMemoryDialog(
                 OutlinedTextField(association, { association = it }, label = { Text("Vivid image or action association (optional)") }, minLines = 2)
                 OutlinedTextField(sequenceOrderText, { value -> sequenceOrderText = value.filter(Char::isDigit).take(4) }, label = { Text("Sequence position (optional, e.g. 1)") }, singleLine = true)
                 Text("Group related facts under one chunk. Use a concrete, unusual image or action. Number items only when order matters.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                val encodingCheck = EncodingQualityPlan.evaluate(prompt, answer, chunkLabel, association)
+                Text(
+                    "Local encoding checklist: ${encodingCheck.score}/${encodingCheck.maxScore}",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    "This is a completeness checklist, not a prediction of how well you will remember the fact.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                encodingCheck.suggestions.forEach { suggestion ->
+                    Text("• $suggestion", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                }
                 OutlinedTextField(palace, { palace = it }, label = { Text("Palace / building (optional)") }, singleLine = true)
                 OutlinedTextField(locus, { locus = it }, label = { Text("Locus / location (optional)") }, singleLine = true)
                 if (locusNodes.isNotEmpty()) {
