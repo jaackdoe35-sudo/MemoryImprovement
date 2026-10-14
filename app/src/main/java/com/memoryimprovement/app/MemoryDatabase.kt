@@ -92,6 +92,9 @@ interface MemoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertItems(items: List<MemoryItemEntity>)
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertLegacyItemsIfAbsent(items: List<MemoryItemEntity>)
+
     @Query("DELETE FROM memory_items WHERE id = :itemId")
     suspend fun deleteItem(itemId: String)
 
