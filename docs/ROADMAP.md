@@ -15,7 +15,7 @@
 - [x] Persist recall attempts and timestamps, including retrieval latency; free-recall response capture is now stored as well.
 - [x] Implement initial cued, free, and reverse recall modes; manual ratings remain subjective.
 - [ ] Add editing, deletion, import/export, and safe backup.
-- [ ] Add automated repository and scheduler tests.
+- [ ] Add automated repository and scheduler tests (checkpoint schedule unit tests added; repository/migration tests still needed).
 
 ## Milestone 2 — navigable memory palaces (in progress)
 
@@ -28,9 +28,9 @@
 
 ## Milestone 3 — retention measurement
 
-- [ ] Store immediate and delayed test outcomes (free-recall responses are captured; scheduled delayed checkpoints remain unimplemented).
+- [x] Define and persist 24-hour, 7-day, and 30-day retention checkpoints; initialize missing checkpoints for existing memories.
 - [ ] Track accuracy, latency, order accuracy, and interference; free-recall correctness is not yet independently scored.
-- [ ] Surface 24-hour, 7-day, and 30-day checkpoints.
+- [ ] Surface and run 24-hour, 7-day, and 30-day checkpoints in the UI, then display retention trends.
 - [ ] Compare methods on comparable material and time invested.
 - [ ] Avoid declaring a method superior without enough comparable observations.
 
