@@ -58,6 +58,7 @@ data class RecallAttemptEntity(
     val correct: Boolean,
     val score: Int,
     val latencyMs: Long,
+    val recalledResponse: String?,
     val reviewedAt: Long,
 )
 
@@ -105,13 +106,19 @@ interface MemoryDao {
 
 @Database(
     entities = [MemoryItemEntity::class, RecallAttemptEntity::class, PalaceNodeEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false,
 )
 abstract class MemoryDatabase : RoomDatabase() {
     abstract fun memoryDao(): MemoryDao
 
     companion object {
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE recall_attempts ADD COLUMN recalledResponse TEXT")
+            }
+        }
+
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE memory_items ADD COLUMN palaceNodeId TEXT")
