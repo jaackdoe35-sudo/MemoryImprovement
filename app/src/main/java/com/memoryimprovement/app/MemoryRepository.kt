@@ -12,7 +12,7 @@ class MemoryRepository(context: Context) {
         appContext,
         MemoryDatabase::class.java,
         "memory_improvement.db",
-    ).addMigrations(MemoryDatabase.MIGRATION_1_2).build()
+    ).addMigrations(MemoryDatabase.MIGRATION_1_2, MemoryDatabase.MIGRATION_2_3).build()
     private val dao = database.memoryDao()
 
     suspend fun loadItems(): List<MemoryItem> {
@@ -33,6 +33,7 @@ class MemoryRepository(context: Context) {
                 correct = attempt.correct,
                 score = attempt.score,
                 latencyMs = attempt.latencyMs.coerceAtLeast(0L),
+                recalledResponse = attempt.recalledResponse,
                 reviewedAt = attempt.reviewedAt,
             ),
         )
