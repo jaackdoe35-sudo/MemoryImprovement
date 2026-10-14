@@ -207,6 +207,27 @@ class RecallSchedulerTest {
     }
 
     @Test
+    fun retentionReviewPlanUpdatesScheduleAndReviewCountFromEffortScore() {
+        val original = MemoryItem(
+            id = "retained", prompt = "P", answer = "A",
+            createdAt = 1L, nextReviewAt = 2L, lastScore = 4, reviewCount = 2,
+        )
+        val completedAt = 10L * 24L * 60L * 60L * 1000L
+        val updated = RetentionReviewPlan.apply(original, effortScore = 1, completedAt = completedAt)
+        assertEquals(completedAt + 24L * 60L * 60L * 1000L, updated.nextReviewAt)
+        assertEquals(1, updated.lastScore)
+        assertEquals(3, updated.reviewCount)
+        assertEquals(original.id, updated.id)
+    }
+
+    @Test
+    fun retentionReviewPlanClampsEffortScore() {
+        val item = MemoryItem(id = "a", prompt = "P", answer = "A")
+        assertEquals(0, RetentionReviewPlan.apply(item, -10, 100L).lastScore)
+        assertEquals(5, RetentionReviewPlan.apply(item, 99, 100L).lastScore)
+    }
+
+    @Test
     fun scoreIsClampedToSupportedRange() {
         assertEquals(5, RecallScheduler.schedule(0, 9, 0L).score)
         assertEquals(0, RecallScheduler.schedule(0, -3, 0L).score)
