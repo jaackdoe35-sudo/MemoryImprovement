@@ -2,6 +2,8 @@ package com.memoryimprovement.app
 
 import android.os.Bundle
 import android.os.SystemClock
+import android.net.Uri
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.lifecycle.lifecycleScope
@@ -46,8 +48,15 @@ import androidx.compose.ui.unit.dp
 import java.util.UUID
 
 class MainActivity : ComponentActivity() {
+    private var pendingExport: String = ""
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val createExportFile = registerForActivityResult(ActivityResultContracts.CreateDocument("text/tab-separated-values")) { uri: Uri? ->
+            if (uri != null) {
+                contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { it.write(pendingExport) }
+            }
+        }
         val repository = MemoryRepository(applicationContext)
         lifecycleScope.launch {
             val initialItems = repository.loadItems()
@@ -63,6 +72,10 @@ class MainActivity : ComponentActivity() {
                             initialAttempts = initialAttempts,
                             initialCheckpoints = initialCheckpoints,
                             onSave = { updated -> lifecycleScope.launch { repository.saveItems(updated) } },
+                            onExportMemories = { items ->
+                                pendingExport = MemoryExportPlan.toTsv(items)
+                                createExportFile.launch("memory-improvement-memories.tsv")
+                            },
                             onDeleteMemory = { itemId, onDeleted ->
                                 lifecycleScope.launch {
                                     repository.deleteMemory(itemId)
@@ -102,6 +115,7 @@ private fun MemoryApp(
     initialAttempts: List<RecallAttempt>,
     initialCheckpoints: List<RetentionCheckpoint>,
     onSave: (List<MemoryItem>) -> Unit,
+    onExportMemories: (List<MemoryItem>) -> Unit,
     onDeleteMemory: (String, () -> Unit) -> Unit,
     onAttempt: (RecallAttempt) -> Unit,
     onCompleteRetention: (String, Int, Long, String?, Int, (List<RetentionCheckpoint>) -> Unit) -> Unit,
@@ -290,6 +304,7 @@ private fun MemoryApp(
                     onEdit = { editingMemory = it },
                     onDelete = { deletingMemory = it },
                     onImport = { bulkImportOpen = true; bulkImportError = null },
+                    onExport = { onExportMemories(memories) },
                 )
             }
         }
@@ -1296,7 +1311,7 @@ private fun RecallScreen(
 }
 
 @Composable
-private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit: (MemoryItem) -> Unit, onDelete: (MemoryItem) -> Unit, onImport: () -> Unit) {
+private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit: (MemoryItem) -> Unit, onDelete: (MemoryItem) -> Unit, onImport: () -> Unit, onExport: () -> Unit) {
     var searchQuery by remember { mutableStateOf("") }
     var dueOnly by remember { mutableStateOf(false) }
     val now = System.currentTimeMillis()
@@ -1308,6 +1323,7 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Heading("Memory library")
             Row {
+                TextButton(onClick = onExport, enabled = memories.isNotEmpty()) { Text("Export TSV") }
                 TextButton(onClick = onImport) { Text("Import TSV") }
                 TextButton(onClick = onAdd) { Text("+ Add") }
             }
