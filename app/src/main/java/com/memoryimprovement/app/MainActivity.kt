@@ -364,7 +364,7 @@ private fun TodayScreen(
                                 color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
                             Text("A · ${pair.first.prompt}", fontWeight = FontWeight.SemiBold)
                             Text(pair.first.answer, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            HorizontalDivider()
+                            Divider()
                             Text("B · ${pair.second.prompt}", fontWeight = FontWeight.SemiBold)
                             Text(pair.second.answer, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text("Discrimination cue: make each prompt specific and give the two facts distinct, vivid associations.",
