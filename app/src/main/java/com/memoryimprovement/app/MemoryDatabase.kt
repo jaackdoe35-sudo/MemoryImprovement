@@ -150,6 +150,9 @@ interface MemoryDao {
     @Query("UPDATE memory_items SET palaceNodeId = NULL WHERE palaceNodeId IN (:nodeIds)")
     suspend fun clearMemoryPalaceNodeReferences(nodeIds: List<String>)
 
+    @Query("UPDATE palace_nodes SET name = :name WHERE id = :id")
+    suspend fun renamePalaceNode(id: String, name: String)
+
     @Query("DELETE FROM palace_nodes WHERE id = :id")
     suspend fun deletePalaceNode(id: String)
 }
