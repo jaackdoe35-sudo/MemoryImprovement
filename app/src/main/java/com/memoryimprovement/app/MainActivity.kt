@@ -703,7 +703,7 @@ private fun TodayScreen(
         }
         item {
             Heading("Priority practice")
-            val priorities = WeakMemoryPlan.rank(memories)
+            val priorities = WeakMemoryPlan.rank(memories, attemptHistory)
             if (priorities.isEmpty()) {
                 Text("Add memory items to build a targeted practice queue.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
