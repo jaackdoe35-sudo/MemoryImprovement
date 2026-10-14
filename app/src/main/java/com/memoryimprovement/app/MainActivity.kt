@@ -58,6 +58,11 @@ class MainActivity : ComponentActivity() {
                 contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { it.write(pendingExport) }
             }
         }
+        val createLegacyBackup = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri: Uri? ->
+            if (uri != null) {
+                contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { it.write(pendingExport) }
+            }
+        }
         val openImportFile = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
             if (uri != null) {
                 runCatching {
@@ -94,7 +99,7 @@ class MainActivity : ComponentActivity() {
                             },
                             onExportLegacyData = { raw ->
                                 pendingExport = raw
-                                createExportFile.launch("memory-improvement-legacy-backup.json")
+                                createLegacyBackup.launch("memory-improvement-legacy-backup.json")
                             },
                             onChooseImportFile = { consume ->
                                 pendingImportConsumer = consume
