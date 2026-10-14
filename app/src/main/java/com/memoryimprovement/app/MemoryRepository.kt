@@ -3,6 +3,7 @@ package com.memoryimprovement.app
 import android.content.Context
 import androidx.room.Room
 import org.json.JSONArray
+import java.util.UUID
 
 /** Offline-first Room persistence, with one-time migration from the original preference store. */
 class MemoryRepository(context: Context) {
@@ -11,7 +12,7 @@ class MemoryRepository(context: Context) {
         appContext,
         MemoryDatabase::class.java,
         "memory_improvement.db",
-    ).build()
+    ).addMigrations(MemoryDatabase.MIGRATION_1_2).build()
     private val dao = database.memoryDao()
 
     suspend fun loadItems(): List<MemoryItem> {
@@ -35,6 +36,37 @@ class MemoryRepository(context: Context) {
                 reviewedAt = attempt.reviewedAt,
             ),
         )
+    }
+
+    suspend fun loadPalaceNodes(): List<PalaceNode> =
+        dao.getPalaceNodes().map { it.toModel() }
+
+    suspend fun createPalaceNode(name: String, kind: PalaceNodeKind, parentId: String?) {
+        val normalizedName = name.trim()
+        require(normalizedName.isNotEmpty()) { "Node name cannot be empty." }
+        val parent = parentId?.let { dao.getPalaceNode(it) }
+        require(parentId == null || parent != null) { "Parent node does not exist." }
+        require(
+            when (kind) {
+                PalaceNodeKind.Palace -> parent == null
+                PalaceNodeKind.Route, PalaceNodeKind.Area -> parent?.kind in
+                    listOf(PalaceNodeKind.Palace.name, PalaceNodeKind.Route.name, PalaceNodeKind.Area.name)
+                PalaceNodeKind.Locus -> parent?.kind in
+                    listOf(PalaceNodeKind.Palace.name, PalaceNodeKind.Route.name, PalaceNodeKind.Area.name)
+            },
+        ) { "This node type cannot be placed under the selected parent." }
+        dao.insertPalaceNode(
+            PalaceNodeEntity(
+                id = UUID.randomUUID().toString(),
+                name = normalizedName,
+                kind = kind.name,
+                parentId = parentId,
+            ),
+        )
+    }
+
+    suspend fun deletePalaceNode(id: String) {
+        dao.deletePalaceNode(id)
     }
 
     private suspend fun migrateLegacyItems() {
@@ -67,13 +99,22 @@ class MemoryRepository(context: Context) {
     private fun MemoryItemEntity.toModel() = MemoryItem(
         id = id, prompt = prompt, answer = answer, palace = palace, locus = locus,
         createdAt = createdAt, nextReviewAt = nextReviewAt, lastScore = lastScore,
-        reviewCount = reviewCount,
+        reviewCount = reviewCount, palaceNodeId = palaceNodeId,
     )
 
     private fun MemoryItem.toEntity() = MemoryItemEntity(
         id = id, prompt = prompt, answer = answer, palace = palace, locus = locus,
         createdAt = createdAt, nextReviewAt = nextReviewAt, lastScore = lastScore,
-        reviewCount = reviewCount,
+        reviewCount = reviewCount, palaceNodeId = palaceNodeId,
+    )
+
+    private fun PalaceNodeEntity.toModel() = PalaceNode(
+        id = id,
+        name = name,
+        kind = runCatching { PalaceNodeKind.valueOf(kind) }.getOrDefault(PalaceNodeKind.Locus),
+        parentId = parentId,
+        position = position,
+        createdAt = createdAt,
     )
 
     private companion object {
