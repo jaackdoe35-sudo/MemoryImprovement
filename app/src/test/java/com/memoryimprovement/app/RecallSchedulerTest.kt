@@ -63,7 +63,7 @@ class RecallSchedulerTest {
     fun interferencePlanFindsItemsWithStrongSharedTerms() {
         val items = listOf(
             MemoryItem(id = "a", prompt = "What does access control protect?", answer = "Access control protects restricted resources"),
-            MemoryItem(id = "b", prompt = "What does access control enforce?", answer = "Access control enforces approved permissions"),
+            MemoryItem(id = "b", prompt = "What does access control protect?", answer = "Access control protects approved resources"),
             MemoryItem(id = "c", prompt = "How does photosynthesis work?", answer = "Plants convert sunlight into chemical energy"),
         )
         val pairs = MemoryInterferencePlan.find(items)
