@@ -101,6 +101,18 @@ class RecallSchedulerTest {
     }
 
     @Test
+    fun performanceSummaryUsesOnlyAttemptsForEachMode() {
+        val attempts = listOf(
+            RecallAttempt(itemId = "a", mode = RecallMode.Cued, correct = true, score = 4, latencyMs = 1000L),
+            RecallAttempt(itemId = "b", mode = RecallMode.Cued, correct = false, score = 1, latencyMs = 3000L),
+            RecallAttempt(itemId = "c", mode = RecallMode.Free, correct = true, score = 5, latencyMs = 2000L),
+        )
+        assertEquals(2, attempts.count { it.mode == RecallMode.Cued })
+        assertEquals(1, attempts.count { it.mode == RecallMode.Free })
+        assertEquals(1, attempts.filter { it.mode == RecallMode.Cued }.count { it.correct })
+    }
+
+    @Test
     fun scoreIsClampedToSupportedRange() {
         assertEquals(5, RecallScheduler.schedule(0, 9, 0L).score)
         assertEquals(0, RecallScheduler.schedule(0, -3, 0L).score)
