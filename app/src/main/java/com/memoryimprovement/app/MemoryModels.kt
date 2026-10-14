@@ -40,6 +40,31 @@ data class RecallAttempt(
 
 data class RecallOutcome(val nextReviewAt: Long, val intervalDays: Int, val score: Int)
 
+data class RetentionCheckpoint(
+    val id: String,
+    val itemId: String,
+    val delayDays: Int,
+    val dueAt: Long,
+    val completedAt: Long? = null,
+    val score: Int? = null,
+    val latencyMs: Long? = null,
+    val recalledResponse: String? = null,
+)
+
+object RetentionCheckpointPlan {
+    val delaysDays = listOf(1, 7, 30)
+
+    fun dueTimes(itemId: String, encodedAt: Long): List<RetentionCheckpoint> =
+        delaysDays.map { days ->
+            RetentionCheckpoint(
+                id = "$itemId-$days",
+                itemId = itemId,
+                delayDays = days,
+                dueAt = encodedAt + days * 24L * 60L * 60L * 1000L,
+            )
+        }
+}
+
 /** Transparent baseline; evaluate against measured delayed recall before claiming it is optimal. */
 object RecallScheduler {
     fun schedule(previousReviews: Int, score: Int, now: Long = System.currentTimeMillis()): RecallOutcome {
