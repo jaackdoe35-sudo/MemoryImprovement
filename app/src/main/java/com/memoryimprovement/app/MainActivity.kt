@@ -988,9 +988,12 @@ private fun TodayScreen(
                                 }
                                 val accuracyRatings = group.mapNotNull { it.accuracy }
                                 if (accuracyRatings.isNotEmpty()) {
-                                    val accuracyPercent = accuracyRatings.count { it == 2 } * 100 / accuracyRatings.size
+                                    val fullyCorrect = accuracyRatings.count { it == 2 }
+                                    val partiallyCorrect = accuracyRatings.count { it == 1 }
+                                    val incorrect = accuracyRatings.count { it == 0 }
+                                    val accuracyPercent = fullyCorrect * 100 / accuracyRatings.size
                                     Text(
-                                        "Fully correct by self-check: $accuracyPercent% (${accuracyRatings.size} rated)",
+                                        "Fully correct: $fullyCorrect (${accuracyPercent}%) · Partial: $partiallyCorrect · Incorrect: $incorrect (${accuracyRatings.size} checked)",
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
