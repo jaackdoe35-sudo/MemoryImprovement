@@ -581,6 +581,36 @@ private fun TodayScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
+            Heading("Progress by memory")
+            val progress = MemoryProgressPlan.summarize(memories, attemptHistory)
+            if (progress.isEmpty()) {
+                Text("Each memory appears here after at least two recorded recall attempts.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                Text("First-versus-latest comparisons use recorded attempt labels, not automatic grading of free-text responses.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                progress.forEach { itemProgress ->
+                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(itemProgress.item.prompt, fontWeight = FontWeight.SemiBold)
+                            Text("${itemProgress.attemptCount} attempts · ${itemProgress.correctCount} marked correct")
+                            val change = when {
+                                !itemProgress.firstCorrect && itemProgress.latestCorrect -> "Improved: latest attempt marked correct"
+                                itemProgress.firstCorrect && !itemProgress.latestCorrect -> "Regressed: latest attempt marked incorrect"
+                                itemProgress.latestCorrect -> "Latest attempt marked correct"
+                                else -> "Still marked incorrect on latest attempt"
+                            }
+                            Text(change, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Mean retrieval time: ${"%.1f".format(itemProgress.meanLatencyMs / 1000.0)} s",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+        }
+        item {
             Heading("Repeated errors")
             val repeatedErrors = RepeatedErrorPlan.find(memories, attemptHistory)
             if (repeatedErrors.isEmpty()) {
