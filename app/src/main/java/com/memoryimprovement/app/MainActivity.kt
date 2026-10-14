@@ -292,7 +292,18 @@ private fun MemoryApp(
                     onReveal = { revealed = true },
                     onRate = { score, latencyMs, recalledResponse ->
                         val current = active ?: return@RecallScreen
-                        val outcome = RecallScheduler.schedule(current.reviewCount, score)
+                        val recentAttempts = attemptHistory
+                            .asSequence()
+                            .filter { it.itemId == current.id }
+                            .sortedByDescending { it.reviewedAt }
+                            .take(2)
+                            .toList()
+                        val consecutiveFailures = recentAttempts.takeWhile { !it.correct }.size
+                        val outcome = RecallScheduler.schedule(
+                            previousReviews = current.reviewCount,
+                            score = score,
+                            consecutiveFailures = consecutiveFailures,
+                        )
                         val updated = memories.map { memory ->
                             if (memory.id == current.id) memory.copy(
                                 nextReviewAt = outcome.nextReviewAt,
