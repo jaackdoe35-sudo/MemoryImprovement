@@ -372,9 +372,15 @@ object WeakMemoryPlan {
 }
 
 object RecallScheduler {
-    fun schedule(previousReviews: Int, score: Int, now: Long = System.currentTimeMillis()): RecallOutcome {
+    fun schedule(
+        previousReviews: Int,
+        score: Int,
+        now: Long = System.currentTimeMillis(),
+        consecutiveFailures: Int = 0,
+    ): RecallOutcome {
         val normalized = score.coerceIn(0, 5)
         val interval = when {
+            consecutiveFailures >= 2 -> 1
             normalized <= 1 -> 1
             normalized == 2 -> 2
             normalized == 3 -> listOf(1, 3, 7, 14)[previousReviews.coerceIn(0, 3)]
