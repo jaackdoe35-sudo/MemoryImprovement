@@ -51,12 +51,14 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             val initialItems = repository.loadItems()
             val initialNodes = repository.loadPalaceNodes()
+            val initialAttempts = repository.loadAttempts()
             setContent {
                 MaterialTheme {
                     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                         MemoryApp(
                             initialItems = initialItems,
                             initialNodes = initialNodes,
+                            initialAttempts = initialAttempts,
                             onSave = { updated -> lifecycleScope.launch { repository.saveItems(updated) } },
                             onAttempt = { attempt -> lifecycleScope.launch { repository.saveAttempt(attempt) } },
                             onCreateNode = { name, kind, parentId, onLoaded ->
@@ -82,6 +84,7 @@ private enum class AppTab(val label: String) {
 private fun MemoryApp(
     initialItems: List<MemoryItem>,
     initialNodes: List<PalaceNode>,
+    initialAttempts: List<RecallAttempt>,
     onSave: (List<MemoryItem>) -> Unit,
     onAttempt: (RecallAttempt) -> Unit,
     onCreateNode: (String, PalaceNodeKind, String?, (List<PalaceNode>) -> Unit) -> Unit,
@@ -92,8 +95,8 @@ private fun MemoryApp(
     var adding by remember { mutableStateOf(false) }
     var active by remember { mutableStateOf<MemoryItem?>(null) }
     var revealed by remember { mutableStateOf(false) }
-    var attempts by remember { mutableStateOf(0) }
-    var correct by remember { mutableStateOf(0) }
+    var attempts by remember { mutableStateOf(initialAttempts.size) }
+    var correct by remember { mutableStateOf(initialAttempts.count { it.correct }) }
     var recallMode by remember { mutableStateOf(RecallMode.Cued) }
 
     fun save(updated: List<MemoryItem>) {
@@ -240,8 +243,8 @@ private fun TodayScreen(
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 MetricCard("Stored", memories.size.toString(), "memory units", Modifier.weight(1f))
-                MetricCard("Recalled", attempts.toString(), "this session", Modifier.weight(1f))
-                MetricCard("Accuracy", if (attempts == 0) "—" else "${(correct * 100) / attempts}%", "session", Modifier.weight(1f))
+                MetricCard("Attempts", attempts.toString(), "all recorded", Modifier.weight(1f))
+                MetricCard("Self-rated success", if (attempts == 0) "—" else "${(correct * 100) / attempts}%", "all recorded attempts", Modifier.weight(1f))
             }
         }
         item { Heading("The system") }
