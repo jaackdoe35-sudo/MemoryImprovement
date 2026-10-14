@@ -398,6 +398,35 @@ private fun TodayScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
+            Heading("Repeated errors")
+            val repeatedErrors = RepeatedErrorPlan.find(memories, attemptHistory)
+            if (repeatedErrors.isEmpty()) {
+                Text("No memories have two or more attempts marked incorrect yet.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                Text("These items have repeated recorded failures. The list uses saved attempt labels, not automatic grading of free-text answers.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                repeatedErrors.forEach { error ->
+                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                            Text(error.item.prompt, fontWeight = FontWeight.SemiBold)
+                            Text("${error.incorrectAttempts} recorded incorrect attempts",
+                                color = MaterialTheme.colorScheme.error)
+                            error.lastIncorrectResponse?.let {
+                                Text("Latest recorded response: $it",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Button(onClick = { onStartPriority(error.item) }, modifier = Modifier.fillMaxWidth()) {
+                                Text("Practise this memory")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        item {
             Heading("Priority practice")
             val priorities = WeakMemoryPlan.rank(memories)
             if (priorities.isEmpty()) {
