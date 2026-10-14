@@ -339,14 +339,26 @@ object RetentionAnalytics {
 data class WeakMemoryPriority(val item: MemoryItem, val priority: Int, val reason: String)
 
 object WeakMemoryPlan {
-    /** Prioritizes low last scores and overdue review dates; this is a transparent baseline, not an ML prediction. */
+    /** Transparent baseline, not an ML prediction. Repeated incorrect labels add a capped priority bonus. */
     fun rank(memories: List<MemoryItem>, now: Long = System.currentTimeMillis(), limit: Int = 5): List<WeakMemoryPriority> =
-        memories.map { item ->
+        rank(memories, emptyList(), now, limit)
+
+    fun rank(
+        memories: List<MemoryItem>,
+        attempts: List<RecallAttempt>,
+        now: Long = System.currentTimeMillis(),
+        limit: Int = 5,
+    ): List<WeakMemoryPriority> {
+        val failuresByItem = attempts.filterNot { it.correct }.groupingBy { it.itemId }.eachCount()
+        return memories.map { item ->
             val lowScore = item.lastScore?.let { (5 - it.coerceIn(0, 5)) * 3 } ?: 0
             val overdueDays = ((now - item.nextReviewAt).coerceAtLeast(0L) / (24L * 60L * 60L * 1000L)).coerceAtMost(30L).toInt()
             val untested = if (item.reviewCount == 0) 2 else 0
-            val priority = lowScore + overdueDays + untested
+            val failures = failuresByItem[item.id] ?: 0
+            val repeatedFailureBonus = (failures * 2).coerceAtMost(10)
+            val priority = lowScore + overdueDays + untested + repeatedFailureBonus
             val reason = when {
+                failures >= 2 -> "Repeated incorrect attempts ($failures)"
                 item.lastScore != null && item.lastScore <= 2 -> "Low last self-rating"
                 overdueDays > 0 -> "Overdue by $overdueDays day(s)"
                 item.reviewCount == 0 -> "Not yet practised"
@@ -356,7 +368,7 @@ object WeakMemoryPlan {
         }
             .sortedWith(compareByDescending<WeakMemoryPriority> { it.priority }.thenBy { it.item.nextReviewAt }.thenBy { it.item.prompt.lowercase() })
             .take(limit)
-
+    }
 }
 
 object RecallScheduler {
