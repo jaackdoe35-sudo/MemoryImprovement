@@ -52,6 +52,43 @@ class RecallSchedulerTest {
     }
 
     @Test
+    fun exportImportPreservesTabsNewlinesCarriageReturnsAndBackslashes() {
+        val item = MemoryItem(
+            id = "escaped",
+            prompt = "Question\twith tab\nand newline",
+            answer = "Line one\r\nLine two\\literal",
+            palace = "Palace\tA",
+            locus = "Room\nB",
+            chunkLabel = "Chunk\\C",
+            association = "Association\rD",
+            sequenceOrder = 4,
+        )
+        val row = MemoryImportPlan.parseTsv(MemoryExportPlan.toTsv(listOf(item))).single()
+        assertEquals(item.prompt, row.prompt)
+        assertEquals(item.answer, row.answer)
+        assertEquals(item.palace, row.palace)
+        assertEquals(item.locus, row.locus)
+        assertEquals(item.chunkLabel, row.chunkLabel)
+        assertEquals(item.association, row.association)
+        assertEquals(item.sequenceOrder, row.sequenceOrder)
+    }
+
+    @Test
+    fun legacyTsvWithoutEscapesStillParses() {
+        val row = MemoryImportPlan.parseTsv("Question?\tAnswer\tPalace\tDesk").single()
+        assertEquals("Question?", row.prompt)
+        assertEquals("Answer", row.answer)
+        assertEquals("Palace", row.palace)
+        assertEquals("Desk", row.locus)
+    }
+
+    @Test
+    fun importRejectsUnknownAndTrailingEscapeSequences() {
+        assertEquals(true, runCatching { MemoryImportPlan.parseTsv("Q\\x\tA") }.exceptionOrNull() is IllegalArgumentException)
+        assertEquals(true, runCatching { MemoryImportPlan.parseTsv("Q\\") }.exceptionOrNull() is IllegalArgumentException)
+    }
+
+    @Test
     fun importPreviewCountsNewRowsAndDuplicatesBeforeSaving() {
         val existing = listOf(MemoryItem(id = "old", prompt = "Capital?", answer = "Lagos"))
         val parsed = MemoryImportPlan.parseTsv(
