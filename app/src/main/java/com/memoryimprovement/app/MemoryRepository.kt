@@ -163,6 +163,13 @@ class MemoryRepository(
         )
     }
 
+    suspend fun renamePalaceNode(id: String, name: String) {
+        val normalizedName = name.trim()
+        require(normalizedName.isNotEmpty()) { "Node name cannot be empty." }
+        require(dao.getPalaceNode(id) != null) { "Palace location does not exist." }
+        dao.renamePalaceNode(id, normalizedName)
+    }
+
     /** Deletes a palace branch and atomically unlinks memories assigned anywhere in that branch. */
     suspend fun deletePalaceNode(id: String) = database.withTransaction {
         val nodes = dao.getPalaceNodes().map { it.toModel() }
