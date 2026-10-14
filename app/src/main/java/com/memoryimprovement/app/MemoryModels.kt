@@ -32,30 +32,85 @@ data class MemoryImportRow(
 )
 
 object MemoryImportPlan {
-    /** Parses tab-separated rows: prompt, answer, palace, locus, chunk, association, sequence order. */
+    /**
+     * Parses seven-column TSV. Backslash escapes (\t, \n, \r, \\) are decoded in cells.
+     * Literal backslashes must be escaped as \\; legacy TSV without escapes remains supported.
+     */
     fun parseTsv(text: String): List<MemoryImportRow> {
-        val rows = text.lineSequence().mapIndexedNotNull { index, raw ->
-            if (raw.isBlank()) return@mapIndexedNotNull null
-            val columns = raw.split('\t')
-            require(columns.size in 2..7) { "Line ${index + 1}: expected 2–7 tab-separated columns." }
-            val prompt = columns[0].trim()
-            val answer = columns[1].trim()
-            require(prompt.isNotEmpty() && answer.isNotEmpty()) {
-                "Line ${index + 1}: prompt and answer are required."
+        val rows = mutableListOf<MemoryImportRow>()
+        var cells = mutableListOf(StringBuilder())
+        var line = 1
+        var rowStartLine = 1
+        var escaped = false
+
+        fun finishRow() {
+            val columns = cells.map { it.toString() }
+            if (columns.all { it.isBlank() }) {
+                cells = mutableListOf(StringBuilder())
+                rowStartLine = line + 1
+                return
             }
-            val orderText = columns.getOrNull(6)?.trim().orEmpty()
+            require(columns.size in 2..7) {
+                "Line $rowStartLine: expected 2–7 tab-separated columns."
+            }
+            val prompt = columns[0]
+            val answer = columns[1]
+            require(prompt.isNotEmpty() && answer.isNotEmpty()) {
+                "Line $rowStartLine: prompt and answer are required."
+            }
+            val orderText = columns.getOrNull(6).orEmpty()
             val order = if (orderText.isEmpty()) null else orderText.toIntOrNull()?.takeIf { it > 0 }
-                ?: throw IllegalArgumentException("Line ${index + 1}: sequence order must be a positive integer.")
-            MemoryImportRow(
+                ?: throw IllegalArgumentException("Line $rowStartLine: sequence order must be a positive integer.")
+            rows += MemoryImportRow(
                 prompt = prompt,
                 answer = answer,
-                palace = columns.getOrNull(2)?.trim().orEmpty(),
-                locus = columns.getOrNull(3)?.trim().orEmpty(),
-                chunkLabel = columns.getOrNull(4)?.trim().orEmpty(),
-                association = columns.getOrNull(5)?.trim().orEmpty(),
+                palace = columns.getOrNull(2).orEmpty(),
+                locus = columns.getOrNull(3).orEmpty(),
+                chunkLabel = columns.getOrNull(4).orEmpty(),
+                association = columns.getOrNull(5).orEmpty(),
                 sequenceOrder = order,
             )
-        }.toList()
+            cells = mutableListOf(StringBuilder())
+            rowStartLine = line + 1
+        }
+
+        var index = 0
+        while (index < text.length) {
+            val ch = text[index]
+            if (escaped) {
+                cells.last().append(
+                    when (ch) {
+                        't' -> '\t'
+                        'n' -> '\n'
+                        'r' -> '\r'
+                        '\\' -> '\\'
+                        else -> throw IllegalArgumentException("Line $line: unsupported escape sequence \\$ch.")
+                    }
+                )
+                escaped = false
+            } else {
+                when (ch) {
+                    '\\' -> escaped = true
+                    '\t' -> cells.add(StringBuilder())
+                    '\n' -> {
+                        finishRow()
+                        line++
+                    }
+                    '\r' -> {
+                        if (index + 1 < text.length && text[index + 1] == '\n') {
+                            // CRLF is one record separator.
+                        } else {
+                            finishRow()
+                            line++
+                        }
+                    }
+                    else -> cells.last().append(ch)
+                }
+            }
+            index++
+        }
+        require(!escaped) { "Line $line: trailing escape character." }
+        if (cells.size > 1 || cells.first().isNotEmpty()) finishRow()
         require(rows.isNotEmpty()) { "Paste at least one valid row." }
         return rows
     }
@@ -72,9 +127,21 @@ object MemoryImportPlan {
 data class MemoryImportBatch(val rows: List<MemoryImportRow>, val duplicatesSkipped: Int)
 
 object MemoryExportPlan {
-    /** Exports memory content as seven-column TSV, compatible with MemoryImportPlan. */
+    /** Exports seven-column TSV; escapes special characters so import can restore exact cell content. */
     fun toTsv(memories: List<MemoryItem>): String {
-        fun cell(value: String) = value.replace('\t', ' ').replace('\n', ' ').replace('\r', ' ').trim()
+        fun cell(value: String) = buildString(value.length) {
+            value.forEach { ch ->
+                append(
+                    when (ch) {
+                        '\\' -> "\\\\"
+                        '\t' -> "\\t"
+                        '\n' -> "\\n"
+                        '\r' -> "\\r"
+                        else -> ch.toString()
+                    }
+                )
+            }
+        }
         return memories.joinToString("\n") { item ->
             listOf(
                 item.prompt, item.answer, item.palace, item.locus, item.chunkLabel, item.association,
