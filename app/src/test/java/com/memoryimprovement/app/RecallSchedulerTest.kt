@@ -186,6 +186,27 @@ class RecallSchedulerTest {
     }
 
     @Test
+    fun memoryProgressComparesFirstAndLatestAttemptAndOmitsSingleAttempts() {
+        val memories = listOf(
+            MemoryItem(id = "improved", prompt = "Improved", answer = "A"),
+            MemoryItem(id = "single", prompt = "Single", answer = "B"),
+        )
+        val attempts = listOf(
+            RecallAttempt("improved", RecallMode.Free, false, 0, 3000L, reviewedAt = 10L),
+            RecallAttempt("improved", RecallMode.Free, true, 5, 1000L, reviewedAt = 20L),
+            RecallAttempt("single", RecallMode.Cued, true, 5, 500L, reviewedAt = 15L),
+            RecallAttempt("deleted", RecallMode.Cued, true, 5, 500L, reviewedAt = 30L),
+        )
+        val summary = MemoryProgressPlan.summarize(memories, attempts).single()
+        assertEquals("improved", summary.item.id)
+        assertEquals(2, summary.attemptCount)
+        assertEquals(1, summary.correctCount)
+        assertEquals(false, summary.firstCorrect)
+        assertEquals(true, summary.latestCorrect)
+        assertEquals(2000L, summary.meanLatencyMs)
+    }
+
+    @Test
     fun scoreIsClampedToSupportedRange() {
         assertEquals(5, RecallScheduler.schedule(0, 9, 0L).score)
         assertEquals(0, RecallScheduler.schedule(0, -3, 0L).score)
