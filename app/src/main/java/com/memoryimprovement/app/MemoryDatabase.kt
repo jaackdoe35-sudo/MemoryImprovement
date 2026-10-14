@@ -107,6 +107,9 @@ interface MemoryDao {
     @Insert
     suspend fun insertAttempt(attempt: RecallAttemptEntity)
 
+    @Insert
+    suspend fun insertAttempts(attempts: List<RecallAttemptEntity>)
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertRetentionCheckpoints(checkpoints: List<RetentionCheckpointEntity>)
 
