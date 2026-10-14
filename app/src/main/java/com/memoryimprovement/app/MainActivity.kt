@@ -362,10 +362,6 @@ private fun TodayScreen(
                                 Text(mode.label(), fontWeight = FontWeight.SemiBold)
                                 Text("$successRate% · ${modeAttempts.size} attempts")
                             }
-                            LinearProgressIndicator(
-                                progress = { successRate / 100f },
-                                modifier = Modifier.fillMaxWidth(),
-                            )
                             Text("Mean retrieval time: ${averageLatency / 1000.0}s",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -376,6 +372,35 @@ private fun TodayScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+        }
+        item {
+            Heading("Delayed-retention results")
+            RetentionCheckpointPlan.delaysDays.forEach { delay ->
+                val group = checkpoints.filter { it.delayDays == delay }
+                val completed = group.filter { it.completedAt != null }
+                val rated = completed.mapNotNull { it.score }
+                val accuracyRated = completed.mapNotNull { it.accuracy }
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("${delay}-day checkpoint", fontWeight = FontWeight.SemiBold)
+                        Text("${completed.size}/${group.size} completed")
+                    }
+                    if (rated.isNotEmpty()) {
+                        Text("Mean self-rating: ${"%.1f".format(rated.average())}/5",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (accuracyRated.isNotEmpty()) {
+                        Text("User-checked accuracy: ${accuracyRated.count { it == 2 } * 100 / accuracyRated.size}% (${accuracyRated.size} rated)",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (completed.isEmpty()) {
+                        Text("No completed results yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+            Text("Self-ratings and user-checked accuracy are separate measures; neither is an automated semantic evaluation.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
             Heading("Priority practice")
