@@ -12,7 +12,7 @@ class MemoryRepository(context: Context) {
         appContext,
         MemoryDatabase::class.java,
         "memory_improvement.db",
-    ).addMigrations(MemoryDatabase.MIGRATION_1_2, MemoryDatabase.MIGRATION_2_3).build()
+    ).addMigrations(MemoryDatabase.MIGRATION_1_2, MemoryDatabase.MIGRATION_2_3, MemoryDatabase.MIGRATION_3_4).build()
     private val dao = database.memoryDao()
 
     suspend fun loadItems(): List<MemoryItem> {
@@ -23,7 +23,28 @@ class MemoryRepository(context: Context) {
 
     suspend fun saveItems(items: List<MemoryItem>) {
         dao.upsertItems(items.map { it.toEntity() })
+        dao.insertRetentionCheckpoints(
+            items.flatMap { item -> RetentionCheckpointPlan.dueTimes(item.id, item.createdAt) }
+                .map { it.toEntity() },
+        )
     }
+
+    suspend fun loadRetentionCheckpoints(): List<RetentionCheckpoint> =
+        dao.getRetentionCheckpoints().map { it.toModel() }
+
+    suspend fun completeRetentionCheckpoint(
+        id: String,
+        score: Int,
+        latencyMs: Long,
+        recalledResponse: String?,
+        completedAt: Long = System.currentTimeMillis(),
+    ): Boolean = dao.completeRetentionCheckpoint(
+        id = id,
+        completedAt = completedAt,
+        score = score.coerceIn(0, 5),
+        latencyMs = latencyMs.coerceAtLeast(0L),
+        recalledResponse = recalledResponse?.trim()?.takeIf { it.isNotEmpty() },
+    ) == 1
 
     suspend fun saveAttempt(attempt: RecallAttempt) {
         dao.insertAttempt(
@@ -109,6 +130,28 @@ class MemoryRepository(context: Context) {
         }.getOrDefault(emptyList())
         if (legacyItems.isNotEmpty()) dao.upsertItems(legacyItems.map { it.toEntity() })
     }
+
+    private fun RetentionCheckpoint.toEntity() = RetentionCheckpointEntity(
+        id = id,
+        itemId = itemId,
+        delayDays = delayDays,
+        dueAt = dueAt,
+        completedAt = completedAt,
+        score = score,
+        latencyMs = latencyMs,
+        recalledResponse = recalledResponse,
+    )
+
+    private fun RetentionCheckpointEntity.toModel() = RetentionCheckpoint(
+        id = id,
+        itemId = itemId,
+        delayDays = delayDays,
+        dueAt = dueAt,
+        completedAt = completedAt,
+        score = score,
+        latencyMs = latencyMs,
+        recalledResponse = recalledResponse,
+    )
 
     private fun MemoryItemEntity.toModel() = MemoryItem(
         id = id, prompt = prompt, answer = answer, palace = palace, locus = locus,
