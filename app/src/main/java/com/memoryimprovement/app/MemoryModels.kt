@@ -71,6 +71,19 @@ object MemoryImportPlan {
 
 data class MemoryImportBatch(val rows: List<MemoryImportRow>, val duplicatesSkipped: Int)
 
+object MemoryExportPlan {
+    /** Exports memory content as seven-column TSV, compatible with MemoryImportPlan. */
+    fun toTsv(memories: List<MemoryItem>): String {
+        fun cell(value: String) = value.replace('\\t', ' ').replace('\\n', ' ').replace('\\r', ' ').trim()
+        return memories.joinToString("\\n") { item ->
+            listOf(
+                item.prompt, item.answer, item.palace, item.locus, item.chunkLabel, item.association,
+                item.sequenceOrder?.toString().orEmpty(),
+            ).joinToString("\\t", transform = ::cell)
+        }
+    }
+}
+
 data class MemoryItem(
     val id: String,
     val prompt: String,
