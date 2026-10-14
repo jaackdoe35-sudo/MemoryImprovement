@@ -113,6 +113,24 @@ data class PalaceNode(
     val createdAt: Long = System.currentTimeMillis(),
 )
 
+/** Returns a node and all descendants, protecting memory references before a branch is deleted. */
+object PalaceHierarchyPlan {
+    fun descendantIds(nodes: List<PalaceNode>, rootId: String): Set<String> {
+        if (nodes.none { it.id == rootId }) return emptySet()
+        val childrenByParent = nodes.groupBy { it.parentId }
+        val result = linkedSetOf<String>()
+        val pending = ArrayDeque<String>()
+        pending.add(rootId)
+        while (pending.isNotEmpty()) {
+            val current = pending.removeFirst()
+            if (result.add(current)) {
+                childrenByParent[current].orEmpty().forEach { pending.add(it.id) }
+            }
+        }
+        return result
+    }
+}
+
 enum class RecallMode { Cued, Free, Reverse, Sequence, Discrimination, Retention }
 
 data class RecallSequence(val label: String, val items: List<MemoryItem>)
