@@ -102,6 +102,25 @@ class RecallSchedulerTest {
     }
 
     @Test
+    fun successfulCurrentRecallResetsPreviousFailureStreak() {
+        val recent = listOf(
+            RecallAttempt("a", RecallMode.Free, false, 0, 1000L, reviewedAt = 20L),
+            RecallAttempt("a", RecallMode.Free, false, 0, 1000L, reviewedAt = 10L),
+        )
+        assertEquals(0, RecallFailurePlan.consecutiveFailuresAfter(recent, currentCorrect = true))
+    }
+
+    @Test
+    fun failedCurrentRecallExtendsOnlyTheMostRecentFailureStreak() {
+        val recent = listOf(
+            RecallAttempt("a", RecallMode.Free, false, 0, 1000L, reviewedAt = 30L),
+            RecallAttempt("a", RecallMode.Free, true, 5, 1000L, reviewedAt = 20L),
+            RecallAttempt("a", RecallMode.Free, false, 0, 1000L, reviewedAt = 10L),
+        )
+        assertEquals(2, RecallFailurePlan.consecutiveFailuresAfter(recent, currentCorrect = false))
+    }
+
+    @Test
     fun failedRecallSchedulesNextDay() {
         val now = 1_000_000L
         val result = RecallScheduler.schedule(previousReviews = 3, score = 0, now = now)
