@@ -309,7 +309,7 @@ private fun TodayScreen(
     var activeDrill by remember { mutableStateOf<InterferencePair?>(null) }
     var selectedAnswerId by remember { mutableStateOf<String?>(null) }
     var drillChecked by remember { mutableStateOf(false) }
-    var drillStartedAt by remember { mutableLongStateOf(0L) }
+    var drillStartedAt by remember { mutableStateOf(0L) }
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 18.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { Spacer(Modifier.height(4.dp)) }
