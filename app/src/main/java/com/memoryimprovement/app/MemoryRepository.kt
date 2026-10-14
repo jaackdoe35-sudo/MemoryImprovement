@@ -18,7 +18,12 @@ class MemoryRepository(context: Context) {
     suspend fun loadItems(): List<MemoryItem> {
         val existing = dao.getItems()
         if (existing.isEmpty()) migrateLegacyItems()
-        return dao.getItems().map { it.toModel() }
+        val items = dao.getItems().map { it.toModel() }
+        dao.insertRetentionCheckpoints(
+            items.flatMap { item -> RetentionCheckpointPlan.dueTimes(item.id, item.createdAt) }
+                .map { it.toEntity() },
+        )
+        return items
     }
 
     suspend fun saveItems(items: List<MemoryItem>) {
