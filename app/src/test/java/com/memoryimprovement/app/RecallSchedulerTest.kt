@@ -55,7 +55,7 @@ class RecallSchedulerTest {
     fun importPreviewCountsNewRowsAndDuplicatesBeforeSaving() {
         val existing = listOf(MemoryItem(id = "old", prompt = "Capital?", answer = "Lagos"))
         val parsed = MemoryImportPlan.parseTsv(
-            "Capital?\\tLagos\\nLargest ocean?\\tPacific\\nHighest mountain?\\tEverest"
+            "Capital?\tLagos\nLargest ocean?\tPacific\nHighest mountain?\tEverest"
         )
         val preview = MemoryImportPlan.excludeDuplicates(parsed, existing)
         assertEquals(2, preview.rows.size)
