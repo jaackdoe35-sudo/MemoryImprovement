@@ -60,13 +60,13 @@ tap_label() {
   local coords
   adb shell uiautomator dump /sdcard/window.xml >/dev/null
   adb pull /sdcard/window.xml /tmp/window.xml >/dev/null
-  python3 scripts/assert_text.py "$label"
   coords="$(python3 scripts/tap_text.py "$label")"
   read -r x y <<< "$coords"
   adb shell input tap "$x" "$y"
   sleep 3
   adb shell uiautomator dump /sdcard/window.xml >/dev/null
   adb pull /sdcard/window.xml /tmp/window.xml >/dev/null
+  python3 scripts/assert_text.py "$label"
 }
 
 capture_tabs() {
