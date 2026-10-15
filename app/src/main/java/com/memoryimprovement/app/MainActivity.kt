@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -1819,7 +1821,7 @@ private fun RecallScreen(
     var recalledResponse by remember(item?.id, mode) { mutableStateOf("") }
     var userCheckedCorrect by remember(item?.id, mode) { mutableStateOf<Boolean?>(null) }
     val recallStartedAt = remember(item?.id, mode) { SystemClock.elapsedRealtime() }
-    Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Heading("Retrieval practice")
         Text("Your practice loop: try to remember → reveal the answer → compare honestly → record the result. Do not worry about getting everything right; mistakes show what to practise next.",
             color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -1828,8 +1830,14 @@ private fun RecallScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
             listOf(RecallMode.Cued, RecallMode.Free, RecallMode.Reverse).forEach { option ->
-                TextButton(onClick = { onModeChange(option) }) {
-                    Text(if (mode == option) "• ${option.label()}" else option.label())
+                if (mode == option) {
+                    Button(onClick = { onModeChange(option) }, modifier = Modifier.weight(1f)) {
+                        Text(option.label())
+                    }
+                } else {
+                    TextButton(onClick = { onModeChange(option) }, modifier = Modifier.weight(1f)) {
+                        Text(option.label())
+                    }
                 }
             }
         }
@@ -2032,7 +2040,10 @@ private fun AddMemoryDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (initialItem == null) "Create a memory · ${setupStep + 1} of 3" else "Edit a memory · ${setupStep + 1} of 3") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
                 Text(when (setupStep) {
                     0 -> "STEP 1 · THE FACT"
                     1 -> "STEP 2 · MAKE IT STICK"
