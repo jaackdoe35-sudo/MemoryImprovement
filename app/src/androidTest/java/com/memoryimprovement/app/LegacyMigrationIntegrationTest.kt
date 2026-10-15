@@ -83,6 +83,26 @@ class LegacyMigrationIntegrationTest {
             val db = helper.writableDatabase
             MemoryDatabase.MIGRATION_5_6.migrate(db)
 
+            val defaults = mutableMapOf<String, String?>()
+            val notNull = mutableMapOf<String, Int>()
+            db.query("PRAGMA table_info(memory_items)").use { cursor ->
+                while (cursor.moveToNext()) {
+                    val columnName = cursor.getString(cursor.getColumnIndexOrThrow("name"))
+                    defaults[columnName] = if (cursor.isNull(cursor.getColumnIndexOrThrow("dflt_value"))) {
+                        null
+                    } else {
+                        cursor.getString(cursor.getColumnIndexOrThrow("dflt_value"))
+                    }
+                    notNull[columnName] = cursor.getInt(cursor.getColumnIndexOrThrow("notnull"))
+                }
+            }
+            assertEquals("''", defaults["chunkLabel"])
+            assertEquals("''", defaults["association"])
+            assertEquals(1, notNull["chunkLabel"])
+            assertEquals(1, notNull["association"])
+            assertNull(defaults["sequenceOrder"])
+            assertEquals(0, notNull["sequenceOrder"])
+
             db.query(
                 "SELECT id, prompt, answer, palace, locus, createdAt, nextReviewAt, lastScore, reviewCount, palaceNodeId, chunkLabel, association, sequenceOrder FROM memory_items WHERE id = 'legacy-memory'",
             ).use { cursor ->
