@@ -463,4 +463,55 @@ class LegacyMigrationIntegrationTest {
         assertEquals(1, repository.loadAttempts().size)
     }
 
+    @Test
+    fun destructiveOperationsRemoveDependentHistoryAndPreserveUnrelatedMemories() = runBlocking {
+        val branchMemory = MemoryItem(
+            id = "branch-memory",
+            prompt = "Where is the study desk?",
+            answer = "At the end of the hallway",
+            createdAt = 100L,
+        )
+        val deletedMemory = MemoryItem(
+            id = "deleted-memory",
+            prompt = "What should be removed?",
+            answer = "The memory and its dependent history",
+            createdAt = 200L,
+        )
+        repository.createPalaceNode("Home", PalaceNodeKind.Palace, null)
+        val home = repository.loadPalaceNodes().single { it.name == "Home" }
+        repository.createPalaceNode("Hallway", PalaceNodeKind.Route, home.id)
+        val hallway = repository.loadPalaceNodes().single { it.name == "Hallway" }
+        repository.createPalaceNode("Study desk", PalaceNodeKind.Locus, hallway.id)
+        val locus = repository.loadPalaceNodes().single { it.name == "Study desk" }
+
+        repository.saveItems(listOf(branchMemory.copy(palaceNodeId = locus.id), deletedMemory))
+        repository.saveAttempt(
+            RecallAttempt(
+                itemId = deletedMemory.id,
+                mode = RecallMode.Cued,
+                correct = false,
+                score = 1,
+                latencyMs = 900L,
+                recalledResponse = "An unrelated response",
+                reviewedAt = 300L,
+            ),
+        )
+        assertTrue(repository.loadRetentionCheckpoints().any { it.itemId == deletedMemory.id })
+        assertTrue(repository.loadAttempts().any { it.itemId == deletedMemory.id })
+
+        repository.deleteMemory(deletedMemory.id)
+
+        assertFalse(repository.loadItems().any { it.id == deletedMemory.id })
+        assertFalse(repository.loadRetentionCheckpoints().any { it.itemId == deletedMemory.id })
+        assertFalse(repository.loadAttempts().any { it.itemId == deletedMemory.id })
+
+        repository.deletePalaceNode(home.id)
+
+        val remainingMemory = repository.loadItems().single { it.id == branchMemory.id }
+        assertNull(remainingMemory.palaceNodeId)
+        assertTrue(repository.loadPalaceNodes().isEmpty())
+        assertEquals("Where is the study desk?", remainingMemory.prompt)
+        assertEquals("At the end of the hallway", remainingMemory.answer)
+    }
+
 }
