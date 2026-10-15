@@ -172,6 +172,54 @@ object EncodingQualityPlan {
     }
 }
 
+data class MemoryCueConflict(
+    val existing: MemoryItem,
+    val similarity: Double,
+    val exactMatch: Boolean,
+)
+
+/**
+ * Flags identical normalized prompts and high lexical overlap. This is a cue-review heuristic,
+ * not semantic similarity detection; it deliberately avoids guessing at synonyms or meaning.
+ */
+object MemoryCueConfusionPlan {
+    private val ignored = setOf("what", "when", "where", "which", "who", "whom", "whose", "how", "does", "did", "are", "was", "were", "the", "and", "for", "from", "with", "that", "this", "into", "your")
+
+    private fun normalize(value: String): String =
+        value.lowercase().replace(Regex("[^a-z0-9]+"), " ").trim().replace(Regex("\\s+"), " ")
+
+    private fun terms(value: String): Set<String> =
+        normalize(value).split(" ").filter { it.length >= 3 && it !in ignored }.toSet()
+
+    fun find(candidate: MemoryItem, existing: List<MemoryItem>, limit: Int = 5): List<MemoryCueConflict> {
+        val candidateCue = normalize(candidate.prompt)
+        if (candidateCue.isBlank()) return emptyList()
+        val candidateTerms = terms(candidate.prompt)
+        return existing.asSequence()
+            .filter { it.id != candidate.id }
+            .mapNotNull { item ->
+                val existingCue = normalize(item.prompt)
+                if (existingCue.isBlank()) return@mapNotNull null
+                val exact = candidateCue == existingCue
+                val otherTerms = terms(item.prompt)
+                val similarity = if (candidateTerms.isEmpty() || otherTerms.isEmpty()) {
+                    if (exact) 1.0 else 0.0
+                } else {
+                    candidateTerms.intersect(otherTerms).size.toDouble() /
+                        candidateTerms.union(otherTerms).size.toDouble()
+                }
+                if (exact || (candidateTerms.size >= 2 && otherTerms.size >= 2 && similarity >= 0.8)) {
+                    MemoryCueConflict(item, similarity, exact)
+                } else null
+            }
+            .sortedWith(compareByDescending<MemoryCueConflict> { it.exactMatch }
+                .thenByDescending { it.similarity }
+                .thenBy { it.existing.prompt.lowercase() })
+            .take(limit.coerceAtLeast(0))
+            .toList()
+    }
+}
+
 data class MemoryItem(
     val id: String,
     val prompt: String,
