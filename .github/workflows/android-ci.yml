@@ -9,7 +9,8 @@ on:
 
 concurrency:
   group: android-ci-build-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
+  queue: max
 
 permissions:
   contents: read
@@ -46,4 +47,3 @@ jobs:
           name: MemoryImprovement-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-
