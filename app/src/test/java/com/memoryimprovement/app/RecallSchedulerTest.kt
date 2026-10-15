@@ -601,4 +601,35 @@ class RecallSchedulerTest {
         assertEquals(all.map { it.first.id to it.second.id }, MemoryInterferencePlan.find(items).map { it.first.id to it.second.id })
     }
 
+
+    @Test
+    fun recallSequenceGroupsOnlyNumberedItemsAndSortsByPositionWithStableTies() {
+        val memories = listOf(
+            MemoryItem("b", "Second", "B", chunkLabel = " Biology ", sequenceOrder = 2, createdAt = 20L),
+            MemoryItem("a", "First", "A", chunkLabel = "biology", sequenceOrder = 1, createdAt = 10L),
+            MemoryItem("c", "Second tie", "C", chunkLabel = "BIOLOGY", sequenceOrder = 2, createdAt = 10L),
+            MemoryItem("single", "Only one", "S", chunkLabel = "Solo", sequenceOrder = 1),
+            MemoryItem("unordered", "No order", "U", chunkLabel = "Biology"),
+            MemoryItem("no-chunk", "No chunk", "N", sequenceOrder = 3),
+        )
+        val sequences = RecallSequencePlan.groups(memories)
+        assertEquals(listOf("biology"), sequences.map { it.label.lowercase() })
+        assertEquals(listOf("a", "c", "b"), sequences.single().items.map { it.id })
+    }
+
+    @Test
+    fun recallSequenceGroupsAreOrderedByLabelAndRequireTwoExplicitlyOrderedItems() {
+        val memories = listOf(
+            MemoryItem("z2", "Z second", "2", chunkLabel = "Zebra", sequenceOrder = 2),
+            MemoryItem("z1", "Z first", "1", chunkLabel = "Zebra", sequenceOrder = 1),
+            MemoryItem("a2", "A second", "2", chunkLabel = "Apple", sequenceOrder = 2),
+            MemoryItem("a1", "A first", "1", chunkLabel = "Apple", sequenceOrder = 1),
+            MemoryItem("lonely", "Only", "x", chunkLabel = "Lonely", sequenceOrder = 1),
+        )
+        val sequences = RecallSequencePlan.groups(memories)
+        assertEquals(listOf("Apple", "Zebra"), sequences.map { it.label })
+        assertEquals(listOf("a1", "a2"), sequences[0].items.map { it.id })
+        assertEquals(listOf("z1", "z2"), sequences[1].items.map { it.id })
+    }
+
 }
