@@ -61,48 +61,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot-save
           disable-animations: true
           script: |
-            set -eu
-            echo "ADB devices immediately after emulator runner startup:"
-            adb devices
-
-            echo "Resetting ADB server..."
-            adb kill-server || true
-            adb start-server || true
-
-            echo "Waiting for emulator to boot..."
-            timeout=0
-            until adb shell getprop sys.boot_completed 2>/dev/null | grep -q "1"; do
-              sleep 5
-              timeout=$((timeout+5))
-              if [ "$timeout" -ge 180 ]; then
-                echo "Emulator failed to boot within 180 seconds. Exiting."
-                adb devices
-                adb version
-                exit 1
-              fi
-            done
-            echo "Emulator booted successfully!"
-            adb devices
-
-            mkdir -p docs/screenshots
-            # Normalize to a tall phone viewport for repeatable screenshots.
-            adb shell wm size 1080x2400
-            adb shell settings put system font_scale 1.0
-            adb install -r app/build/outputs/apk/debug/app-debug.apk
-
-            capture() {
-              name="$1"
-              adb exec-out screencap -p > "docs/screenshots/$name.png"
-              test -s "docs/screenshots/$name.png"
-            }
-
-            # First incremental capture: Today screen in light mode only.
-            adb shell cmd uimode night no
-            sleep 3
-            adb shell am force-stop com.memoryimprovement.app
-            adb shell am start -n com.memoryimprovement.app/.MainActivity
-            sleep 6
-            capture today-light
+            bash scripts/capture_emulator_screenshots.sh
 
       - name: Upload emulator screenshots
         if: always()
