@@ -37,6 +37,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.outlined.Replay
+import androidx.compose.material.icons.outlined.Today
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -279,7 +285,7 @@ private fun MemoryApp(
                 title = {
                     Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
                         Text("MEMORY STUDIO", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, letterSpacing = 1.1.sp)
-                        Text("A quieter way to learn what lasts", style = MaterialTheme.typography.labelMedium,
+                        Text("A quieter way to learn what lasts", style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
@@ -295,11 +301,16 @@ private fun MemoryApp(
                     NavigationBarItem(
                         selected = tab == destination,
                         onClick = { tab = destination; if (destination == AppTab.Recall) startRecall() },
-                        icon = { Text(when (destination) {
-                            AppTab.Today -> "◷"; AppTab.Palace -> "⌂"
-                            AppTab.Recall -> "↻"; AppTab.Library -> "▤"
-                        }, style = MaterialTheme.typography.titleMedium) },
-                        label = { Text(destination.label, style = MaterialTheme.typography.labelMedium) },
+                        icon = {
+                            val image = when (destination) {
+                                AppTab.Today -> Icons.Outlined.Today
+                                AppTab.Palace -> Icons.Outlined.Home
+                                AppTab.Recall -> Icons.Outlined.Replay
+                                AppTab.Library -> Icons.Outlined.MenuBook
+                            }
+                            Icon(imageVector = image, contentDescription = destination.label)
+                        },
+                        label = { Text(destination.label, style = MaterialTheme.typography.labelSmall) },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
                             selectedTextColor = MaterialTheme.colorScheme.primary,
