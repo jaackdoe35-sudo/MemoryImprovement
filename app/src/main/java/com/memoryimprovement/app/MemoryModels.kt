@@ -1,5 +1,8 @@
 package com.memoryimprovement.app
 
+import org.json.JSONArray
+import org.json.JSONObject
+
 /** Result of attempting to decode legacy preference data; failures retain the original raw value. */
 data class LegacyMigrationResult(
     val items: List<MemoryItem>,
@@ -534,4 +537,197 @@ object RetentionReviewPlan {
             reviewCount = item.reviewCount + 1,
         )
     }
+}
+
+
+/** Complete logical backup payload; timestamps and stable IDs are retained across restore. */
+data class MemoryBackupSnapshot(
+    val createdAt: Long,
+    val memories: List<MemoryItem>,
+    val palaceNodes: List<PalaceNode>,
+    val attempts: List<RecallAttempt>,
+    val checkpoints: List<RetentionCheckpoint>,
+)
+
+/**
+ * Versioned JSON codec for a full logical backup. This preserves study records and history,
+ * unlike TSV, which intentionally exports only memory content.
+ */
+object MemoryBackupPlan {
+    private const val FORMAT = "MemoryImprovement-backup"
+    private const val VERSION = 1
+
+    fun encode(snapshot: MemoryBackupSnapshot): String {
+        validate(snapshot)
+        val root = JSONObject()
+            .put("format", FORMAT)
+            .put("version", VERSION)
+            .put("createdAt", snapshot.createdAt)
+            .put("memories", JSONArray().apply {
+                snapshot.memories.forEach { item ->
+                    put(JSONObject()
+                        .put("id", item.id)
+                        .put("prompt", item.prompt)
+                        .put("answer", item.answer)
+                        .put("palace", item.palace)
+                        .put("locus", item.locus)
+                        .put("createdAt", item.createdAt)
+                        .put("nextReviewAt", item.nextReviewAt)
+                        .put("lastScore", item.lastScore ?: JSONObject.NULL)
+                        .put("reviewCount", item.reviewCount)
+                        .put("palaceNodeId", item.palaceNodeId ?: JSONObject.NULL)
+                        .put("chunkLabel", item.chunkLabel)
+                        .put("association", item.association)
+                        .put("sequenceOrder", item.sequenceOrder ?: JSONObject.NULL))
+                }
+            })
+            .put("palaceNodes", JSONArray().apply {
+                snapshot.palaceNodes.forEach { node ->
+                    put(JSONObject()
+                        .put("id", node.id)
+                        .put("name", node.name)
+                        .put("kind", node.kind.name)
+                        .put("parentId", node.parentId ?: JSONObject.NULL)
+                        .put("position", node.position)
+                        .put("createdAt", node.createdAt))
+                }
+            })
+            .put("attempts", JSONArray().apply {
+                snapshot.attempts.forEach { attempt ->
+                    put(JSONObject()
+                        .put("itemId", attempt.itemId)
+                        .put("mode", attempt.mode.name)
+                        .put("correct", attempt.correct)
+                        .put("score", attempt.score)
+                        .put("latencyMs", attempt.latencyMs)
+                        .put("recalledResponse", attempt.recalledResponse ?: JSONObject.NULL)
+                        .put("reviewedAt", attempt.reviewedAt))
+                }
+            })
+            .put("checkpoints", JSONArray().apply {
+                snapshot.checkpoints.forEach { checkpoint ->
+                    put(JSONObject()
+                        .put("id", checkpoint.id)
+                        .put("itemId", checkpoint.itemId)
+                        .put("delayDays", checkpoint.delayDays)
+                        .put("dueAt", checkpoint.dueAt)
+                        .put("completedAt", checkpoint.completedAt ?: JSONObject.NULL)
+                        .put("score", checkpoint.score ?: JSONObject.NULL)
+                        .put("latencyMs", checkpoint.latencyMs ?: JSONObject.NULL)
+                        .put("recalledResponse", checkpoint.recalledResponse ?: JSONObject.NULL)
+                        .put("accuracy", checkpoint.accuracy ?: JSONObject.NULL))
+                }
+            })
+        return root.toString()
+    }
+
+    fun decode(raw: String): MemoryBackupSnapshot {
+        val root = JSONObject(raw)
+        require(root.getString("format") == FORMAT) { "This is not a MemoryImprovement backup." }
+        require(root.getInt("version") == VERSION) { "Unsupported backup version: ${root.optInt("version", -1)}." }
+        val memories = root.getJSONArray("memories").let { array ->
+            (0 until array.length()).map { index ->
+                val item = array.getJSONObject(index)
+                MemoryItem(
+                    id = item.getString("id"),
+                    prompt = item.getString("prompt"),
+                    answer = item.getString("answer"),
+                    palace = item.getString("palace"),
+                    locus = item.getString("locus"),
+                    createdAt = item.getLong("createdAt"),
+                    nextReviewAt = item.getLong("nextReviewAt"),
+                    lastScore = item.nullableInt("lastScore"),
+                    reviewCount = item.getInt("reviewCount"),
+                    palaceNodeId = item.nullableString("palaceNodeId"),
+                    chunkLabel = item.getString("chunkLabel"),
+                    association = item.getString("association"),
+                    sequenceOrder = item.nullableInt("sequenceOrder"),
+                )
+            }
+        }
+        val nodes = root.getJSONArray("palaceNodes").let { array ->
+            (0 until array.length()).map { index ->
+                val node = array.getJSONObject(index)
+                PalaceNode(
+                    id = node.getString("id"),
+                    name = node.getString("name"),
+                    kind = PalaceNodeKind.valueOf(node.getString("kind")),
+                    parentId = node.nullableString("parentId"),
+                    position = node.getInt("position"),
+                    createdAt = node.getLong("createdAt"),
+                )
+            }
+        }
+        val attempts = root.getJSONArray("attempts").let { array ->
+            (0 until array.length()).map { index ->
+                val attempt = array.getJSONObject(index)
+                RecallAttempt(
+                    itemId = attempt.getString("itemId"),
+                    mode = RecallMode.valueOf(attempt.getString("mode")),
+                    correct = attempt.getBoolean("correct"),
+                    score = attempt.getInt("score"),
+                    latencyMs = attempt.getLong("latencyMs"),
+                    recalledResponse = attempt.nullableString("recalledResponse"),
+                    reviewedAt = attempt.getLong("reviewedAt"),
+                )
+            }
+        }
+        val checkpoints = root.getJSONArray("checkpoints").let { array ->
+            (0 until array.length()).map { index ->
+                val checkpoint = array.getJSONObject(index)
+                RetentionCheckpoint(
+                    id = checkpoint.getString("id"),
+                    itemId = checkpoint.getString("itemId"),
+                    delayDays = checkpoint.getInt("delayDays"),
+                    dueAt = checkpoint.getLong("dueAt"),
+                    completedAt = checkpoint.nullableLong("completedAt"),
+                    score = checkpoint.nullableInt("score"),
+                    latencyMs = checkpoint.nullableLong("latencyMs"),
+                    recalledResponse = checkpoint.nullableString("recalledResponse"),
+                    accuracy = checkpoint.nullableInt("accuracy"),
+                )
+            }
+        }
+        return MemoryBackupSnapshot(
+            createdAt = root.getLong("createdAt"),
+            memories = memories,
+            palaceNodes = nodes,
+            attempts = attempts,
+            checkpoints = checkpoints,
+        ).also(::validate)
+    }
+
+    private fun validate(snapshot: MemoryBackupSnapshot) {
+        require(snapshot.memories.map { it.id }.toSet().size == snapshot.memories.size) { "Backup contains duplicate memory IDs." }
+        require(snapshot.palaceNodes.map { it.id }.toSet().size == snapshot.palaceNodes.size) { "Backup contains duplicate palace node IDs." }
+        val memoryIds = snapshot.memories.mapTo(mutableSetOf()) { it.id }
+        val nodeIds = snapshot.palaceNodes.mapTo(mutableSetOf()) { it.id }
+        require(snapshot.memories.all { it.palaceNodeId == null || it.palaceNodeId in nodeIds }) {
+            "A memory references a missing palace node."
+        }
+        require(snapshot.palaceNodes.all { it.parentId == null || it.parentId in nodeIds }) {
+            "A palace node references a missing parent."
+        }
+        require(snapshot.attempts.all { it.itemId in memoryIds }) { "A recall attempt references a missing memory." }
+        require(snapshot.checkpoints.all { it.itemId in memoryIds }) { "A retention checkpoint references a missing memory." }
+        require(snapshot.checkpoints.map { it.id }.toSet().size == snapshot.checkpoints.size) { "Backup contains duplicate checkpoint IDs." }
+        val byId = snapshot.palaceNodes.associateBy { it.id }
+        snapshot.palaceNodes.forEach { node ->
+            val visited = mutableSetOf<String>()
+            var current: PalaceNode? = node
+            while (current != null) {
+                require(visited.add(current.id)) { "Backup contains a palace hierarchy cycle." }
+                current = current.parentId?.let(byId::get)
+            }
+        }
+    }
+
+    private fun JSONObject.nullableString(key: String): String? =
+        if (isNull(key)) null else getString(key)
+
+    private fun JSONObject.nullableInt(key: String): Int? =
+        if (isNull(key)) null else getInt(key)
+
+    private fun JSONObject.nullableLong(key: String): Long? =
+        if (isNull(key)) null else getLong(key)
 }
