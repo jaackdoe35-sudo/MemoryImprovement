@@ -61,7 +61,7 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot-save
           disable-animations: true
           script: |
-            set -euo pipefail
+            set -eu
             echo "ADB devices immediately after emulator runner startup:"
             adb devices
 
@@ -83,7 +83,26 @@ jobs:
             done
             echo "Emulator booted successfully!"
             adb devices
-            adb shell wm size
+
+            mkdir -p docs/screenshots
+            # Normalize to a tall phone viewport for repeatable screenshots.
+            adb shell wm size 1080x2400
+            adb shell settings put system font_scale 1.0
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+
+            capture() {
+              name="$1"
+              adb exec-out screencap -p > "docs/screenshots/$name.png"
+              test -s "docs/screenshots/$name.png"
+            }
+
+            # First incremental capture: Today screen in light mode only.
+            adb shell cmd uimode night no
+            sleep 3
+            adb shell am force-stop com.memoryimprovement.app
+            adb shell am start -n com.memoryimprovement.app/.MainActivity
+            sleep 6
+            capture today-light
 
       - name: Upload emulator screenshots
         if: always()
