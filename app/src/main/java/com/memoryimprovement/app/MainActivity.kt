@@ -230,6 +230,8 @@ private fun MemoryApp(
     var backupImportSnapshot by remember { mutableStateOf<MemoryBackupSnapshot?>(null) }
     var backupImportError by remember { mutableStateOf<String?>(null) }
     var backupImportStatus by remember { mutableStateOf<String?>(null) }
+    var pendingCueCandidate by remember { mutableStateOf<MemoryItem?>(null) }
+    var pendingCueConflicts by remember { mutableStateOf<List<MemoryCueConflict>>(emptyList()) }
     var editingMemory by remember { mutableStateOf<MemoryItem?>(null) }
     var deletingMemory by remember { mutableStateOf<MemoryItem?>(null) }
     var active by remember { mutableStateOf<MemoryItem?>(null) }
@@ -650,6 +652,62 @@ private fun MemoryApp(
         )
     }
 
+    if (pendingCueCandidate != null) {
+        val candidate = pendingCueCandidate!!
+        AlertDialog(
+            onDismissRequest = {
+                pendingCueCandidate = null
+                pendingCueConflicts = emptyList()
+            },
+            title = { Text("Review similar cues") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("This prompt matches or closely resembles existing cues. Similar wording can make retrieval ambiguous. Review the matches before deciding.")
+                    pendingCueConflicts.forEach { conflict ->
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text(conflict.existing.prompt, fontWeight = FontWeight.SemiBold)
+                                Text("Answer: ${conflict.existing.answer}")
+                                Text(
+                                    if (conflict.exactMatch) "Exact normalized prompt match"
+                                    else "Lexical overlap: ${"%.0f".format(conflict.similarity * 100)}%",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                    Text("This is a wording-based warning, not a semantic judgment. It may miss synonyms or flag legitimate related facts.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (editingMemory != null) save(memories.map { if (it.id == candidate.id) candidate else it })
+                    else save(memories + candidate)
+                    if (active?.id == candidate.id) { active = candidate; revealed = false }
+                    adding = false
+                    editingMemory = null
+                    pendingCueCandidate = null
+                    pendingCueConflicts = emptyList()
+                }) { Text("Save anyway") }
+            },
+            dismissButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(onClick = {
+                        pendingCueCandidate = null
+                        pendingCueConflicts = emptyList()
+                    }) { Text("Edit cue") }
+                    TextButton(onClick = {
+                        pendingCueCandidate = null
+                        pendingCueConflicts = emptyList()
+                        adding = false
+                        editingMemory = null
+                    }) { Text("Discard") }
+                }
+            },
+        )
+    }
+
     if (adding || editingMemory != null) {
         val existing = editingMemory
         AddMemoryDialog(
@@ -678,11 +736,17 @@ private fun MemoryApp(
                         createdAt = now, nextReviewAt = now,
                     )
                 }
-                if (existing != null) save(memories.map { if (it.id == existing.id) item else it })
-                else save(memories + item)
-                adding = false
-                editingMemory = null
-                if (active?.id == item.id) { active = item; revealed = false }
+                val conflicts = MemoryCueConfusionPlan.find(item, memories)
+                if (conflicts.isNotEmpty()) {
+                    pendingCueCandidate = item
+                    pendingCueConflicts = conflicts
+                } else {
+                    if (existing != null) save(memories.map { if (it.id == existing.id) item else it })
+                    else save(memories + item)
+                    adding = false
+                    editingMemory = null
+                    if (active?.id == item.id) { active = item; revealed = false }
+                }
             },
         )
     }
