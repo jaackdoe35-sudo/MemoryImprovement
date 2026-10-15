@@ -1,0 +1,130 @@
+name: Compose emulator screenshots
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - '.github/workflows/compose-screenshots.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: compose-screenshots-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  screenshots:
+    name: Capture real emulator screens
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Build debug APK
+        run: |
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+          gradle assembleDebug
+      - name: Boot phone emulator and capture screens
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          emulator-boot-timeout: 600
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          disable-animations: true
+          script: |
+            set -euo pipefail
+            mkdir -p docs/screenshots
+            adb wait-for-device
+            adb shell settings put system font_scale 1.0
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb shell am force-stop com.memoryimprovement.app
+            adb shell am start -n com.memoryimprovement.app/.MainActivity
+            sleep 8
+
+            capture() {
+              name="$1"
+              adb exec-out screencap -p > "docs/screenshots/$name.png"
+              test -s "docs/screenshots/$name.png"
+            }
+            tap() { adb shell input tap "$1" "$2"; sleep 2; }
+
+            # Light mode: reset system night mode, then capture Today.
+            adb shell cmd uimode night no
+            sleep 3
+            adb shell am force-stop com.memoryimprovement.app
+            adb shell am start -n com.memoryimprovement.app/.MainActivity
+            sleep 6
+            capture today-light
+
+            # Bottom navigation destinations, ordered Today / Palace / Recall / Library.
+            tap 135 2180
+            capture palace-light
+            tap 405 2180
+            capture recall-light
+            tap 675 2180
+            capture library-light
+
+            # Open memory creation from Library; capture the actual Compose dialog.
+            tap 530 360
+            sleep 2
+            capture creation-light
+
+            # Dismiss creation, switch to dark, restart and capture the same screens.
+            adb shell input keyevent 4
+            adb shell cmd uimode night yes
+            sleep 3
+            adb shell am force-stop com.memoryimprovement.app
+            adb shell am start -n com.memoryimprovement.app/.MainActivity
+            sleep 6
+            capture today-dark
+            tap 135 2180
+            capture palace-dark
+            tap 405 2180
+            capture recall-dark
+            tap 675 2180
+            capture library-dark
+            tap 530 360
+            sleep 2
+            capture creation-dark
+
+      - name: Upload emulator screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compose-emulator-screenshots
+          path: docs/screenshots/*.png
+          if-no-files-found: error
+          retention-days: 14
+      - name: Commit captured screenshots to PR branch
+        if: success() && github.event_name == 'pull_request'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/screenshots/*.png
+          if git diff --cached --quiet; then
+            echo "No screenshot changes to commit."
+            exit 0
+          fi
+          git commit -m "Add real emulator screenshots for light and dark themes"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
