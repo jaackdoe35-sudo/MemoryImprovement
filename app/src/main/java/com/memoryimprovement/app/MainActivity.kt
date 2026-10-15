@@ -1915,15 +1915,27 @@ private fun RecallScreen(
                 Text("Compare before you rate", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text("Compare what you wrote with the answer above. Mark ‘Correct’ only if it matches the important fact; otherwise mark ‘Incorrect’. The app does not automatically grade your wording.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    TextButton(onClick = { userCheckedCorrect = false }, modifier = Modifier.weight(1f)) {
-                        Text(if (userCheckedCorrect == false) "✓ Incorrect" else "Incorrect")
+                    if (userCheckedCorrect == false) {
+                        Button(onClick = { userCheckedCorrect = false }, modifier = Modifier.weight(1f)) {
+                            Text("✓ Incorrect")
+                        }
+                    } else {
+                        TextButton(onClick = { userCheckedCorrect = false }, modifier = Modifier.weight(1f)) {
+                            Text("Incorrect")
+                        }
                     }
-                    TextButton(onClick = { userCheckedCorrect = true }, modifier = Modifier.weight(1f)) {
-                        Text(if (userCheckedCorrect == true) "✓ Correct" else "Correct")
+                    if (userCheckedCorrect == true) {
+                        Button(onClick = { userCheckedCorrect = true }, modifier = Modifier.weight(1f)) {
+                            Text("✓ Correct")
+                        }
+                    } else {
+                        TextButton(onClick = { userCheckedCorrect = true }, modifier = Modifier.weight(1f)) {
+                            Text("Correct")
+                        }
                     }
                 }
                 Text("How hard was it to remember?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Text("Choose how it felt, separately from whether your answer was correct.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                Text("Choose how it felt, separately from whether your answer was correct. You must mark correctness first; this keeps accuracy and effort as separate records.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                 listOf(0 to "Again · forgot", 2 to "Hard · effortful", 3 to "Got it · some effort", 5 to "Easy · immediate").forEach { (score, label) ->
                     TextButton(
                         enabled = userCheckedCorrect != null,
