@@ -36,3 +36,12 @@ adb shell am start -n com.memoryimprovement.app/.MainActivity
 sleep 6
 capture today-light
 echo "Captured docs/screenshots/today-light.png"
+
+# Second incremental capture: Today screen in dark mode.
+adb shell cmd uimode night yes
+sleep 3
+adb shell am force-stop com.memoryimprovement.app
+adb shell am start -n com.memoryimprovement.app/.MainActivity
+sleep 6
+capture today-dark
+echo "Captured docs/screenshots/today-dark.png"
