@@ -575,6 +575,35 @@ class LegacyMigrationIntegrationTest {
     }
 
     @Test
+    fun invalidBackupRestoreLeavesExistingLocalDataUnchanged() = runBlocking {
+        repository.createPalaceNode("Existing palace", PalaceNodeKind.Palace, null)
+        repository.saveItems(listOf(MemoryItem(id = "existing", prompt = "Keep this", answer = "Existing answer")))
+        val beforeMemories = repository.loadItems()
+        val beforeNodes = repository.loadPalaceNodes()
+        val beforeAttempts = repository.loadAttempts()
+        val beforeCheckpoints = repository.loadRetentionCheckpoints()
+
+        val invalid = MemoryBackupSnapshot(
+            createdAt = 2L,
+            memories = listOf(
+                MemoryItem(id = "duplicate", prompt = "First", answer = "One"),
+                MemoryItem(id = "duplicate", prompt = "Second", answer = "Two"),
+            ),
+            palaceNodes = emptyList(),
+            attempts = emptyList(),
+            checkpoints = emptyList(),
+        )
+
+        val failure = runCatching { repository.restoreBackupSnapshot(invalid) }.exceptionOrNull()
+
+        assertTrue("Invalid backup must be rejected", failure is IllegalArgumentException)
+        assertEquals(beforeMemories, repository.loadItems())
+        assertEquals(beforeNodes, repository.loadPalaceNodes())
+        assertEquals(beforeAttempts, repository.loadAttempts())
+        assertEquals(beforeCheckpoints, repository.loadRetentionCheckpoints())
+    }
+
+    @Test
     fun fullBackupCodecRoundTripsMemoriesPalacesAttemptsAndCheckpoints() {
         val snapshot = MemoryBackupSnapshot(
             createdAt = 123456L,
