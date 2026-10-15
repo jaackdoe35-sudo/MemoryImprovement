@@ -162,6 +162,18 @@ interface MemoryDao {
 
     @Query("DELETE FROM palace_nodes WHERE id = :id")
     suspend fun deletePalaceNode(id: String)
+
+    @Query("DELETE FROM memory_items")
+    suspend fun deleteAllItems()
+
+    @Query("DELETE FROM recall_attempts")
+    suspend fun deleteAllAttempts()
+
+    @Query("DELETE FROM retention_checkpoints")
+    suspend fun deleteAllRetentionCheckpoints()
+
+    @Query("DELETE FROM palace_nodes")
+    suspend fun deleteAllPalaceNodes()
 }
 
 @Database(
