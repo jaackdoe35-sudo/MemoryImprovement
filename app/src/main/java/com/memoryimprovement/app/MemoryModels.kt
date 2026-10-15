@@ -208,7 +208,7 @@ object MemoryCueConfusionPlan {
                     candidateTerms.intersect(otherTerms).size.toDouble() /
                         candidateTerms.union(otherTerms).size.toDouble()
                 }
-                if (exact || (candidateTerms.size >= 2 && otherTerms.size >= 2 && similarity >= 0.8)) {
+                if (exact || (candidateTerms.size >= 2 && otherTerms.size >= 2 && similarity >= 0.7)) {
                     MemoryCueConflict(item, similarity, exact)
                 } else null
             }
