@@ -839,12 +839,12 @@ private fun TodayScreen(
                 shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(Modifier.padding(horizontal = 24.dp, vertical = 26.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(if (memories.isEmpty()) "YOUR STARTING POINT" else "YOUR NEXT PRACTICE", color = Color(0xFFC9E8D5), style = MaterialTheme.typography.labelLarge)
+                    Text(if (memories.isEmpty()) "YOUR STARTING POINT" else "YOUR NEXT PRACTICE", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.labelLarge)
                     Spacer(Modifier.height(12.dp))
                     Text(if (memories.isEmpty()) "Build a memory that lasts." else "Recall first. Review second.",
-                        color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                        color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(8.dp))
-                    Text(if (memories.isEmpty()) "Start with one useful fact. We’ll guide you through the method, one small step at a time." else "Try to retrieve the answer before revealing it. Effortful recall helps you see what you can actually remember.", color = Color(0xFFE1EEE6), style = MaterialTheme.typography.bodyLarge)
+                    Text(if (memories.isEmpty()) "Start with one useful fact. We’ll guide you through the method, one small step at a time." else "Try to retrieve the answer before revealing it. Effortful recall helps you see what you can actually remember.", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.bodyLarge)
                     Spacer(Modifier.height(18.dp))
                     Button(onClick = if (memories.isEmpty()) onAdd else onRecall) {
                         Text(if (memories.isEmpty()) "Add a first fact" else "Practise recall")
