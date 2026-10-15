@@ -687,7 +687,7 @@ class LegacyMigrationIntegrationTest {
             { repository.createPalaceNode("Invalid locus child", PalaceNodeKind.Locus, "missing-parent") },
             { repository.renamePalaceNode(hallway.id, "   ") },
             { repository.renamePalaceNode("missing-node", "Name") },
-            { repository.movePalaceNode(home.id, null) },
+            { repository.movePalaceNode(home.id, hallway.id) },
             { repository.movePalaceNode("missing-node", home.id) },
         )
 
