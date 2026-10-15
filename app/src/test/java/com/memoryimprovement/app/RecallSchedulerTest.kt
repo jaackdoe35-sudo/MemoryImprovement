@@ -7,6 +7,29 @@ import org.junit.Test
 
 class RecallSchedulerTest {
     @Test
+    fun cueConfusionPlanFindsExactAndHighOverlapPromptsWithoutMatchingUnrelatedCues() {
+        val existing = listOf(
+            MemoryItem(id = "exact", prompt = "What causes coastal erosion?", answer = "Waves"),
+            MemoryItem(id = "similar", prompt = "What causes coastal erosion in beaches?", answer = "Waves"),
+            MemoryItem(id = "other", prompt = "How does photosynthesis work?", answer = "Plants"),
+        )
+        val candidate = MemoryItem(id = "new", prompt = "What causes coastal erosion?", answer = "Wind and water")
+
+        val conflicts = MemoryCueConfusionPlan.find(candidate, existing)
+
+        assertEquals(listOf("exact", "similar"), conflicts.map { it.existing.id })
+        assertTrue(conflicts.first().exactMatch)
+        assertTrue(conflicts.first().similarity > conflicts.last().similarity)
+    }
+
+    @Test
+    fun cueConfusionPlanIgnoresSameItemAndBlankPrompts() {
+        val item = MemoryItem(id = "same", prompt = "Capital of Nigeria?", answer = "Abuja")
+        assertTrue(MemoryCueConfusionPlan.find(item, listOf(item)).isEmpty())
+        assertTrue(MemoryCueConfusionPlan.find(item.copy(prompt = "  "), listOf(item)).isEmpty())
+    }
+
+    @Test
     fun encodingQualityPlanRewardsCompleteEncodingAndHasNoSuggestions() {
         val result = EncodingQualityPlan.evaluate(
             prompt = "What is photosynthesis?",
