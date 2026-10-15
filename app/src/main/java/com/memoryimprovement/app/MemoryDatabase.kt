@@ -140,7 +140,7 @@ interface MemoryDao {
     fun observeCorrectAttemptCount(): Flow<Int>
 
     @Query("SELECT * FROM palace_nodes ORDER BY position, name COLLATE NOCASE")
-    fun getPalaceNodes(): List<PalaceNodeEntity>
+    suspend fun getPalaceNodes(): List<PalaceNodeEntity>
 
     @Query("SELECT * FROM palace_nodes WHERE id = :id LIMIT 1")
     suspend fun getPalaceNode(id: String): PalaceNodeEntity?
