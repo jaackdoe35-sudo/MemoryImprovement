@@ -107,3 +107,19 @@ fun MemoryImprovementTheme(content: @Composable () -> Unit) {
         content = content,
     )
 }
+
+/** Shared spacing rhythm for every Compose screen and component. */
+object StudioSpacing {
+    val xxs = 4.dp
+    val xs = 8.dp
+    val sm = 12.dp
+    val md = 16.dp
+    val lg = 20.dp
+    val xl = 24.dp
+    val xxl = 32.dp
+    val screenHorizontal = 20.dp
+    val screenVertical = 16.dp
+    val sectionGap = 18.dp
+    val cardPadding = 18.dp
+    val controlMinHeight = 48.dp
+}
