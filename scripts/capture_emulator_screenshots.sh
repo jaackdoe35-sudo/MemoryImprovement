@@ -114,7 +114,7 @@ for name in names:
     if len(data) < 1000:
         errors.append(f"{path}: unexpectedly small ({len(data)} bytes)")
         continue
-    if data[:8] != b"\\x89PNG\\r\\n\\x1a\\n":
+    if data[:8] != b"\x89PNG\r\n\x1a\n":
         errors.append(f"{path}: invalid PNG signature")
         continue
     if len(data) < 24 or data[12:16] != b"IHDR":
