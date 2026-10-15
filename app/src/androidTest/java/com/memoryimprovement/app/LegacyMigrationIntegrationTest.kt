@@ -291,4 +291,51 @@ class LegacyMigrationIntegrationTest {
         assertEquals(office.id, memories.getValue("office-memory").palaceNodeId)
     }
 
+    @Test
+    fun palaceRenameMoveRejectsCyclesAndPreservesSequenceEncodingData() = runBlocking {
+        repository.createPalaceNode("Home", PalaceNodeKind.Palace, null)
+        repository.createPalaceNode("Office", PalaceNodeKind.Palace, null)
+        val roots = repository.loadPalaceNodes()
+        val home = roots.single { it.name == "Home" }
+        val office = roots.single { it.name == "Office" }
+
+        repository.createPalaceNode("Hallway", PalaceNodeKind.Route, home.id)
+        val hallway = repository.loadPalaceNodes().single { it.name == "Hallway" }
+        repository.createPalaceNode("Desk", PalaceNodeKind.Locus, hallway.id)
+        val desk = repository.loadPalaceNodes().single { it.name == "Desk" }
+
+        repository.renamePalaceNode(desk.id, "Study desk")
+        repository.movePalaceNode(desk.id, office.id)
+
+        val moved = repository.loadPalaceNodes().single { it.id == desk.id }
+        assertEquals("Study desk", moved.name)
+        assertEquals(office.id, moved.parentId)
+
+        var cycleRejected = false
+        try {
+            repository.movePalaceNode(hallway.id, desk.id)
+        } catch (_: IllegalArgumentException) {
+            cycleRejected = true
+        }
+        assertTrue("Moving a route beneath its own descendant must be rejected", cycleRejected)
+        assertEquals(home.id, repository.loadPalaceNodes().single { it.id == hallway.id }.parentId)
+
+        val encodedMemory = MemoryItem(
+            id = "sequence-memory",
+            prompt = "Name the sequence",
+            answer = "First, second, third",
+            palaceNodeId = desk.id,
+            chunkLabel = "Ordered steps",
+            association = "A vivid image links each step",
+            sequenceOrder = 2,
+        )
+        repository.saveItems(listOf(encodedMemory))
+
+        val persisted = repository.loadItems().single { it.id == encodedMemory.id }
+        assertEquals(desk.id, persisted.palaceNodeId)
+        assertEquals("Ordered steps", persisted.chunkLabel)
+        assertEquals("A vivid image links each step", persisted.association)
+        assertEquals(2, persisted.sequenceOrder)
+    }
+
 }
