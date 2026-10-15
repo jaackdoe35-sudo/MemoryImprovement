@@ -169,4 +169,5 @@ object StudioSpacing {
     val screenHorizontalTablet = 32.dp
     val screenVertical = 16.dp
     val controlMinHeight = 48.dp
+    val actionHeight = 48.dp
 }
