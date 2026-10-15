@@ -5,8 +5,10 @@ import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,7 +43,7 @@ class LegacyMigrationIntegrationTest {
 
     @Test
     fun malformedLegacyJsonIsPreservedAndCanBeRetriedAfterCorrection() = runBlocking {
-        val malformed = "[{\"id\":\"broken\""
+        val malformed = "[{\\"id\\":\\"broken\\""
         preferences.edit().putString("items_json", malformed).commit()
 
         val failed = repository.loadItemsWithMigrationStatus()
@@ -85,5 +87,81 @@ class LegacyMigrationIntegrationTest {
         assertEquals("Imported prompt", imported.prompt)
         assertEquals(2, result.items.size)
         assertEquals(false, preferences.getBoolean("legacy_migration_pending", true))
+    }
+
+    @Test
+    fun deletingMemoryRemovesOnlyItsAttemptsAndRetentionCheckpoints() = runBlocking {
+        val deleted = MemoryItem(id = "delete-me", prompt = "Delete?", answer = "Yes")
+        val kept = MemoryItem(id = "keep-me", prompt = "Keep?", answer = "Yes")
+        repository.saveItems(listOf(deleted, kept))
+        repository.saveAttempt(
+            RecallAttempt(
+                itemId = deleted.id,
+                mode = RecallMode.Free,
+                correct = false,
+                score = 1,
+                latencyMs = 1200L,
+                recalledResponse = "No",
+                reviewedAt = 100L,
+            ),
+        )
+        repository.saveAttempt(
+            RecallAttempt(
+                itemId = kept.id,
+                mode = RecallMode.Cued,
+                correct = true,
+                score = 5,
+                latencyMs = 800L,
+                recalledResponse = "Yes",
+                reviewedAt = 200L,
+            ),
+        )
+
+        repository.deleteMemory(deleted.id)
+
+        assertEquals(listOf(kept.id), repository.loadItems().map { it.id })
+        assertTrue(repository.loadRetentionCheckpoints().none { it.itemId == deleted.id })
+        assertEquals(listOf(kept.id), repository.loadAttempts().map { it.itemId })
+        assertEquals(3, repository.loadRetentionCheckpoints().size)
+    }
+
+    @Test
+    fun retentionCheckpointCompletionIsAtomicAndCannotBeRepeated() = runBlocking {
+        val item = MemoryItem(id = "retention-item", prompt = "Capital?", answer = "Paris")
+        repository.saveItems(listOf(item))
+        val checkpointId = "${item.id}-1"
+
+        val first = repository.completeRetentionCheckpoint(
+            id = checkpointId,
+            score = 9,
+            latencyMs = -50L,
+            recalledResponse = "  Paris  ",
+            accuracy = 4,
+            completedAt = 123456L,
+        )
+        val second = repository.completeRetentionCheckpoint(
+            id = checkpointId,
+            score = 5,
+            latencyMs = 100L,
+            recalledResponse = "Paris",
+            accuracy = 2,
+            completedAt = 123999L,
+        )
+
+        assertTrue(first)
+        assertFalse(second)
+        val checkpoint = repository.loadRetentionCheckpoints().single { it.id == checkpointId }
+        assertEquals(123456L, checkpoint.completedAt)
+        assertEquals(5, checkpoint.score)
+        assertEquals(0L, checkpoint.latencyMs)
+        assertEquals("Paris", checkpoint.recalledResponse)
+        assertEquals(2, checkpoint.accuracy)
+
+        val attempts = repository.loadAttempts()
+        assertEquals(1, attempts.size)
+        assertEquals(RecallMode.Retention, attempts.single().mode)
+        assertTrue(attempts.single().correct)
+        assertEquals(0L, attempts.single().latencyMs)
+        assertEquals(123456L, attempts.single().reviewedAt)
     }
 }
