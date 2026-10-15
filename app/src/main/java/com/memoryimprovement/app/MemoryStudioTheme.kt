@@ -166,6 +166,7 @@ object StudioSpacing {
     val xl = 24.dp
     val xxl = 32.dp
     val screenHorizontalPhone = 20.dp
+    val screenHorizontal = screenHorizontalPhone
     val screenHorizontalTablet = 32.dp
     val screenVertical = 16.dp
     val controlMinHeight = 48.dp
