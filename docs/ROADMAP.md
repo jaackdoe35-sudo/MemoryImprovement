@@ -18,7 +18,9 @@
 - [x] Parse and export TSV, including an escaped versioned format for tabs/newlines/backslashes; accept legacy TSV and preview duplicate filtering.
 - [x] Persist retention checkpoints for 24-hour, 7-day, and 30-day intervals.
 - [ ] Add broader automated database/repository tests for schema upgrades, migration edge cases, import/export persistence, and destructive operations.
-- [ ] Define and verify a backup/restore workflow; TSV export exists but is not a complete database backup.
+- [x] Define a versioned full-data JSON backup format and transactional repository restore; codec and restore integration tests pass.
+- [x] Add user-facing full backup export and restore selection with payload validation and explicit replacement confirmation.
+- [ ] Verify the new export/restore flow on a physical Android device, including cancellation, malformed files, successful round-trip, and preservation after rejected restore.
 
 ## Milestone 2 — navigable memory palaces
 
