@@ -28,7 +28,7 @@
 - [x] Create, rename, move, and delete palace branches; clear memory references when deleting a branch.
 - [x] Link memories to palace nodes and store optional sequence order.
 - [ ] Add focused integration coverage for hierarchy mutations, reference integrity, and sequence-order behavior.
-- [ ] Detect duplicate or potentially confusable cues and let the user resolve them.
+- [x] Detect duplicate or potentially confusable cues and let the user resolve them with a documented lexical-overlap heuristic (not semantic similarity).
 
 ## Milestone 3 — retention measurement
 
@@ -36,6 +36,7 @@
 - [x] Record checkpoint completion, score, latency, recalled response, and an accuracy value.
 - [x] Summarize recall-attempt accuracy and latency by recall mode.
 - [ ] Verify scoring semantics and end-to-end checkpoint behavior with automated tests.
+- [x] Verify cue-confusion unit tests, debug APK assembly, and Android instrumentation on commit `0792725a4daf3c1fab09e04159078377bdcb8670` ([Android CI #203](https://github.com/jaackdoe35-sudo/MemoryImprovement/actions/runs/38672469081), [Instrumentation #38](https://github.com/jaackdoe35-sudo/MemoryImprovement/actions/runs/38672469080)).
 - [ ] Track and validate sequence accuracy and interference/confusion metrics; do not treat their existence as verified until code and tests establish them.
 - [ ] Compare methods on comparable material and time invested.
 - [ ] Demonstrate delayed-retention outcomes with measured observations before making efficacy claims.
