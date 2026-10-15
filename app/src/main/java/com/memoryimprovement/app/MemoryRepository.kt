@@ -25,6 +25,84 @@ class MemoryRepository(
 
     suspend fun loadItems(): List<MemoryItem> = loadItemsWithMigrationStatus().items
 
+    /** Captures a consistent logical backup of all user study data. */
+    suspend fun createBackupSnapshot(createdAt: Long = System.currentTimeMillis()): MemoryBackupSnapshot =
+        database.withTransaction {
+            MemoryBackupSnapshot(
+                createdAt = createdAt,
+                memories = dao.getItems().map { it.toModel() },
+                palaceNodes = dao.getPalaceNodes().map { it.toModel() },
+                attempts = dao.getAttempts().map { attempt ->
+                    RecallAttempt(
+                        itemId = attempt.itemId,
+                        mode = runCatching { RecallMode.valueOf(attempt.mode) }.getOrDefault(RecallMode.Cued),
+                        correct = attempt.correct,
+                        score = attempt.score,
+                        latencyMs = attempt.latencyMs,
+                        recalledResponse = attempt.recalledResponse,
+                        reviewedAt = attempt.reviewedAt,
+                    )
+                },
+                checkpoints = dao.getRetentionCheckpoints().map { it.toModel() },
+            )
+        }
+
+    /**
+     * Replaces local study data atomically. The payload is validated before entering the transaction,
+     * and palace parents are inserted before their descendants.
+     */
+    suspend fun restoreBackupSnapshot(snapshot: MemoryBackupSnapshot) {
+        // Reuse the public codec validator so callers cannot bypass backup integrity checks.
+        MemoryBackupPlan.decode(MemoryBackupPlan.encode(snapshot))
+        database.withTransaction {
+            dao.deleteAllAttempts()
+            dao.deleteAllRetentionCheckpoints()
+            dao.deleteAllItems()
+            dao.deleteAllPalaceNodes()
+            dao.upsertItems(snapshot.memories.map { it.toEntity() })
+
+            val pending = snapshot.palaceNodes.toMutableList()
+            val inserted = mutableSetOf<String>()
+            while (pending.isNotEmpty()) {
+                val ready = pending.filter { it.parentId == null || it.parentId in inserted }
+                check(ready.isNotEmpty()) { "Backup contains an invalid palace hierarchy." }
+                ready.forEach { node ->
+                    dao.insertPalaceNode(
+                        PalaceNodeEntity(
+                            id = node.id,
+                            name = node.name,
+                            kind = node.kind.name,
+                            parentId = node.parentId,
+                            position = node.position,
+                            createdAt = node.createdAt,
+                        ),
+                    )
+                    inserted += node.id
+                }
+                pending.removeAll(ready.toSet())
+            }
+            dao.insertAttempts(
+                snapshot.attempts.map { attempt ->
+                    RecallAttemptEntity(
+                        itemId = attempt.itemId,
+                        mode = attempt.mode.name,
+                        correct = attempt.correct,
+                        score = attempt.score,
+                        latencyMs = attempt.latencyMs,
+                        recalledResponse = attempt.recalledResponse,
+                        reviewedAt = attempt.reviewedAt,
+                    )
+                },
+            )
+            dao.insertRetentionCheckpoints(snapshot.checkpoints.map { it.toEntity() })
+        }
+        appContext.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE).edit()
+            .remove(LEGACY_ITEMS_KEY)
+            .putBoolean(LEGACY_MIGRATION_PENDING_KEY, false)
+            .apply()
+    }
+
+
     suspend fun loadItemsWithMigrationStatus(): LegacyMigrationResult {
         val preferences = appContext.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
         val existing = dao.getItems()
