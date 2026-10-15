@@ -1,5 +1,8 @@
 package com.memoryimprovement.app
 
+import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.sqlite.db.SupportSQLiteOpenHelper
+import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.runBlocking
@@ -39,6 +42,70 @@ class LegacyMigrationIntegrationTest {
             .remove("items_json")
             .remove("legacy_migration_pending")
             .commit()
+    }
+
+    @Test
+    fun migration5To6PreservesExistingMemoriesAndAddsEncodingColumns() {
+        val legacyDatabaseName = "migration-5-to-6-${UUID.randomUUID()}.db"
+        val callback = object : SupportSQLiteOpenHelper.Callback(5) {
+            override fun onCreate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """CREATE TABLE memory_items (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        prompt TEXT NOT NULL,
+                        answer TEXT NOT NULL,
+                        palace TEXT NOT NULL,
+                        locus TEXT NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        nextReviewAt INTEGER NOT NULL,
+                        lastScore INTEGER,
+                        reviewCount INTEGER NOT NULL,
+                        palaceNodeId TEXT
+                    )""",
+                )
+                db.execSQL(
+                    """INSERT INTO memory_items
+                        (id, prompt, answer, palace, locus, createdAt, nextReviewAt, lastScore, reviewCount, palaceNodeId)
+                        VALUES ('legacy-memory', 'Original prompt', 'Original answer', 'Home', 'Desk', 123, 456, 4, 7, NULL)""",
+                )
+            }
+
+            override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+        }
+        val helper = FrameworkSQLiteOpenHelperFactory().create(
+            SupportSQLiteOpenHelper.Configuration.builder(context)
+                .name(legacyDatabaseName)
+                .callback(callback)
+                .build(),
+        )
+
+        try {
+            val db = helper.writableDatabase
+            MemoryDatabase.MIGRATION_5_6.migrate(db)
+
+            db.query(
+                "SELECT id, prompt, answer, palace, locus, createdAt, nextReviewAt, lastScore, reviewCount, palaceNodeId, chunkLabel, association, sequenceOrder FROM memory_items WHERE id = 'legacy-memory'",
+            ).use { cursor ->
+                assertTrue("The pre-migration memory must remain present", cursor.moveToFirst())
+                assertEquals("legacy-memory", cursor.getString(0))
+                assertEquals("Original prompt", cursor.getString(1))
+                assertEquals("Original answer", cursor.getString(2))
+                assertEquals("Home", cursor.getString(3))
+                assertEquals("Desk", cursor.getString(4))
+                assertEquals(123L, cursor.getLong(5))
+                assertEquals(456L, cursor.getLong(6))
+                assertEquals(4, cursor.getInt(7))
+                assertEquals(7, cursor.getInt(8))
+                assertTrue(cursor.isNull(9))
+                assertEquals("", cursor.getString(10))
+                assertEquals("", cursor.getString(11))
+                assertTrue("sequenceOrder should default to NULL for existing rows", cursor.isNull(12))
+                assertFalse("Only the seeded memory should exist", cursor.moveToNext())
+            }
+        } finally {
+            helper.close()
+            context.deleteDatabase(legacyDatabaseName)
+        }
     }
 
     @Test
