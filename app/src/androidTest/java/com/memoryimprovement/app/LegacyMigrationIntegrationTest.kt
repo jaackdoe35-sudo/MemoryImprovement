@@ -164,4 +164,44 @@ class LegacyMigrationIntegrationTest {
         assertEquals(0L, attempts.single().latencyMs)
         assertEquals(123456L, attempts.single().reviewedAt)
     }
+    @Test
+    fun deletingPalaceBranchUnlinksMemoriesAndPreservesOtherBranches() = runBlocking {
+        repository.createPalaceNode("Home", PalaceNodeKind.Palace, null)
+        repository.createPalaceNode("Office", PalaceNodeKind.Palace, null)
+        val roots = repository.loadPalaceNodes()
+        val home = roots.single { it.name == "Home" }
+        val office = roots.single { it.name == "Office" }
+
+        repository.createPalaceNode("Hallway", PalaceNodeKind.Route, home.id)
+        val hallway = repository.loadPalaceNodes().single { it.name == "Hallway" }
+        repository.createPalaceNode("Desk", PalaceNodeKind.Locus, hallway.id)
+        val desk = repository.loadPalaceNodes().single { it.name == "Desk" }
+
+        repository.saveItems(
+            listOf(
+                MemoryItem(
+                    id = "home-memory",
+                    prompt = "Home prompt",
+                    answer = "Home answer",
+                    palaceNodeId = desk.id,
+                ),
+                MemoryItem(
+                    id = "office-memory",
+                    prompt = "Office prompt",
+                    answer = "Office answer",
+                    palaceNodeId = office.id,
+                ),
+            ),
+        )
+
+        repository.deletePalaceNode(home.id)
+
+        val remainingNodes = repository.loadPalaceNodes()
+        assertTrue(remainingNodes.none { it.id == home.id || it.id == hallway.id || it.id == desk.id })
+        assertTrue(remainingNodes.any { it.id == office.id })
+        val memories = repository.loadItems().associateBy { it.id }
+        assertNull(memories.getValue("home-memory").palaceNodeId)
+        assertEquals(office.id, memories.getValue("office-memory").palaceNodeId)
+    }
+
 }
