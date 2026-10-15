@@ -819,7 +819,7 @@ private fun TodayScreen(
         }
         item {
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF202C4A)),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
                 shape = RoundedCornerShape(26.dp), modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(Modifier.padding(22.dp)) {
@@ -1177,6 +1177,10 @@ private fun TodayScreen(
         }
         item {
             Heading("Retention checkpoints")
+            Text("A delayed test checks whether you can still retrieve a fact after time has passed. It is different from remembering it immediately after studying.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+            Text("When a checkpoint is due, try free recall first, reveal the stored answer, then record accuracy and effort separately.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
             val now = System.currentTimeMillis()
             val pending = checkpoints.filter { it.completedAt == null }.sortedBy { it.dueAt }
             val due = pending.filter { it.dueAt <= now }
@@ -1923,8 +1927,15 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
             }
         }
         if (memories.isEmpty()) {
-            Text("Your saved facts stay on this device. Add one to begin.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Your library starts with one useful question", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Example: ‘What gas do plants absorb?’ Answer: ‘Carbon dioxide.’ Keep the question specific so you can test yourself later.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Button(onClick = onAdd, modifier = Modifier.fillMaxWidth()) { Text("Create my first memory") }
+                    Text("Your saved facts stay on this device.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
         } else {
             OutlinedTextField(
                 value = searchQuery,
