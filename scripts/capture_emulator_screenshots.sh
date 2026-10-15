@@ -95,4 +95,44 @@ sleep 3
 launch_app
 capture_tabs dark
 
+python3 - <<'PY'
+from pathlib import Path
+import struct
+import sys
+
+names = [
+    "today-light", "palace-light", "recall-light", "library-light", "add-memory-light",
+    "today-dark", "palace-dark", "recall-dark", "library-dark", "add-memory-dark",
+]
+errors = []
+for name in names:
+    path = Path("docs/screenshots") / f"{name}.png"
+    if not path.is_file():
+        errors.append(f"{path}: missing")
+        continue
+    data = path.read_bytes()
+    if len(data) < 1000:
+        errors.append(f"{path}: unexpectedly small ({len(data)} bytes)")
+        continue
+    if data[:8] != b"\\x89PNG\\r\\n\\x1a\\n":
+        errors.append(f"{path}: invalid PNG signature")
+        continue
+    if len(data) < 24 or data[12:16] != b"IHDR":
+        errors.append(f"{path}: missing PNG IHDR header")
+        continue
+    width, height = struct.unpack(">II", data[16:24])
+    if (width, height) != (1080, 2400):
+        errors.append(f"{path}: expected 1080x2400, got {width}x{height}")
+    print(f"Validated {path}: {width}x{height}, {len(data)} bytes")
+
+if errors:
+    print("Screenshot validation failed:", file=sys.stderr)
+    for error in errors:
+        print(f" - {error}", file=sys.stderr)
+    raise SystemExit(1)
+
+print(f"Validated all {len(names)} screenshots.")
+PY
+
+
 echo "All 10 expected light/dark screen captures completed."
