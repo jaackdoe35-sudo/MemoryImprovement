@@ -60,23 +60,32 @@ tap_label() {
   local coords
   adb shell uiautomator dump /sdcard/window.xml >/dev/null
   adb pull /sdcard/window.xml /tmp/window.xml >/dev/null
+  python3 scripts/assert_text.py "$label"
   coords="$(python3 scripts/tap_text.py "$label")"
   read -r x y <<< "$coords"
   adb shell input tap "$x" "$y"
   sleep 3
+  adb shell uiautomator dump /sdcard/window.xml >/dev/null
+  adb pull /sdcard/window.xml /tmp/window.xml >/dev/null
 }
 
 capture_tabs() {
   local theme="$1"
+  adb shell uiautomator dump /sdcard/window.xml >/dev/null
+  adb pull /sdcard/window.xml /tmp/window.xml >/dev/null
+  python3 scripts/assert_text.py "Today"
   capture "today-${theme}"
 
   tap_label "Palace"
+  python3 scripts/assert_text.py "Palace"
   capture "palace-${theme}"
 
   tap_label "Recall"
+  python3 scripts/assert_text.py "Recall"
   capture "recall-${theme}"
 
   tap_label "Library"
+  python3 scripts/assert_text.py "Library"
   capture "library-${theme}"
 
   tap_label "Today"
