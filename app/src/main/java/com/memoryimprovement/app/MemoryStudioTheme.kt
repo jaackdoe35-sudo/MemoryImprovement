@@ -3,44 +3,41 @@ package com.memoryimprovement.app
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.googlefonts.Font
+import androidx.compose.ui.text.googlefonts.GoogleFont
+import androidx.compose.ui.text.googlefonts.GoogleFont.Provider
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * Memory Studio visual system.
- *
- * A quiet, editorial study workspace: warm paper surfaces, deep botanical green,
- * and restrained clay accents. Semantic colors stay centralized so light/dark
- * surfaces and component states remain coherent.
+ * Central design tokens for Memory Studio. Remote font failures fall back to
+ * Compose's default system typeface; font requests are asynchronous.
  */
 private val StudioLightColors = lightColorScheme(
-    primary = Color(0xFF245B4A),
+    primary = Color(0xFF2F5D50),
     onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFFDCEBE2),
-    onPrimaryContainer = Color(0xFF173E31),
-    secondary = Color(0xFF98552F),
+    primaryContainer = Color(0xFFD7E8E1),
+    onPrimaryContainer = Color(0xFF0F2A22),
+    secondary = Color(0xFF8A5A3C),
     onSecondary = Color(0xFFFFFFFF),
-    secondaryContainer = Color(0xFFF6DFCF),
-    onSecondaryContainer = Color(0xFF40200F),
-    tertiary = Color(0xFF536B8A),
-    onTertiary = Color(0xFFFFFFFF),
-    background = Color(0xFFF6F4EF),
-    onBackground = Color(0xFF202820),
-    surface = Color(0xFFFFFEFA),
-    onSurface = Color(0xFF202820),
-    surfaceVariant = Color(0xFFEAE9E1),
-    onSurfaceVariant = Color(0xFF59635C),
-    outline = Color(0xFF858D84),
-    outlineVariant = Color(0xFFD4D7CE),
+    background = Color(0xFFF7F5F0),
+    onBackground = Color(0xFF1C1B18),
+    surface = Color(0xFFFFFFFF),
+    onSurface = Color(0xFF1C1B18),
+    surfaceVariant = Color(0xFFEFEBE3),
+    onSurfaceVariant = Color(0xFF5C5749),
+    surfaceContainer = Color(0xFFF2EEE6),
+    outline = Color(0xFFD6CFC2),
+    outlineVariant = Color(0xFFE6E0D4),
     error = Color(0xFFB3261E),
     onError = Color(0xFFFFFFFF),
     errorContainer = Color(0xFFF9DEDC),
@@ -48,53 +45,105 @@ private val StudioLightColors = lightColorScheme(
 )
 
 private val StudioDarkColors = darkColorScheme(
-    primary = Color(0xFFA5D4BC),
-    onPrimary = Color(0xFF123D2E),
-    primaryContainer = Color(0xFF245B4A),
-    onPrimaryContainer = Color(0xFFDCEBE2),
-    secondary = Color(0xFFF0B995),
-    onSecondary = Color(0xFF542B16),
-    secondaryContainer = Color(0xFF713F25),
-    onSecondaryContainer = Color(0xFFFFDBC5),
-    tertiary = Color(0xFFB8CBE8),
-    onTertiary = Color(0xFF24364F),
-    background = Color(0xFF151A17),
-    onBackground = Color(0xFFE5E9E2),
-    surface = Color(0xFF1D241F),
-    onSurface = Color(0xFFE5E9E2),
-    surfaceVariant = Color(0xFF303832),
-    onSurfaceVariant = Color(0xFFC0C9C0),
-    outline = Color(0xFF89958B),
-    outlineVariant = Color(0xFF424B44),
+    primary = Color(0xFF9CCBB8),
+    onPrimary = Color(0xFF0E3328),
+    primaryContainer = Color(0xFF1F4A3D),
+    onPrimaryContainer = Color(0xFFD7E8E1),
+    secondary = Color(0xFFD9A783),
+    onSecondary = Color(0xFF3D2414),
+    background = Color(0xFF121413),
+    onBackground = Color(0xFFE6E2DA),
+    surface = Color(0xFF1A1D1B),
+    onSurface = Color(0xFFE6E2DA),
+    surfaceVariant = Color(0xFF262A27),
+    onSurfaceVariant = Color(0xFFB9B4A7),
+    surfaceContainer = Color(0xFF1F2321),
+    outline = Color(0xFF4A4F4B),
+    outlineVariant = Color(0xFF343A36),
     error = Color(0xFFF2B8B5),
     onError = Color(0xFF601410),
     errorContainer = Color(0xFF8C1D18),
     onErrorContainer = Color(0xFFF9DEDC),
 )
 
+private val GoogleFontsProvider = Provider(
+    providerAuthority = "com.google.android.gms.fonts",
+    providerPackage = "com.google.android.gms",
+    certificates = R.array.com_google_android_gms_fonts_certs,
+)
+
+private val Newsreader = GoogleFont("Newsreader")
+private val Inter = GoogleFont("Inter")
+
+private val EditorialHeading = FontFamily(
+    Font(googleFont = Newsreader, fontProvider = GoogleFontsProvider, weight = FontWeight.Medium),
+    Font(googleFont = Newsreader, fontProvider = GoogleFontsProvider, weight = FontWeight.SemiBold),
+)
+
+private val InterfaceBody = FontFamily(
+    Font(googleFont = Inter, fontProvider = GoogleFontsProvider, weight = FontWeight.Normal),
+    Font(googleFont = Inter, fontProvider = GoogleFontsProvider, weight = FontWeight.Medium),
+    Font(googleFont = Inter, fontProvider = GoogleFontsProvider, weight = FontWeight.SemiBold),
+)
+
 private val StudioTypography = Typography(
-    displayLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 32.sp, lineHeight = 38.sp, letterSpacing = (-0.8).sp),
-    displayMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 28.sp, lineHeight = 34.sp, letterSpacing = (-0.5).sp),
-    headlineLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Bold, fontSize = 26.sp, lineHeight = 32.sp, letterSpacing = (-0.4).sp),
-    headlineMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 23.sp, lineHeight = 29.sp, letterSpacing = (-0.25).sp),
-    headlineSmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 20.sp, lineHeight = 26.sp),
-    titleLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 19.sp, lineHeight = 25.sp),
-    titleMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, lineHeight = 22.sp),
-    titleSmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 20.sp),
-    bodyLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 24.sp),
-    bodyMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 21.sp),
-    bodySmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 18.sp),
-    labelLarge = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, lineHeight = 18.sp, letterSpacing = 0.2.sp),
-    labelMedium = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 12.sp, lineHeight = 16.sp, letterSpacing = 0.2.sp),
-    labelSmall = TextStyle(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium, fontSize = 11.sp, lineHeight = 14.sp, letterSpacing = 0.25.sp),
+    displaySmall = TextStyle(
+        fontFamily = EditorialHeading,
+        fontWeight = FontWeight.Medium,
+        fontSize = 36.sp,
+        lineHeight = 42.sp,
+    ),
+    headlineMedium = TextStyle(
+        fontFamily = EditorialHeading,
+        fontWeight = FontWeight.Medium,
+        fontSize = 28.sp,
+        lineHeight = 34.sp,
+    ),
+    titleLarge = TextStyle(
+        fontFamily = InterfaceBody,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 20.sp,
+        lineHeight = 28.sp,
+    ),
+    titleMedium = TextStyle(
+        fontFamily = InterfaceBody,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+    ),
+    bodyLarge = TextStyle(
+        fontFamily = InterfaceBody,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+    ),
+    bodyMedium = TextStyle(
+        fontFamily = InterfaceBody,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+    ),
+    labelLarge = TextStyle(
+        fontFamily = InterfaceBody,
+        fontWeight = FontWeight.Medium,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+    ),
+    labelSmall = TextStyle(
+        fontFamily = InterfaceBody,
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.4.sp,
+    ),
 )
 
 private val StudioShapes = Shapes(
     extraSmall = RoundedCornerShape(8.dp),
-    small = RoundedCornerShape(12.dp),
-    medium = RoundedCornerShape(18.dp),
-    large = RoundedCornerShape(24.dp),
-    extraLarge = RoundedCornerShape(30.dp),
+    small = RoundedCornerShape(8.dp),
+    medium = RoundedCornerShape(14.dp),
+    large = RoundedCornerShape(20.dp),
+    extraLarge = RoundedCornerShape(28.dp),
 )
 
 @Composable
@@ -108,18 +157,16 @@ fun MemoryImprovementTheme(content: @Composable () -> Unit) {
     )
 }
 
-/** Shared spacing rhythm for every Compose screen and component. */
+/** Shared 4 dp spacing scale. */
 object StudioSpacing {
-    val xxs = 4.dp
-    val xs = 8.dp
-    val sm = 12.dp
-    val md = 16.dp
-    val lg = 20.dp
+    val xs = 4.dp
+    val sm = 8.dp
+    val md = 12.dp
+    val lg = 16.dp
     val xl = 24.dp
     val xxl = 32.dp
-    val screenHorizontal = 20.dp
+    val screenHorizontalPhone = 20.dp
+    val screenHorizontalTablet = 32.dp
     val screenVertical = 16.dp
-    val sectionGap = 18.dp
-    val cardPadding = 18.dp
     val controlMinHeight = 48.dp
 }
