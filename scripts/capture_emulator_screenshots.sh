@@ -33,116 +33,67 @@ done
 echo "Emulator booted successfully."
 
 mkdir -p docs/screenshots
-adb shell wm size 1080x2400
-adb shell settings put system font_scale 1.0
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-
-capture() {
-  local name="$1"
-  adb exec-out screencap -p > "docs/screenshots/${name}.png"
-  test -s "docs/screenshots/${name}.png"
-  echo "Captured docs/screenshots/${name}.png"
+capture_profile() {
+  local suffix="$1" size="$2" density="$3" scale="$4"
+  DEVICE_SUFFIX="$suffix"
+  echo "Capturing profile $suffix (size=$size density=$density font_scale=$scale)"
+  adb shell wm size "$size"
+  adb shell wm density "$density"
+  adb shell settings put system font_scale "$scale"
+  for theme in light dark; do
+    if [ "$theme" = "light" ]; then adb shell cmd uimode night no; else adb shell cmd uimode night yes; fi
+    sleep 2
+    launch_app
+    capture_tabs "$theme"
+  done
 }
 
-launch_app() {
-  adb shell am force-stop com.memoryimprovement.app
-  adb shell am start -W -n com.memoryimprovement.app/.MainActivity
-  sleep 5
-  if ! adb shell pidof com.memoryimprovement.app 2>/dev/null | grep -q '[0-9]'; then
-    echo "App process is not running after launch; refusing to save a potentially misleading screenshot."
-    adb logcat -d -t 500 -v brief | tail -n 200 || true
-    return 1
-  fi
-}
-
-tap_label() {
-  local label="$1"
-  local expected="${2:-$1}"
-  local coords
-  adb shell uiautomator dump /sdcard/window.xml >/dev/null
-  adb pull /sdcard/window.xml /tmp/window.xml >/dev/null
-  coords="$(python3 scripts/tap_text.py "$label")"
-  read -r x y <<< "$coords"
-  adb shell input tap "$x" "$y"
-  sleep 3
-  adb shell uiautomator dump /sdcard/window.xml >/dev/null
-  adb pull /sdcard/window.xml /tmp/window.xml >/dev/null
-  python3 scripts/assert_text.py "$expected"
-}
-
-capture_tabs() {
-  local theme="$1"
-  adb shell uiautomator dump /sdcard/window.xml >/dev/null
-  adb pull /sdcard/window.xml /tmp/window.xml >/dev/null
-  python3 scripts/assert_text.py "Today"
-  capture "today-${theme}"
-
-  tap_label "Palace"
-  python3 scripts/assert_text.py "Palace"
-  capture "palace-${theme}"
-
-  tap_label "Recall"
-  python3 scripts/assert_text.py "Recall"
-  capture "recall-${theme}"
-
-  tap_label "Library"
-  python3 scripts/assert_text.py "Library"
-  capture "library-${theme}"
-
-  tap_label "Today"
-  tap_label "Add a first fact" "Create a memory · 1 of 3"
-  capture "add-memory-${theme}"
-  tap_label "Cancel" "Today"
-}
-
-adb shell cmd uimode night no
-sleep 3
-launch_app
-capture_tabs light
-
-adb shell cmd uimode night yes
-sleep 3
-launch_app
-capture_tabs dark
+# Match the requested logical dimensions exactly: 360x800 dp phone and 840x1280 dp tablet.
+capture_profile phone-100 1080x2400 480 1.0
+capture_profile phone-200 1080x2400 480 2.0
+capture_profile tablet-100 1680x2560 320 1.0
+capture_profile tablet-200 1680x2560 320 2.0
 
 python3 - <<'PY'
 from pathlib import Path
 import struct
 import sys
 
-names = [
-    "today-light", "palace-light", "recall-light", "library-light", "add-memory-light",
-    "today-dark", "palace-dark", "recall-dark", "library-dark", "add-memory-dark",
-]
+screens = ["today", "palace", "recall", "library", "add-memory"]
+themes = ["light", "dark"]
+profiles = {
+    "phone-100": (1080, 2400),
+    "phone-200": (1080, 2400),
+    "tablet-100": (1680, 2560),
+    "tablet-200": (1680, 2560),
+}
 errors = []
-for name in names:
-    path = Path("docs/screenshots") / f"{name}.png"
-    if not path.is_file():
-        errors.append(f"{path}: missing")
-        continue
-    data = path.read_bytes()
-    if len(data) < 1000:
-        errors.append(f"{path}: unexpectedly small ({len(data)} bytes)")
-        continue
-    if data[:8] != b"\x89PNG\r\n\x1a\n":
-        errors.append(f"{path}: invalid PNG signature")
-        continue
-    if len(data) < 24 or data[12:16] != b"IHDR":
-        errors.append(f"{path}: missing PNG IHDR header")
-        continue
-    width, height = struct.unpack(">II", data[16:24])
-    if (width, height) != (1080, 2400):
-        errors.append(f"{path}: expected 1080x2400, got {width}x{height}")
-    print(f"Validated {path}: {width}x{height}, {len(data)} bytes")
-
+count = 0
+for profile, expected_size in profiles.items():
+    for theme in themes:
+        for screen in screens:
+            path = Path("docs/screenshots") / f"{screen}-{theme}-{profile}.png"
+            if not path.is_file():
+                errors.append(f"{path}: missing")
+                continue
+            data = path.read_bytes()
+            if len(data) < 1000:
+                errors.append(f"{path}: unexpectedly small ({len(data)} bytes)")
+                continue
+            if data[:8] != b"\x89PNG\r\n\x1a\n" or data[12:16] != b"IHDR":
+                errors.append(f"{path}: invalid PNG header")
+                continue
+            width, height = struct.unpack(">II", data[16:24])
+            if (width, height) != expected_size:
+                errors.append(f"{path}: expected {expected_size[0]}x{expected_size[1]}, got {width}x{height}")
+            print(f"Validated {path}: {width}x{height}, {len(data)} bytes")
+            count += 1
 if errors:
     print("Screenshot validation failed:", file=sys.stderr)
     for error in errors:
         print(f" - {error}", file=sys.stderr)
     raise SystemExit(1)
-
-print(f"Validated all {len(names)} screenshots.")
+print(f"Validated all {count} screenshots across phone/tablet, light/dark, and 100%/200% font scale.")
 PY
 
-
-echo "All 10 expected light/dark screen captures completed."
+echo "All 40 phone/tablet, light/dark, 100%/200% font-scale captures completed."
