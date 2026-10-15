@@ -627,13 +627,13 @@ private fun MemoryApp(
                     bulkImportPreview?.let { preview ->
                         Text("Preview: ${preview.rows.size} new memories; ${preview.duplicatesSkipped} duplicates will be skipped.")
                         preview.rows.take(3).forEach { row ->
-                            Text("• ${row.prompt} → ${row.answer}", style = MaterialTheme.typography.bodySmall)
+                            Text("• ${row.prompt} → ${row.answer}", style = MaterialTheme.typography.bodyMedium)
                         }
                         if (preview.rows.size > 3) {
-                            Text("…and ${preview.rows.size - 3} more", style = MaterialTheme.typography.bodySmall)
+                            Text("…and ${preview.rows.size - 3} more", style = MaterialTheme.typography.bodyMedium)
                         }
                     }
-                    Text("Duplicate prompt + answer pairs are skipped automatically.", style = MaterialTheme.typography.bodySmall)
+                    Text("Duplicate prompt + answer pairs are skipped automatically.", style = MaterialTheme.typography.bodyMedium)
                 }
             },
             confirmButton = {
@@ -714,7 +714,7 @@ private fun MemoryApp(
                             }
                         }
                     }
-                    Text("This is a wording-based warning, not a semantic judgment. It may miss synonyms or flag legitimate related facts.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("This is a wording-based warning, not a semantic judgment. It may miss synonyms or flag legitimate related facts.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
             confirmButton = {
@@ -843,7 +843,7 @@ private fun TodayScreen(
                         Text("Legacy data needs recovery", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onErrorContainer)
                         Text(migrationResult.errorMessage, color = MaterialTheme.colorScheme.onErrorContainer)
                         Text("The original JSON is still preserved. Export a backup before editing or replacing it.",
-                            color = MaterialTheme.colorScheme.onErrorContainer, style = MaterialTheme.typography.bodySmall)
+                            color = MaterialTheme.colorScheme.onErrorContainer, style = MaterialTheme.typography.bodyMedium)
                         migrationResult.preservedRawData?.let { raw ->
                             Button(onClick = { onExportLegacyData(raw) }) { Text("Export legacy JSON backup") }
                         }
@@ -862,7 +862,7 @@ private fun TodayScreen(
                     Text(if (memories.isEmpty()) "YOUR STARTING POINT" else "YOUR NEXT PRACTICE", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.labelLarge)
                     Spacer(Modifier.height(12.dp))
                     Text(if (memories.isEmpty()) "Build a memory that lasts." else "Recall first. Review second.",
-                        color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                        color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(8.dp))
                     Text(if (memories.isEmpty()) "Start with one useful fact. We’ll guide you through the method, one small step at a time." else "Try to retrieve the answer before revealing it. Effortful recall helps you see what you can actually remember.", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.bodyLarge)
                     Spacer(Modifier.height(18.dp))
@@ -888,7 +888,7 @@ private fun TodayScreen(
                         Text("What it means: try to remember before looking at the answer. Example: close your notes and explain one idea in your own words.",
                             color = MaterialTheme.colorScheme.onPrimaryContainer)
                         Text("Why use it: it reveals what you can actually retrieve, not just what looks familiar.",
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
                     }
                 }
                 Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth(),
@@ -899,7 +899,7 @@ private fun TodayScreen(
                         Text("02  Spaced practice", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Text("What it means: revisit information across separate sessions instead of cramming it all at once.")
                         Text("Try this: test yourself today, then return to the same fact tomorrow. Adjust the interval based on how well you remember.",
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth(),
@@ -910,7 +910,7 @@ private fun TodayScreen(
                         Text("03  Distinctive associations", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Text("What it means: connect a fact to a concrete, unusual image or action that gives you a retrieval cue.")
                         Text("Example: to remember that a person is a baker, imagine them juggling enormous loaves in a bakery. The stranger and more specific cue may be easier to recall.",
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -925,7 +925,7 @@ private fun TodayScreen(
         item {
             Heading("Your practice results")
             Text("These numbers describe your recorded practice, not a test of intelligence. A marked-correct result is self-checked; the app does not automatically judge free-text meaning.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
             if (attemptHistory.isEmpty()) {
                 Text("Results will appear after your first recall attempt.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
@@ -936,12 +936,12 @@ private fun TodayScreen(
                             Text("${summary.accuracyPercent}% · ${summary.attempts} attempts")
                         }
                         Text("Mean retrieval time: ${summary.meanLatencyMs / 1000.0}s",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 Text("Success is based on recorded scores/self-ratings, not independently verified correctness.",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
@@ -971,20 +971,20 @@ private fun TodayScreen(
                 }
             }
             Text("Self-ratings and user-checked accuracy are separate measures; neither is an automated semantic evaluation.",
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
             Heading("How each fact is going")
             Text("Look for facts repeatedly marked incorrect and practise those again. Faster answers alone do not prove stronger memory; correctness and delayed recall matter too.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
             val progress = MemoryProgressPlan.summarize(memories, attemptHistory)
             if (progress.isEmpty()) {
                 Text("Each memory appears here after at least two recorded recall attempts.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 Text("First-versus-latest comparisons use recorded attempt labels, not automatic grading of free-text responses.",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 progress.forEach { itemProgress ->
                     Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
@@ -1002,7 +1002,7 @@ private fun TodayScreen(
                             }
                             Text(change, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text("Mean retrieval time: ${"%.1f".format(itemProgress.meanLatencyMs / 1000.0)} s",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
@@ -1017,7 +1017,7 @@ private fun TodayScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 Text("These items have repeated recorded failures. The list uses saved attempt labels, not automatic grading of free-text answers.",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 repeatedErrors.forEach { error ->
                     Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
@@ -1030,7 +1030,7 @@ private fun TodayScreen(
                                 color = MaterialTheme.colorScheme.error)
                             error.lastIncorrectResponse?.let {
                                 Text("Latest recorded response: $it",
-                                    style = MaterialTheme.typography.bodySmall,
+                                    style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             Button(onClick = { onStartPriority(error.item) }, modifier = Modifier.fillMaxWidth()) {
@@ -1059,7 +1059,7 @@ private fun TodayScreen(
                         }
                         Text(trajectory, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("${summary.correctCount}/${summary.attemptCount} marked correct · mean retrieval time ${summary.meanLatencyMs / 1000.0}s",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Button(onClick = { onStartPriority(summary.item) }, modifier = Modifier.fillMaxWidth()) {
                             Text("Practise this memory")
@@ -1067,7 +1067,7 @@ private fun TodayScreen(
                     }
                 }
                 Text("These trends compare saved first/latest correctness labels; they do not establish causation or independently grade answers.",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
@@ -1090,17 +1090,17 @@ private fun TodayScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Text("Rating ${attempt.score}/5 · ${android.text.format.DateUtils.getRelativeTimeSpanString(attempt.reviewedAt, System.currentTimeMillis(), android.text.format.DateUtils.MINUTE_IN_MILLIS)}",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                         attempt.recalledResponse?.takeIf { it.isNotBlank() }?.let { response ->
-                            Text("Response: $response", style = MaterialTheme.typography.bodySmall)
+                            Text("Response: $response", style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 }
             }
             Text("History displays saved correctness labels and responses; it does not independently evaluate free-text answers.",
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
@@ -1119,7 +1119,7 @@ private fun TodayScreen(
                         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                             Text(priority.item.prompt, fontWeight = FontWeight.SemiBold)
                             Text(priority.reason, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodySmall)
+                                style = MaterialTheme.typography.bodyMedium)
                             Button(onClick = { onStartPriority(priority.item) }, modifier = Modifier.fillMaxWidth()) {
                                 Text("Practise this memory")
                             }
@@ -1175,14 +1175,14 @@ private fun TodayScreen(
         ) {
                         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text("Shared terms: ${pair.sharedTerms.joinToString(", ")}",
-                                color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
+                                color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall)
                             Text("A · ${pair.first.prompt}", fontWeight = FontWeight.SemiBold)
                             Text(pair.first.answer, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Surface(modifier = Modifier.fillMaxWidth().height(1.dp), color = MaterialTheme.colorScheme.outlineVariant) {}
                             Text("B · ${pair.second.prompt}", fontWeight = FontWeight.SemiBold)
                             Text(pair.second.answer, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text("Discrimination cue: make each prompt specific and give the two facts distinct, vivid associations.",
-                                style = MaterialTheme.typography.bodySmall)
+                                style = MaterialTheme.typography.bodyMedium)
                             Button(
                                 onClick = {
                                     activeDrill = pair
@@ -1244,7 +1244,7 @@ private fun TodayScreen(
             Text("A delayed test checks whether you can still retrieve a fact after time has passed. It is different from remembering it immediately after studying.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
             Text("When a checkpoint is due, try free recall first, reveal the stored answer, then record accuracy and effort separately.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
             val now = System.currentTimeMillis()
             val pending = checkpoints.filter { it.completedAt == null }.sortedBy { it.dueAt }
             val due = pending.filter { it.dueAt <= now }
@@ -1271,7 +1271,7 @@ private fun TodayScreen(
                                 Text(
                                     if (checkpoint.dueAt <= now) "Due now"
                                     else "Due ${android.text.format.DateUtils.getRelativeTimeSpanString(checkpoint.dueAt, now, android.text.format.DateUtils.MINUTE_IN_MILLIS)}",
-                                    style = MaterialTheme.typography.labelMedium,
+                                    style = MaterialTheme.typography.labelSmall,
                                 )
                                 Spacer(Modifier.height(6.dp))
                                 Button(onClick = { onStartRetention(checkpoint) }, modifier = Modifier.fillMaxWidth()) {
@@ -1360,7 +1360,7 @@ private fun TodayScreen(
                             }
                             Text(
                                 "Answer accuracy: $accuracyLabel · Self-rating: ${checkpoint.score?.let { "$it / 5" } ?: "not recorded"} · Retrieval time: ${checkpoint.latencyMs?.let { "${"%.1f".format(it / 1000.0)} s" } ?: "not recorded"}",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = MaterialTheme.typography.bodyMedium,
                             )
                             Text(
                                 "Completed ${android.text.format.DateUtils.getRelativeTimeSpanString(checkpoint.completedAt!!, now, android.text.format.DateUtils.MINUTE_IN_MILLIS)}",
@@ -1386,7 +1386,7 @@ private fun TodayScreen(
             Text(
                 "Descriptive history, not a controlled experiment. Correctness reflects saved attempt labels; ratings are self-reported.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
             )
             val summaries = RecallAnalytics.byMode(attemptHistory)
             if (summaries.isEmpty()) {
@@ -1428,8 +1428,8 @@ private fun MetricCard(title: String, value: String, detail: String, modifier: M
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
         ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Text(title, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            Text(title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
             Text(detail, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
@@ -1523,11 +1523,11 @@ private fun PalaceScreen(
                     Text("1. Choose a place you know well, such as your home.\n2. Pick a consistent route through it.\n3. Choose distinct stops, such as the front door, sofa, and kitchen sink.\n4. Attach one fact to each stop with a vivid image.\n5. Mentally walk the route and try to recall each fact before checking.",
                         color = MaterialTheme.colorScheme.onPrimaryContainer)
                     Text("Example: imagine a giant leaf blocking your front door to cue ‘plants absorb carbon dioxide’. The image is a reminder, not proof you will remember it.",
-                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
                 }
             }
             Text("The app organises palace → area or route → specific spot. Start with one palace and a few distinct spots; you can add more structure later.",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (flattened.isEmpty()) {
             item {
@@ -1561,7 +1561,7 @@ private fun PalaceScreen(
                     Text(
                         if (itemCount == 1) "1 linked memory" else "$itemCount linked memories",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (allowedChildKinds(node).isNotEmpty()) {
@@ -1784,10 +1784,10 @@ private fun RetentionTestScreen(
                     )
                     if (revealed) {
                         Text("EXPECTED PROMPT", color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.labelMedium)
+                            style = MaterialTheme.typography.labelSmall)
                         Text(item.prompt, fontWeight = FontWeight.SemiBold)
                         Text("EXPECTED ANSWER", color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.labelMedium)
+                            style = MaterialTheme.typography.labelSmall)
                         Text(item.answer)
                     } else {
                         Button(onClick = { revealed = true }, modifier = Modifier.fillMaxWidth()) {
@@ -1866,7 +1866,7 @@ private fun SequenceRecallScreen(
                         Text("${item.sequenceOrder ?: index + 1}. ${item.prompt} — ${item.answer}",
                             style = MaterialTheme.typography.bodyLarge)
                         if (item.association.isNotBlank()) {
-                            Text("Association: ${item.association}", style = MaterialTheme.typography.bodySmall,
+                            Text("Association: ${item.association}", style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
@@ -1916,9 +1916,9 @@ private fun RecallScreen(
         Heading("Retrieval practice")
         Text("Your practice loop: try to remember → reveal the answer → compare honestly → record the result. Do not worry about getting everything right; mistakes show what to practise next.",
             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("Choose a mode", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+        Text("Choose a mode", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Text("Prompt = answer from a question. Free = recall without a cue. Reverse = see the answer and recall its question.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
             listOf(RecallMode.Cued, RecallMode.Free, RecallMode.Reverse).forEach { option ->
                 if (mode == option) {
@@ -1956,7 +1956,7 @@ private fun RecallScreen(
                             color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
                         Spacer(Modifier.height(16.dp))
                         Text(if (mode == RecallMode.Reverse) item.answer else item.prompt,
-                            style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                            style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                     } else {
                         Text("FREE RECALL · NO CUE", color = MaterialTheme.colorScheme.primary,
                             style = MaterialTheme.typography.labelLarge)
@@ -1967,7 +1967,7 @@ private fun RecallScreen(
                     if (item.palace.isNotBlank()) {
                         Spacer(Modifier.height(10.dp))
                         Text("Place: ${item.palace} · ${item.locus.ifBlank { "locus not set" }}",
-                            style = MaterialTheme.typography.labelMedium)
+                            style = MaterialTheme.typography.labelSmall)
                     }
                     if (revealed) {
                         Spacer(Modifier.height(20.dp))
@@ -1978,11 +1978,11 @@ private fun RecallScreen(
                             Text(item.prompt, style = MaterialTheme.typography.bodyLarge)
                         } else if (mode == RecallMode.Free) {
                             Text("PROMPT", color = MaterialTheme.colorScheme.primary,
-                                style = MaterialTheme.typography.labelMedium)
+                                style = MaterialTheme.typography.labelSmall)
                             Text(item.prompt, style = MaterialTheme.typography.bodyLarge)
                             Spacer(Modifier.height(8.dp))
                             Text("ANSWER", color = MaterialTheme.colorScheme.primary,
-                                style = MaterialTheme.typography.labelMedium)
+                                style = MaterialTheme.typography.labelSmall)
                             Text(item.answer, style = MaterialTheme.typography.bodyLarge)
                         } else {
                             Text(item.answer, style = MaterialTheme.typography.bodyLarge)
@@ -2032,7 +2032,7 @@ private fun RecallScreen(
                     }
                 }
                 Text("How hard was it to remember?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Text("Choose how it felt, separately from whether your answer was correct. You must mark correctness first; this keeps accuracy and effort as separate records.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                Text("Choose how it felt, separately from whether your answer was correct. You must mark correctness first; this keeps accuracy and effort as separate records.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
                 listOf(0 to "Again · forgot", 2 to "Hard · effortful", 3 to "Got it · some effort", 5 to "Easy · immediate").forEach { (score, label) ->
                     TextButton(
                         enabled = userCheckedCorrect != null,
@@ -2080,7 +2080,7 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
                     Text("Example: ‘What gas do plants absorb?’ Answer: ‘Carbon dioxide.’ Keep the question specific so you can test yourself later.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Button(onClick = onAdd, modifier = Modifier.fillMaxWidth()) { Text("Create my first memory") }
-                    Text("Your saved facts stay on this device.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Your saved facts stay on this device.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         } else {
@@ -2092,7 +2092,7 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
                 singleLine = true,
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("${filteredMemories.size} memories", style = MaterialTheme.typography.labelMedium)
+                Text("${filteredMemories.size} memories", style = MaterialTheme.typography.labelSmall)
                 TextButton(onClick = { dueOnly = !dueOnly }) {
                     Text(if (dueOnly) "Show all" else "Due reviews only")
                 }
@@ -2127,10 +2127,10 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
                             Spacer(Modifier.height(4.dp))
                             Text(item.answer, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             if (item.chunkLabel.isNotBlank()) {
-                                Text("Chunk: ${item.chunkLabel}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                                Text("Chunk: ${item.chunkLabel}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                             }
                             if (item.association.isNotBlank()) {
-                                Text("Association: ${item.association}", style = MaterialTheme.typography.bodySmall)
+                                Text("Association: ${item.association}", style = MaterialTheme.typography.bodyMedium)
                             }
                             item.sequenceOrder?.let { order -> Text("Sequence position: $order", style = MaterialTheme.typography.labelSmall) }
                             if (item.palace.isNotBlank()) {
@@ -2199,18 +2199,18 @@ private fun AddMemoryDialog(
                 if (setupStep == 1) {
                     OutlinedTextField(chunkLabel, { chunkLabel = it }, label = { Text("Topic (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     OutlinedTextField(association, { association = it }, label = { Text("Unusual image or action (optional)") }, minLines = 2, modifier = Modifier.fillMaxWidth())
-                    Text("Example: picture a giant green leaf vacuuming carbon dioxide out of the air.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Example: picture a giant green leaf vacuuming carbon dioxide out of the air.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     val encodingCheck = EncodingQualityPlan.evaluate(prompt, answer, chunkLabel, association)
-                    Text("Preparation checklist: ${encodingCheck.score}/${encodingCheck.maxScore}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    Text("This checks whether details were added; it cannot predict or guarantee retention.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-                    encodingCheck.suggestions.forEach { suggestion -> Text("• $suggestion", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }
+                    Text("Preparation checklist: ${encodingCheck.score}/${encodingCheck.maxScore}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text("This checks whether details were added; it cannot predict or guarantee retention.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+                    encodingCheck.suggestions.forEach { suggestion -> Text("• $suggestion", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium) }
                 }
                 if (setupStep == 2) {
                     OutlinedTextField(sequenceOrderText, { value -> sequenceOrderText = value.filter(Char::isDigit).take(4) }, label = { Text("Order number (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     OutlinedTextField(palace, { palace = it }, label = { Text("Familiar building (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     OutlinedTextField(locus, { locus = it }, label = { Text("Specific spot in that building (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     if (locusNodes.isNotEmpty()) {
-                        Text("Or link to a saved memory-palace spot", style = MaterialTheme.typography.labelMedium)
+                        Text("Or link to a saved memory-palace spot", style = MaterialTheme.typography.labelSmall)
                         Box {
                             TextButton(onClick = { nodeMenuExpanded = true }) { Text(selectedNodeName) }
                             DropdownMenu(expanded = nodeMenuExpanded, onDismissRequest = { nodeMenuExpanded = false }) {
