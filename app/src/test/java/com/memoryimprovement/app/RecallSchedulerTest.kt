@@ -539,4 +539,66 @@ class RecallSchedulerTest {
     }
 
 
+
+    @Test
+    fun schedulerUsesDocumentedIntervalsAtEveryScoreBoundary() {
+        val day = 24L * 60L * 60L * 1000L
+        val expectedByScore = mapOf(
+            0 to listOf(1, 1, 1, 1, 1),
+            1 to listOf(1, 1, 1, 1, 1),
+            2 to listOf(2, 2, 2, 2, 2),
+            3 to listOf(1, 3, 7, 14, 14),
+            4 to listOf(2, 5, 10, 21, 30),
+            5 to listOf(2, 5, 10, 21, 30),
+        )
+        expectedByScore.forEach { (score, expectedIntervals) ->
+            expectedIntervals.forEachIndexed { previousReviews, expectedDays ->
+                val result = RecallScheduler.schedule(previousReviews, score, now = 0L)
+                assertEquals("score=$score, previousReviews=$previousReviews", expectedDays, result.intervalDays)
+                assertEquals(expectedDays * day, result.nextReviewAt)
+                assertEquals(score, result.score)
+            }
+        }
+    }
+
+    @Test
+    fun schedulerClampsReviewHistoryAndFailureStreakOverridesHighScore() {
+        val day = 24L * 60L * 60L * 1000L
+        assertEquals(30, RecallScheduler.schedule(previousReviews = 100, score = 5, now = 0L).intervalDays)
+        assertEquals(2, RecallScheduler.schedule(previousReviews = -10, score = 5, now = 0L).intervalDays)
+        val failed = RecallScheduler.schedule(
+            previousReviews = 4, score = 5, now = 7L, consecutiveFailures = 2,
+        )
+        assertEquals(1, failed.intervalDays)
+        assertEquals(7L + day, failed.nextReviewAt)
+    }
+
+    @Test
+    fun retentionAnalyticsReportsNullMeansWhenCompletedRecordsHaveNoMeasurements() {
+        val checkpoints = listOf(
+            RetentionCheckpoint("pending", "a", 1, 10L),
+            RetentionCheckpoint("completed-empty", "b", 1, 20L, completedAt = 30L),
+        )
+        val day1 = RetentionAnalytics.byDelay(checkpoints).single { it.delayDays == 1 }
+        assertEquals(2, day1.total)
+        assertEquals(1, day1.completed)
+        assertEquals(null, day1.meanSelfRating)
+        assertEquals(null, day1.checkedAccuracyPercent)
+        assertEquals(0, day1.checkedAccuracyCount)
+        assertEquals(null, day1.meanLatencyMs)
+    }
+
+    @Test
+    fun interferencePlanHonorsLimitAndKeepsResultsDeterministicallyRanked() {
+        val items = listOf(
+            MemoryItem("a", "Access control protect resources", "Access control protects restricted resources"),
+            MemoryItem("b", "Access control protect resources", "Access control protects approved resources"),
+            MemoryItem("c", "Network access control", "Access control blocks unauthorized devices"),
+        )
+        val all = MemoryInterferencePlan.find(items)
+        assertEquals(0, MemoryInterferencePlan.find(items, limit = 0).size)
+        assertEquals(1, MemoryInterferencePlan.find(items, limit = 1).size)
+        assertEquals(all.map { it.first.id to it.second.id }, MemoryInterferencePlan.find(items).map { it.first.id to it.second.id })
+    }
+
 }
