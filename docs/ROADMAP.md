@@ -3,44 +3,48 @@
 ## Milestone 0 — repository foundation
 
 - [x] Kotlin Android application module with Jetpack Compose.
-- [x] Local memory capture and basic recall flow.
-- [x] Initial palace/locus assignment.
-- [x] Transparent baseline review scheduler with unit tests.
-- [x] GitHub Actions build/test workflow.
-- [x] Confirm CI build and unit tests pass on GitHub Actions (latest verified run: #21).
+- [x] Local memory capture, library search/filtering, and recall flow.
+- [x] Baseline review scheduling with unit tests.
+- [x] GitHub Actions build/unit-test workflow and debug APK artifact.
+- [x] Latest Android CI run #173 passed for commit `129a7c16e78bc647b576fdc9b1bd80d00a4a5d49`.
+- [ ] Obtain a successful Android emulator instrumentation run on the current commit; latest run was cancelled and a rerun is pending.
 
 ## Milestone 1 — dependable learning records
 
-- [x] Move from a single serialized preference value to a database-backed repository suitable for larger collections.
-- [x] Persist recall attempts and timestamps, including retrieval latency; free-recall response capture is now stored as well.
-- [x] Implement initial cued, free, and reverse recall modes; manual ratings remain subjective.
-- [ ] Add editing, deletion, import/export, and safe backup.
-- [ ] Add automated repository and scheduler tests (checkpoint schedule unit tests added; repository/migration tests still needed).
+- [x] Room-backed local persistence and explicit schema migrations through version 6.
+- [x] Legacy preference-data migration with malformed-data preservation and retry handling.
+- [x] Persist recall attempts, modes, timestamps, correctness, latency, and free-recall responses.
+- [x] Delete a memory and its associated recall attempts/checkpoints transactionally.
+- [x] Parse and export TSV, including an escaped versioned format for tabs/newlines/backslashes; accept legacy TSV and preview duplicate filtering.
+- [x] Persist retention checkpoints for 24-hour, 7-day, and 30-day intervals.
+- [ ] Add broader automated database/repository tests for schema upgrades, migration edge cases, import/export persistence, and destructive operations.
+- [ ] Define and verify a backup/restore workflow; TSV export exists but is not a complete database backup.
 
-## Milestone 2 — navigable memory palaces (in progress)
+## Milestone 2 — navigable memory palaces
 
-- [x] Model nested palaces, routes/areas, loci, and fact links using stable IDs.
-- [x] Provide a basic indented hierarchy view and create-child flow.
-- [x] Allow memory items to link to a stable locus ID.
-- [ ] Add focused route/locus drill-down, editing, and safe node deletion.
+- [x] Model nested palace, route, area, and locus nodes with stable IDs.
+- [x] Create, rename, move, and delete palace branches; clear memory references when deleting a branch.
+- [x] Link memories to palace nodes and store optional sequence order.
+- [ ] Add focused integration coverage for hierarchy mutations, reference integrity, and sequence-order behavior.
 - [ ] Detect duplicate or potentially confusable cues and let the user resolve them.
-- [ ] Support ordered sequences and test order accuracy.
 
 ## Milestone 3 — retention measurement
 
-- [x] Define and persist 24-hour, 7-day, and 30-day retention checkpoints; initialize missing checkpoints for existing memories.
-- [ ] Track accuracy, latency, order accuracy, and interference; free-recall correctness is not yet independently scored.
-- [ ] Surface and run 24-hour, 7-day, and 30-day checkpoints in the UI, then display retention trends.
+- [x] Store 24-hour, 7-day, and 30-day retention checkpoints.
+- [x] Record checkpoint completion, score, latency, recalled response, and an accuracy value.
+- [x] Summarize recall-attempt accuracy and latency by recall mode.
+- [ ] Verify scoring semantics and end-to-end checkpoint behavior with automated tests.
+- [ ] Track and validate sequence accuracy and interference/confusion metrics; do not treat their existence as verified until code and tests establish them.
 - [ ] Compare methods on comparable material and time invested.
-- [ ] Avoid declaring a method superior without enough comparable observations.
+- [ ] Demonstrate delayed-retention outcomes with measured observations before making efficacy claims.
 
 ## Milestone 4 — optimize encoding
 
-- [ ] Add chunking and association-building tools.
-- [ ] Let the user place facts in a palace while encoding.
-- [ ] Test method combinations against recall outcomes.
-- [ ] Add optional AI-assisted organization only after the offline flow is dependable.
+- [x] Store chunk labels and associations and provide a local encoding-quality checklist.
+- [ ] Evaluate encoding workflow speed and usability against observed user tasks.
+- [ ] Test method combinations against delayed recall outcomes.
+- [ ] Add optional AI-assisted organization only after core offline reliability is established.
 
 ## Acceptance principle
 
-A feature is not complete because it looks finished. It must preserve user data, behave correctly, and expose evidence needed to assess whether it improves reliable recall.
+A feature is not complete because it looks finished. Verify data integrity, runtime behavior, and the relevant tests. Distinguish implemented metrics from validated measurements and demonstrated learning effectiveness. Record CI run links and device-test results; do not mark acceptance criteria complete without evidence.
