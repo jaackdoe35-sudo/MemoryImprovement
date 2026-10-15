@@ -36,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -98,7 +99,19 @@ class MainActivity : ComponentActivity() {
             val initialAttempts = repository.loadAttempts()
             val initialCheckpoints = repository.loadRetentionCheckpoints()
             setContent {
-                MaterialTheme {
+                MaterialTheme(
+                    colorScheme = lightColorScheme(
+                        primary = Color(0xFF245B4A),
+                        onPrimary = Color.White,
+                        secondary = Color(0xFFB96F43),
+                        background = Color(0xFFF6F4EF),
+                        surface = Color(0xFFFFFEFA),
+                        onSurface = Color(0xFF202820),
+                        onSurfaceVariant = Color(0xFF626B63),
+                        primaryContainer = Color(0xFFDCEBE2),
+                        onPrimaryContainer = Color(0xFF173E31),
+                    ),
+                ) {
                     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                         MemoryApp(
                             initialItems = initialItems,
@@ -268,8 +281,8 @@ private fun MemoryApp(
         topBar = {
             TopAppBar(title = {
                 Column {
-                    Text("MemoryImprovement", fontWeight = FontWeight.Bold)
-                    Text("Build memory you can retrieve", style = MaterialTheme.typography.labelMedium,
+                    Text("MEMORY STUDIO", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                    Text("Learn it. Remember it. Recall it.", style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             })
@@ -810,15 +823,49 @@ private fun TodayScreen(
                 shape = RoundedCornerShape(26.dp), modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(Modifier.padding(22.dp)) {
-                    Text("YOUR NEXT REP", color = Color(0xFFB9C8FF), style = MaterialTheme.typography.labelLarge)
+                    Text(if (memories.isEmpty()) "YOUR STARTING POINT" else "YOUR NEXT PRACTICE", color = Color(0xFFC9E8D5), style = MaterialTheme.typography.labelLarge)
                     Spacer(Modifier.height(10.dp))
-                    Text(if (memories.isEmpty()) "Turn information into recall." else "Recall before you review.",
+                    Text(if (memories.isEmpty()) "You can train your memory." else "Recall first. Review second.",
                         color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(8.dp))
-                    Text("Encode it. Place it. Retrieve it later.", color = Color(0xFFD9E0F7))
+                    Text(if (memories.isEmpty()) "No experience needed. Start with one small fact and learn the method as you go." else "Try to retrieve the answer before revealing it. Effortful recall helps you find what you really know.", color = Color(0xFFE1EEE6))
                     Spacer(Modifier.height(18.dp))
                     Button(onClick = if (memories.isEmpty()) onAdd else onRecall) {
-                        Text(if (memories.isEmpty()) "Add your first memory" else "Start recall")
+                        Text(if (memories.isEmpty()) "Add a first fact" else "Practise recall")
+                    }
+                }
+            }
+        }
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Heading("Learn the essentials")
+                Text("Three useful skills. Start with the first; you do not need to know any terminology.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                    shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("01  Active recall", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text("What it means: try to remember before looking at the answer. Example: close your notes and explain one idea in your own words.",
+                            color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text("Why use it: it reveals what you can actually retrieve, not just what looks familiar.",
+                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    }
+                }
+                Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("02  Spaced practice", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text("What it means: revisit information across separate sessions instead of cramming it all at once.")
+                        Text("Try this: test yourself today, then return to the same fact tomorrow. Adjust the interval based on how well you remember.",
+                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("03  Distinctive associations", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text("What it means: connect a fact to a concrete, unusual image or action that gives you a retrieval cue.")
+                        Text("Example: to remember that a person is a baker, imagine them juggling enormous loaves in a bakery. The stranger and more specific cue may be easier to recall.",
+                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
