@@ -722,4 +722,68 @@ class LegacyMigrationIntegrationTest {
         assertEquals("Topic", memory.chunkLabel)
     }
 
+
+    @Test
+    fun savingSameMemoryRepeatedlyDoesNotDuplicateRetentionCheckpoints() = runBlocking {
+        val item = MemoryItem(
+            id = "stable-checkpoints",
+            prompt = "What is a synapse?",
+            answer = "A junction between neurons",
+            createdAt = 1_000L,
+        )
+
+        repository.saveItems(listOf(item))
+        val first = repository.loadRetentionCheckpoints().sortedBy { it.delayDays }
+        repository.saveItems(listOf(item.copy(prompt = "What is a synapse?", reviewCount = 1)))
+        val second = repository.loadRetentionCheckpoints().sortedBy { it.delayDays }
+
+        assertEquals(listOf(1, 7, 30), first.map { it.delayDays })
+        assertEquals(listOf(86_401_000L, 604_801_000L, 2_592_001_000L), first.map { it.dueAt })
+        assertEquals(first, second)
+    }
+
+    @Test
+    fun completingUnknownOrAlreadyCompletedCheckpointDoesNotCreateExtraAttempt() = runBlocking {
+        val item = MemoryItem(id = "checkpoint-once", prompt = "Capital of France?", answer = "Paris")
+        repository.saveItems(listOf(item))
+
+        assertFalse(
+            repository.completeRetentionCheckpoint(
+                id = "unknown-checkpoint",
+                score = 4,
+                latencyMs = 500L,
+                recalledResponse = "Paris",
+                accuracy = 2,
+                completedAt = 100L,
+            ),
+        )
+        assertTrue(repository.loadAttempts().isEmpty())
+
+        assertTrue(
+            repository.completeRetentionCheckpoint(
+                id = "${item.id}-7",
+                score = 4,
+                latencyMs = 500L,
+                recalledResponse = "Paris",
+                accuracy = 2,
+                completedAt = 200L,
+            ),
+        )
+        assertFalse(
+            repository.completeRetentionCheckpoint(
+                id = "${item.id}-7",
+                score = 1,
+                latencyMs = 800L,
+                recalledResponse = "Lyon",
+                accuracy = 0,
+                completedAt = 300L,
+            ),
+        )
+        val attempts = repository.loadAttempts()
+        assertEquals(1, attempts.size)
+        assertEquals(200L, attempts.single().reviewedAt)
+        assertEquals("Paris", attempts.single().recalledResponse)
+        assertEquals(4, attempts.single().score)
+    }
+
 }
