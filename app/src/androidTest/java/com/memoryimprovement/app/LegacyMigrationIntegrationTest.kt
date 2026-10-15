@@ -514,4 +514,55 @@ class LegacyMigrationIntegrationTest {
         assertEquals("At the end of the hallway", remainingMemory.answer)
     }
 
+
+    @Test
+    fun backupRestoreReplacesLocalDataAndPreservesFullStudyHistory() = runBlocking {
+        repository.createPalaceNode("Old palace", PalaceNodeKind.Palace, null)
+        repository.saveItems(listOf(MemoryItem(id = "old", prompt = "Old", answer = "Old answer")))
+
+        val source = MemoryBackupSnapshot(
+            createdAt = 1234L,
+            memories = listOf(
+                MemoryItem(
+                    id = "restored-memory",
+                    prompt = "What is a synapse?",
+                    answer = "A junction between communicating neurons",
+                    createdAt = 10L,
+                    nextReviewAt = 20L,
+                    lastScore = 3,
+                    reviewCount = 2,
+                    palaceNodeId = "restored-locus",
+                    chunkLabel = "Neuroscience",
+                    association = "Two neurons passing a glowing message",
+                    sequenceOrder = 1,
+                ),
+            ),
+            // Deliberately unordered: restore must insert parent nodes before descendants.
+            palaceNodes = listOf(
+                PalaceNode("restored-locus", "Desk", PalaceNodeKind.Locus, "restored-route", 2, 12L),
+                PalaceNode("restored-route", "Hallway", PalaceNodeKind.Route, "restored-palace", 1, 11L),
+                PalaceNode("restored-palace", "Home", PalaceNodeKind.Palace, null, 0, 10L),
+            ),
+            attempts = listOf(
+                RecallAttempt("restored-memory", RecallMode.Free, true, 5, 750L, "Neuron junction", 30L),
+            ),
+            checkpoints = listOf(
+                RetentionCheckpoint(
+                    "restored-memory-7", "restored-memory", 7, 70L,
+                    completedAt = 80L, score = 4, latencyMs = 900L,
+                    recalledResponse = "A junction", accuracy = 1,
+                ),
+            ),
+        )
+
+        repository.restoreBackupSnapshot(MemoryBackupPlan.decode(MemoryBackupPlan.encode(source)))
+
+        assertEquals(listOf("restored-memory"), repository.loadItems().map { it.id })
+        assertEquals(source.memories.single(), repository.loadItems().single())
+        assertEquals(source.palaceNodes.map { it.id }.toSet(), repository.loadPalaceNodes().map { it.id }.toSet())
+        assertEquals(source.attempts, repository.loadAttempts())
+        assertEquals(source.checkpoints, repository.loadRetentionCheckpoints())
+        assertFalse(repository.loadItems().any { it.id == "old" })
+    }
+
 }
