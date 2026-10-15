@@ -338,4 +338,73 @@ class LegacyMigrationIntegrationTest {
         assertEquals(2, persisted.sequenceOrder)
     }
 
+    @Test
+    fun persistedMemoriesSurviveEscapedTsvExportAndImportRoundTrip() = runBlocking {
+        val sourceItems = listOf(
+            MemoryItem(
+                id = "round-trip-1",
+                prompt = "Question\twith tab\nand newline",
+                answer = "Line one\r\nLine two\\\\literal",
+                palace = "Home\tA",
+                locus = "Room\nB",
+                createdAt = 100L,
+                nextReviewAt = 200L,
+                lastScore = 4,
+                reviewCount = 3,
+                chunkLabel = "Chunk\\\\C",
+                association = "Association\rD",
+                sequenceOrder = 2,
+            ),
+            MemoryItem(
+                id = "round-trip-2",
+                prompt = "Second question",
+                answer = "Second answer",
+                palace = "Office",
+                locus = "Desk",
+                createdAt = 300L,
+                nextReviewAt = 400L,
+                chunkLabel = "Protocol",
+                association = "A clear, distinctive mental image",
+                sequenceOrder = 3,
+            ),
+        )
+        repository.saveItems(sourceItems)
+        val persistedBeforeExport = repository.loadItems().associateBy { it.id }
+        val exported = MemoryExportPlan.toTsv(persistedBeforeExport.values.sortedBy { it.id })
+        val parsed = MemoryImportPlan.parseTsv(exported)
+
+        assertEquals(2, parsed.size)
+        val importedDatabaseName = "import-round-trip-${UUID.randomUUID()}.db"
+        val importedRepository = MemoryRepository(context, importedDatabaseName)
+        try {
+            importedRepository.saveItems(
+                parsed.mapIndexed { index, row ->
+                    MemoryItem(
+                        id = "imported-${index + 1}",
+                        prompt = row.prompt,
+                        answer = row.answer,
+                        palace = row.palace,
+                        locus = row.locus,
+                        chunkLabel = row.chunkLabel,
+                        association = row.association,
+                        sequenceOrder = row.sequenceOrder,
+                    )
+                },
+            )
+            val restored = importedRepository.loadItems().associateBy { it.prompt }
+            for (original in sourceItems) {
+                val restoredItem = restored.getValue(original.prompt)
+                assertEquals(original.answer, restoredItem.answer)
+                assertEquals(original.palace, restoredItem.palace)
+                assertEquals(original.locus, restoredItem.locus)
+                assertEquals(original.chunkLabel, restoredItem.chunkLabel)
+                assertEquals(original.association, restoredItem.association)
+                assertEquals(original.sequenceOrder, restoredItem.sequenceOrder)
+            }
+        } finally {
+            importedRepository.close()
+            context.deleteDatabase(importedDatabaseName)
+        }
+    }
+
 }
