@@ -548,9 +548,15 @@ class LegacyMigrationIntegrationTest {
             ),
             checkpoints = listOf(
                 RetentionCheckpoint(
-                    "restored-memory-7", "restored-memory", 7, 70L,
-                    completedAt = 80L, score = 4, latencyMs = 900L,
+                    "restored-memory-1", "restored-memory", 1, 86_400_010L,
+                ),
+                RetentionCheckpoint(
+                    "restored-memory-7", "restored-memory", 7, 604_800_010L,
+                    completedAt = 604_800_080L, score = 4, latencyMs = 900L,
                     recalledResponse = "A junction", accuracy = 1,
+                ),
+                RetentionCheckpoint(
+                    "restored-memory-30", "restored-memory", 30, 2_592_000_010L,
                 ),
             ),
         )
@@ -561,7 +567,10 @@ class LegacyMigrationIntegrationTest {
         assertEquals(source.memories.single(), repository.loadItems().single())
         assertEquals(source.palaceNodes.map { it.id }.toSet(), repository.loadPalaceNodes().map { it.id }.toSet())
         assertEquals(source.attempts, repository.loadAttempts())
-        assertEquals(source.checkpoints, repository.loadRetentionCheckpoints())
+        assertEquals(
+            source.checkpoints.associateBy { it.id },
+            repository.loadRetentionCheckpoints().associateBy { it.id },
+        )
         assertFalse(repository.loadItems().any { it.id == "old" })
     }
 
