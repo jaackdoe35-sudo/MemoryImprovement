@@ -1438,8 +1438,8 @@ private fun PalaceScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     val flattened = remember(nodes) { flattenPalaceTree(nodes) }
     LazyColumn(
-        Modifier.fillMaxSize().padding(18.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        Modifier.fillMaxSize().padding(StudioSpacing.screenHorizontal),
+        verticalArrangement = Arrangement.spacedBy(StudioSpacing.xs),
     ) {
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -1839,7 +1839,7 @@ private fun RecallScreen(
     var recalledResponse by remember(item?.id, mode) { mutableStateOf("") }
     var userCheckedCorrect by remember(item?.id, mode) { mutableStateOf<Boolean?>(null) }
     val recallStartedAt = remember(item?.id, mode) { SystemClock.elapsedRealtime() }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(StudioSpacing.screenHorizontal), verticalArrangement = Arrangement.spacedBy(StudioSpacing.md)) {
         Heading("Retrieval practice")
         Text("Your practice loop: try to remember → reveal the answer → compare honestly → record the result. Do not worry about getting everything right; mistakes show what to practise next.",
             color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -1862,9 +1862,9 @@ private fun RecallScreen(
         if (item == null) {
             Card(shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(20.dp)) {
-                    Text("Nothing to practise yet", fontWeight = FontWeight.Bold)
+                    Text("Your first recall session starts here", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(8.dp))
-                    Text("Add a prompt and answer to start a recall session.")
+                    Text("Create one small question and answer in your library, then come back here to practise retrieving it.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(14.dp))
                     Button(onClick = onAdd) { Text("Add memory") }
                 }
@@ -1974,7 +1974,7 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
     val filteredMemories = remember(memories, searchQuery, dueOnly, now) {
         MemoryLibraryPlan.filterAndSort(memories, searchQuery, dueOnly, now)
     }
-    Column(Modifier.fillMaxSize().padding(horizontal = 18.dp)) {
+    Column(Modifier.fillMaxSize().padding(horizontal = StudioSpacing.screenHorizontal)) {
         Spacer(Modifier.height(8.dp))
         Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             Heading("Your memory library")
@@ -2016,7 +2016,7 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
                 }
             }
             if (filteredMemories.isEmpty()) {
-                Text("No memories match this search.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Column(Modifier.fillMaxWidth().padding(vertical = StudioSpacing.xl), verticalArrangement = Arrangement.spacedBy(StudioSpacing.xs)) {\n                    Text(if (dueOnly) "No reviews are due right now" else "No matching memories", style = MaterialTheme.typography.titleMedium)\n                    Text(if (dueOnly) "You are up to date. Show all memories to browse your library." else "Try a different search, or clear the search to see all saved memories.", color = MaterialTheme.colorScheme.onSurfaceVariant)\n                    TextButton(onClick = { if (dueOnly) dueOnly = false else searchQuery = "" }) { Text(if (dueOnly) "Show all memories" else "Clear search") }\n                }
             }
             LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(filteredMemories, key = { it.id }) { item ->
