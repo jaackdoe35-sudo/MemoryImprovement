@@ -50,6 +50,7 @@ import java.util.UUID
 class MainActivity : ComponentActivity() {
     private var pendingExport: String = ""
     private var pendingImportConsumer: ((Result<String>) -> Unit)? = null
+    private var pendingBackupImportConsumer: ((Result<String>) -> Unit)? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,6 +77,19 @@ class MainActivity : ComponentActivity() {
             }
             pendingImportConsumer = null
         }
+        val openBackupFile = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+            if (uri != null) {
+                runCatching {
+                    contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+                        ?: throw IllegalStateException("Could not read the selected backup file.")
+                }.onSuccess { content ->
+                    pendingBackupImportConsumer?.invoke(Result.success(content))
+                }.onFailure { error ->
+                    pendingBackupImportConsumer?.invoke(Result.failure(error))
+                }
+            }
+            pendingBackupImportConsumer = null
+        }
         val repository = MemoryRepository(applicationContext)
         lifecycleScope.launch {
             val initialMigrationResult = repository.loadItemsWithMigrationStatus()
@@ -100,6 +114,28 @@ class MainActivity : ComponentActivity() {
                             onExportLegacyData = { raw ->
                                 pendingExport = raw
                                 createLegacyBackup.launch("memory-improvement-legacy-backup.json")
+                            },
+                            onExportFullBackup = {
+                                lifecycleScope.launch {
+                                    runCatching { MemoryBackupPlan.encode(repository.createBackupSnapshot()) }
+                                        .onSuccess { raw ->
+                                            pendingExport = raw
+                                            createLegacyBackup.launch("memory-improvement-backup.json")
+                                        }
+                                }
+                            },
+                            onChooseBackupFile = { consume ->
+                                pendingBackupImportConsumer = consume
+                                openBackupFile.launch(arrayOf("application/json", "application/octet-stream", "text/*"))
+                            },
+                            onRestoreBackup = { snapshot, onRestored ->
+                                lifecycleScope.launch {
+                                    runCatching { repository.restoreBackupSnapshot(snapshot) }
+                                        .fold(
+                                            onSuccess = { onRestored(Result.success(Unit)) },
+                                            onFailure = { onRestored(Result.failure(it)) },
+                                        )
+                                }
                             },
                             onChooseImportFile = { consume ->
                                 pendingImportConsumer = consume
@@ -165,6 +201,9 @@ private fun MemoryApp(
     onSave: (List<MemoryItem>) -> Unit,
     onExportMemories: (List<MemoryItem>) -> Unit,
     onExportLegacyData: (String) -> Unit,
+    onExportFullBackup: () -> Unit,
+    onChooseBackupFile: (((Result<String>) -> Unit) -> Unit),
+    onRestoreBackup: (MemoryBackupSnapshot, (Result<Unit>) -> Unit) -> Unit,
     onChooseImportFile: (((Result<String>) -> Unit) -> Unit),
     onDeleteMemory: (String, () -> Unit) -> Unit,
     onAttempt: (RecallAttempt) -> Unit,
@@ -187,6 +226,10 @@ private fun MemoryApp(
     var bulkImportError by remember { mutableStateOf<String?>(null) }
     var bulkImportStatus by remember { mutableStateOf<String?>(null) }
     var bulkImportPreview by remember { mutableStateOf<MemoryImportBatch?>(null) }
+    var backupImportOpen by remember { mutableStateOf(false) }
+    var backupImportSnapshot by remember { mutableStateOf<MemoryBackupSnapshot?>(null) }
+    var backupImportError by remember { mutableStateOf<String?>(null) }
+    var backupImportStatus by remember { mutableStateOf<String?>(null) }
     var editingMemory by remember { mutableStateOf<MemoryItem?>(null) }
     var deletingMemory by remember { mutableStateOf<MemoryItem?>(null) }
     var active by remember { mutableStateOf<MemoryItem?>(null) }
@@ -251,6 +294,13 @@ private fun MemoryApp(
                     memories, attempts, correct, checkpoints, attemptHistory,
                     migrationResult = migrationResult,
                     onExportLegacyData = onExportLegacyData,
+                    onExportFullBackup = onExportFullBackup,
+                    onImportFullBackup = {
+                        backupImportOpen = true
+                        backupImportSnapshot = null
+                        backupImportError = null
+                        backupImportStatus = null
+                    },
                     onAdd = { adding = true }, onRecall = ::startRecall, onStartRetention = ::startRetention,
                     onStartSequence = { sequence -> activeSequence = sequence; activeCheckpoint = null; revealed = false; tab = AppTab.Recall },
                     onStartPriority = { item -> activeCheckpoint = null; activeSequence = null; active = item; revealed = false; tab = AppTab.Recall },
@@ -429,6 +479,84 @@ private fun MemoryApp(
         )
     }
 
+    if (backupImportOpen) {
+        AlertDialog(
+            onDismissRequest = {
+                backupImportOpen = false
+                backupImportSnapshot = null
+                backupImportError = null
+                backupImportStatus = null
+            },
+            title = { Text("Restore full backup") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("A full backup replaces all current memories, palace locations, recall attempts, and retention checkpoints. Export a backup of your current data first if you may need it.")
+                    Button(onClick = {
+                        onChooseBackupFile { result ->
+                            result.onSuccess { raw ->
+                                runCatching { MemoryBackupPlan.decode(raw) }
+                                    .onSuccess {
+                                        backupImportSnapshot = it
+                                        backupImportError = null
+                                        backupImportStatus = null
+                                    }
+                                    .onFailure {
+                                        backupImportSnapshot = null
+                                        backupImportError = it.message ?: "The selected file is not a valid backup."
+                                    }
+                            }.onFailure {
+                                backupImportError = it.message ?: "Could not read the selected backup file."
+                            }
+                        }
+                    }) { Text("Choose backup JSON") }
+                    backupImportSnapshot?.let { snapshot ->
+                        Text("Ready to replace data with ${snapshot.memories.size} memories, ${snapshot.palaceNodes.size} palace locations, ${snapshot.attempts.size} recall attempts, and ${snapshot.checkpoints.size} retention checkpoints.")
+                    }
+                    backupImportError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    backupImportStatus?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = backupImportSnapshot != null,
+                    onClick = {
+                        val snapshot = backupImportSnapshot ?: return@TextButton
+                        onRestoreBackup(snapshot) { result ->
+                            result.onSuccess {
+                                memories = snapshot.memories
+                                palaceNodes = snapshot.palaceNodes
+                                attemptHistory = snapshot.attempts
+                                attempts = snapshot.attempts.size
+                                correct = snapshot.attempts.count { it.correct }
+                                checkpoints = snapshot.checkpoints
+                                active = null
+                                activeCheckpoint = null
+                                activeSequence = null
+                                revealed = false
+                                migrationResult = LegacyMigrationResult(items = snapshot.memories)
+                                backupImportOpen = false
+                                backupImportSnapshot = null
+                                backupImportError = null
+                                backupImportStatus = null
+                                tab = AppTab.Today
+                            }.onFailure {
+                                backupImportError = it.message ?: "Restore failed. Existing data was not intentionally changed."
+                            }
+                        }
+                    },
+                ) { Text("Replace local data") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    backupImportOpen = false
+                    backupImportSnapshot = null
+                    backupImportError = null
+                    backupImportStatus = null
+                }) { Text("Cancel") }
+            },
+        )
+    }
+
     if (bulkImportOpen) {
         AlertDialog(
             onDismissRequest = { bulkImportOpen = false; bulkImportError = null; bulkImportStatus = null; bulkImportPreview = null },
@@ -567,6 +695,8 @@ private fun TodayScreen(
     attemptHistory: List<RecallAttempt>,
     migrationResult: LegacyMigrationResult,
     onExportLegacyData: (String) -> Unit,
+    onExportFullBackup: () -> Unit,
+    onImportFullBackup: () -> Unit,
     onAdd: () -> Unit, onRecall: () -> Unit,
     onStartRetention: (RetentionCheckpoint) -> Unit,
     onStartSequence: (RecallSequence) -> Unit,
@@ -580,6 +710,18 @@ private fun TodayScreen(
     LazyColumn(Modifier.fillMaxSize().padding(horizontal = 18.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { Spacer(Modifier.height(4.dp)) }
+        item {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Data safety", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                    Text("Full JSON backups include memories, palace locations, recall history, and retention checkpoints.")
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = onExportFullBackup, modifier = Modifier.weight(1f)) { Text("Export backup") }
+                        TextButton(onClick = onImportFullBackup, modifier = Modifier.weight(1f)) { Text("Restore backup") }
+                    }
+                }
+            }
+        }
         if (migrationResult.errorMessage != null) {
             item {
                 Card(
