@@ -1,6 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+on_exit() {
+  local status=$?
+  trap - EXIT
+  if [ "$status" -ne 0 ]; then
+    echo "Screenshot capture failed (exit $status). Recent Android crash/runtime logs:"
+    adb logcat -d -t 500 -v brief 2>/dev/null | grep -E 'FATAL EXCEPTION|AndroidRuntime|Process: com\.memoryimprovement\.app|com\.memoryimprovement\.app.*(Exception|Error)' | tail -n 120 || true
+    echo "ADB state:"
+    adb devices || true
+    adb shell dumpsys activity activities 2>/dev/null | grep -E 'mResumedActivity|topResumedActivity' | tail -n 10 || true
+  fi
+  exit "$status"
+}
+trap on_exit EXIT
+
 echo "ADB devices after emulator startup:"
 adb devices
 
@@ -27,21 +41,58 @@ capture() {
   local name="$1"
   adb exec-out screencap -p > "docs/screenshots/${name}.png"
   test -s "docs/screenshots/${name}.png"
+  echo "Captured docs/screenshots/${name}.png"
+}
+
+launch_app() {
+  adb shell am force-stop com.memoryimprovement.app
+  adb shell am start -W -n com.memoryimprovement.app/.MainActivity
+  sleep 5
+  if ! adb shell pidof com.memoryimprovement.app 2>/dev/null | grep -q '[0-9]'; then
+    echo "App process is not running after launch; refusing to save a potentially misleading screenshot."
+    adb logcat -d -t 500 -v brief | tail -n 200 || true
+    return 1
+  fi
+}
+
+tap_label() {
+  local label="$1"
+  local coords
+  adb shell uiautomator dump /sdcard/window.xml >/dev/null
+  adb pull /sdcard/window.xml /tmp/window.xml >/dev/null
+  coords="$(python3 scripts/tap_text.py "$label")"
+  read -r x y <<< "$coords"
+  adb shell input tap "$x" "$y"
+  sleep 3
+}
+
+capture_tabs() {
+  local theme="$1"
+  capture "today-${theme}"
+
+  tap_label "Palace"
+  capture "palace-${theme}"
+
+  tap_label "Recall"
+  capture "recall-${theme}"
+
+  tap_label "Library"
+  capture "library-${theme}"
+
+  tap_label "Today"
+  tap_label "Add a first fact"
+  capture "add-memory-${theme}"
+  tap_label "Cancel"
 }
 
 adb shell cmd uimode night no
 sleep 3
-adb shell am force-stop com.memoryimprovement.app
-adb shell am start -n com.memoryimprovement.app/.MainActivity
-sleep 6
-capture today-light
-echo "Captured docs/screenshots/today-light.png"
+launch_app
+capture_tabs light
 
-# Second incremental capture: Today screen in dark mode.
 adb shell cmd uimode night yes
 sleep 3
-adb shell am force-stop com.memoryimprovement.app
-adb shell am start -n com.memoryimprovement.app/.MainActivity
-sleep 6
-capture today-dark
-echo "Captured docs/screenshots/today-dark.png"
+launch_app
+capture_tabs dark
+
+echo "All 10 expected light/dark screen captures completed."
