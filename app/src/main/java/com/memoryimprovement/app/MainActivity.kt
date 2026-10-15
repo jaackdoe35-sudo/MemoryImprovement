@@ -38,7 +38,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import java.util.UUID
 
 class MainActivity : ComponentActivity() {
@@ -101,19 +103,7 @@ class MainActivity : ComponentActivity() {
             val initialAttempts = repository.loadAttempts()
             val initialCheckpoints = repository.loadRetentionCheckpoints()
             setContent {
-                MaterialTheme(
-                    colorScheme = lightColorScheme(
-                        primary = Color(0xFF245B4A),
-                        onPrimary = Color.White,
-                        secondary = Color(0xFFB96F43),
-                        background = Color(0xFFF6F4EF),
-                        surface = Color(0xFFFFFEFA),
-                        onSurface = Color(0xFF202820),
-                        onSurfaceVariant = Color(0xFF626B63),
-                        primaryContainer = Color(0xFFDCEBE2),
-                        onPrimaryContainer = Color(0xFF173E31),
-                    ),
-                ) {
+                MemoryImprovementTheme {
                     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                         MemoryApp(
                             initialItems = initialItems,
@@ -281,25 +271,42 @@ private fun MemoryApp(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = {
-                Column {
-                    Text("MEMORY STUDIO", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                    Text("Learn it. Remember it. Recall it.", style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            })
+            TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                ),
+                title = {
+                    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                        Text("MEMORY STUDIO", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, letterSpacing = 1.1.sp)
+                        Text("A quieter way to learn what lasts", style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                },
+            )
         },
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                tonalElevation = 0.dp,
+            ) {
                 AppTab.entries.forEach { destination ->
                     NavigationBarItem(
                         selected = tab == destination,
                         onClick = { tab = destination; if (destination == AppTab.Recall) startRecall() },
                         icon = { Text(when (destination) {
-                            AppTab.Today -> "◎"; AppTab.Palace -> "⌂"
+                            AppTab.Today -> "◷"; AppTab.Palace -> "⌂"
                             AppTab.Recall -> "↻"; AppTab.Library -> "▤"
-                        }) },
-                        label = { Text(destination.label) },
+                        }, style = MaterialTheme.typography.titleMedium) },
+                        label = { Text(destination.label, style = MaterialTheme.typography.labelMedium) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
                     )
                 }
             }
@@ -786,13 +793,20 @@ private fun TodayScreen(
     var selectedAnswerId by remember { mutableStateOf<String?>(null) }
     var drillChecked by remember { mutableStateOf(false) }
     var drillStartedAt by remember { mutableStateOf(0L) }
-    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item { Spacer(Modifier.height(4.dp)) }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp),
+    ) {
+        item { Spacer(Modifier.height(6.dp)) }
         item {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Data safety", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+            ) {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Your data, in your hands", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                     Text("Full JSON backups include memories, palace locations, recall history, and retention checkpoints.")
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(onClick = onExportFullBackup, modifier = Modifier.weight(1f)) { Text("Export backup") }
@@ -822,15 +836,15 @@ private fun TodayScreen(
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
-                shape = RoundedCornerShape(26.dp), modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth(),
             ) {
-                Column(Modifier.padding(22.dp)) {
+                Column(Modifier.padding(horizontal = 24.dp, vertical = 26.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(if (memories.isEmpty()) "YOUR STARTING POINT" else "YOUR NEXT PRACTICE", color = Color(0xFFC9E8D5), style = MaterialTheme.typography.labelLarge)
-                    Spacer(Modifier.height(10.dp))
-                    Text(if (memories.isEmpty()) "You can train your memory." else "Recall first. Review second.",
+                    Spacer(Modifier.height(12.dp))
+                    Text(if (memories.isEmpty()) "Build a memory that lasts." else "Recall first. Review second.",
                         color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(8.dp))
-                    Text(if (memories.isEmpty()) "No experience needed. Start with one small fact and learn the method as you go." else "Try to retrieve the answer before revealing it. Effortful recall helps you find what you really know.", color = Color(0xFFE1EEE6))
+                    Text(if (memories.isEmpty()) "Start with one useful fact. We’ll guide you through the method, one small step at a time." else "Try to retrieve the answer before revealing it. Effortful recall helps you see what you can actually remember.", color = Color(0xFFE1EEE6), style = MaterialTheme.typography.bodyLarge)
                     Spacer(Modifier.height(18.dp))
                     Button(onClick = if (memories.isEmpty()) onAdd else onRecall) {
                         Text(if (memories.isEmpty()) "Add a first fact" else "Practise recall")
