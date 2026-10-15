@@ -878,7 +878,9 @@ private fun TodayScreen(
             }
         }
         item {
-            Heading("Performance by recall mode")
+            Heading("Your practice results")
+            Text("These numbers describe your recorded practice, not a test of intelligence. A marked-correct result is self-checked; the app does not automatically judge free-text meaning.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
             if (attemptHistory.isEmpty()) {
                 Text("Results will appear after your first recall attempt.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
@@ -928,7 +930,9 @@ private fun TodayScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
-            Heading("Progress by memory")
+            Heading("How each fact is going")
+            Text("Look for facts repeatedly marked incorrect and practise those again. Faster answers alone do not prove stronger memory; correctness and delayed recall matter too.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
             val progress = MemoryProgressPlan.summarize(memories, attemptHistory)
             if (progress.isEmpty()) {
                 Text("Each memory appears here after at least two recorded recall attempts.",
@@ -1423,9 +1427,25 @@ private fun PalaceScreen(
                 TextButton(onClick = { addParent = null; showAddDialog = true }) { Text("+ Palace") }
             }
             Text(
-                "Build a navigable hierarchy: palace → route or area → locus. Each node has a stable ID.",
+                "A memory palace uses a familiar place as a set of mental addresses. You imagine placing each fact at a specific spot, then mentally walk the route to retrieve it.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                shape = RoundedCornerShape(18.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("How to make your first palace", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Text("1. Choose a place you know well, such as your home.\n2. Pick a consistent route through it.\n3. Choose distinct stops, such as the front door, sofa, and kitchen sink.\n4. Attach one fact to each stop with a vivid image.\n5. Mentally walk the route and try to recall each fact before checking.",
+                        color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Text("Example: imagine a giant leaf blocking your front door to cue ‘plants absorb carbon dioxide’. The image is a reminder, not proof you will remember it.",
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                }
+            }
+            Text("The app organises palace → area or route → specific spot. Start with one palace and a few distinct spots; you can add more structure later.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (flattened.isEmpty()) {
             item {
