@@ -1,5 +1,6 @@
 package com.memoryimprovement.app
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
@@ -26,8 +27,8 @@ data class MemoryItemEntity(
     val lastScore: Int?,
     val reviewCount: Int,
     val palaceNodeId: String? = null,
-    val chunkLabel: String = "",
-    val association: String = "",
+    @ColumnInfo(defaultValue = "''") val chunkLabel: String = "",
+    @ColumnInfo(defaultValue = "''") val association: String = "",
     val sequenceOrder: Int? = null,
 )
 
