@@ -671,4 +671,55 @@ class LegacyMigrationIntegrationTest {
     }
 
 
+
+    @Test
+    fun invalidPalaceHierarchyOperationsAreRejectedWithoutChangingStoredNodes() = runBlocking {
+        repository.createPalaceNode("Home", PalaceNodeKind.Palace, null)
+        val home = repository.loadPalaceNodes().single { it.name == "Home" }
+        repository.createPalaceNode("Hallway", PalaceNodeKind.Route, home.id)
+        val hallway = repository.loadPalaceNodes().single { it.name == "Hallway" }
+
+        val before = repository.loadPalaceNodes().sortedBy { it.id }
+        val invalidOperations = listOf<suspend () -> Unit>(
+            { repository.createPalaceNode("Invalid root child", PalaceNodeKind.Route, null) },
+            { repository.createPalaceNode("Invalid palace child", PalaceNodeKind.Palace, home.id) },
+            { repository.createPalaceNode("Invalid route child", PalaceNodeKind.Route, "missing-parent") },
+            { repository.createPalaceNode("Invalid locus child", PalaceNodeKind.Locus, "missing-parent") },
+            { repository.renamePalaceNode(hallway.id, "   ") },
+            { repository.renamePalaceNode("missing-node", "Name") },
+            { repository.movePalaceNode(home.id, null) },
+            { repository.movePalaceNode("missing-node", home.id) },
+        )
+
+        invalidOperations.forEachIndexed { index, operation ->
+            val failure = runCatching { operation() }.exceptionOrNull()
+            assertTrue("Invalid hierarchy operation #$index must fail", failure is IllegalArgumentException)
+            assertEquals("Rejected operation #$index must not mutate the tree", before, repository.loadPalaceNodes().sortedBy { it.id })
+        }
+    }
+
+    @Test
+    fun movingNodesBetweenAllowedParentsPersistsHierarchyAndDoesNotChangeMemories() = runBlocking {
+        repository.createPalaceNode("Home", PalaceNodeKind.Palace, null)
+        repository.createPalaceNode("Office", PalaceNodeKind.Palace, null)
+        val roots = repository.loadPalaceNodes()
+        val home = roots.single { it.name == "Home" }
+        val office = roots.single { it.name == "Office" }
+        repository.createPalaceNode("Hallway", PalaceNodeKind.Route, home.id)
+        val hallway = repository.loadPalaceNodes().single { it.name == "Hallway" }
+        repository.createPalaceNode("Desk", PalaceNodeKind.Locus, hallway.id)
+        val desk = repository.loadPalaceNodes().single { it.name == "Desk" }
+        repository.saveItems(
+            listOf(MemoryItem("kept-memory", "Prompt", "Answer", palaceNodeId = desk.id, sequenceOrder = 2, chunkLabel = "Topic")),
+        )
+
+        repository.movePalaceNode(desk.id, office.id)
+
+        assertEquals(office.id, repository.loadPalaceNodes().single { it.id == desk.id }.parentId)
+        val memory = repository.loadItems().single { it.id == "kept-memory" }
+        assertEquals(desk.id, memory.palaceNodeId)
+        assertEquals(2, memory.sequenceOrder)
+        assertEquals("Topic", memory.chunkLabel)
+    }
+
 }
