@@ -8,6 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -697,7 +698,10 @@ private fun MemoryApp(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("This prompt matches or closely resembles existing cues. Similar wording can make retrieval ambiguous. Review the matches before deciding.")
                     pendingCueConflicts.forEach { conflict ->
-                        Card(modifier = Modifier.fillMaxWidth()) {
+                        Card(modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                             Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text(conflict.existing.prompt, fontWeight = FontWeight.SemiBold)
                                 Text("Answer: ${conflict.existing.answer}")
@@ -815,7 +819,9 @@ private fun TodayScreen(
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            ) {
+            ,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        ) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Your data, in your hands", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                     Text("Full JSON backups include memories, palace locations, recall history, and retention checkpoints.")
@@ -831,7 +837,10 @@ private fun TodayScreen(
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
                     modifier = Modifier.fillMaxWidth(),
-                ) {
+                ,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Legacy data needs recovery", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onErrorContainer)
                         Text(migrationResult.errorMessage, color = MaterialTheme.colorScheme.onErrorContainer)
@@ -848,7 +857,10 @@ private fun TodayScreen(
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
                 shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth(),
-            ) {
+            ,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                 Column(Modifier.padding(horizontal = 24.dp, vertical = 26.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(if (memories.isEmpty()) "YOUR STARTING POINT" else "YOUR NEXT PRACTICE", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.labelLarge)
                     Spacer(Modifier.height(12.dp))
@@ -869,7 +881,10 @@ private fun TodayScreen(
                 Text("Three useful skills. Start with the first; you do not need to know any terminology.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                    shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
+                    shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text("01  Active recall", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer)
@@ -879,7 +894,10 @@ private fun TodayScreen(
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
                     }
                 }
-                Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
+                Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text("02  Spaced practice", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Text("What it means: revisit information across separate sessions instead of cramming it all at once.")
@@ -887,7 +905,10 @@ private fun TodayScreen(
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
+                Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text("03  Distinctive associations", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Text("What it means: connect a fact to a concrete, unusual image or action that gives you a retrieval cue.")
@@ -969,7 +990,10 @@ private fun TodayScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 progress.forEach { itemProgress ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(itemProgress.item.prompt, fontWeight = FontWeight.SemiBold)
                             Text("${itemProgress.attemptCount} attempts · ${itemProgress.correctCount} marked correct")
@@ -999,7 +1023,10 @@ private fun TodayScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 repeatedErrors.forEach { error ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                             Text(error.item.prompt, fontWeight = FontWeight.SemiBold)
                             Text("${error.incorrectAttempts} recorded incorrect attempts",
@@ -1088,7 +1115,10 @@ private fun TodayScreen(
                 Text("Low previous ratings and overdue reviews rise to the top. Untested items are included until you have results.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 priorities.forEach { priority ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                             Text(priority.item.prompt, fontWeight = FontWeight.SemiBold)
                             Text(priority.reason, color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1114,7 +1144,10 @@ private fun TodayScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 sequences.forEach { sequence ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(sequence.label, fontWeight = FontWeight.SemiBold)
                             Text("${sequence.items.size} ordered items", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -1139,7 +1172,10 @@ private fun TodayScreen(
                 Text("These items share important words. This is a wording-based warning, not proof that you confuse them.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 interference.forEach { pair ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text("Shared terms: ${pair.sharedTerms.joinToString(", ")}",
                                 color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
@@ -1228,7 +1264,10 @@ private fun TodayScreen(
                 pending.take(8).forEach { checkpoint ->
                     val item = memories.firstOrNull { it.id == checkpoint.itemId }
                     if (item != null) {
-                        Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                        Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                             Column(Modifier.padding(14.dp)) {
                                 Text("${checkpoint.delayDays}-day retention test", fontWeight = FontWeight.SemiBold)
                                 Text(item.prompt, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -1266,7 +1305,10 @@ private fun TodayScreen(
                         val notTested = (scheduled - group.size).coerceAtLeast(0)
                         val rated = group.mapNotNull { it.score }
                         val timed = group.mapNotNull { it.latencyMs }
-                        Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                        Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text("${delayDays}-day checkpoint", fontWeight = FontWeight.SemiBold)
                                 Text("${group.size} completed · $notTested not tested")
@@ -1301,7 +1343,10 @@ private fun TodayScreen(
                 Text("Recent completed tests", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 completed.take(12).forEach { checkpoint ->
                     val memory = memories.firstOrNull { it.id == checkpoint.itemId }
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                             Text("${checkpoint.delayDays}-day test", fontWeight = FontWeight.SemiBold)
                             if (memory != null) {
@@ -1351,7 +1396,10 @@ private fun TodayScreen(
                 Text("Complete recall sessions to compare methods.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 summaries.forEach { summary ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(summary.mode.name.lowercase().replaceFirstChar { it.uppercase() },
                                 fontWeight = FontWeight.SemiBold)
@@ -1380,7 +1428,9 @@ private fun MetricCard(title: String, value: String, detail: String, modifier: M
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-    ) {
+    ,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(title, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
@@ -1396,7 +1446,10 @@ private fun Heading(value: String) {
 
 @Composable
 private fun PrincipleCard(number: String, title: String, detail: String) {
-    Card(shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
+    Card(shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
         Row(Modifier.padding(15.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             Text(number, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
             Column {
@@ -1465,7 +1518,10 @@ private fun PalaceScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                 shape = RoundedCornerShape(18.dp),
                 modifier = Modifier.fillMaxWidth(),
-            ) {
+            ,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("How to make your first palace", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer)
@@ -1480,7 +1536,10 @@ private fun PalaceScreen(
         }
         if (flattened.isEmpty()) {
             item {
-                Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
+                Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                     Column(Modifier.padding(18.dp)) {
                         Text("Start with a palace", fontWeight = FontWeight.SemiBold)
                         Text("Create a familiar building, then add routes, areas, and distinct loci.",
@@ -1497,7 +1556,10 @@ private fun PalaceScreen(
             Card(
                 shape = RoundedCornerShape(18.dp),
                 modifier = Modifier.fillMaxWidth().padding(start = (entry.depth * 12).dp),
-            ) {
+            ,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                 Column(Modifier.padding(14.dp)) {
                     Text(node.kind.label.uppercase(), color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.labelSmall)
@@ -1709,7 +1771,10 @@ private fun RetentionTestScreen(
         if (item == null) {
             Text("The linked memory item could not be found.")
         } else {
-            Card(shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth()) {
+            Card(shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("FREE RECALL · NO CUE", color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.labelLarge)
@@ -1787,7 +1852,10 @@ private fun SequenceRecallScreen(
         Text("Sequence: ${sequence.label}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Text("Recall the items in order without looking. Include the sequence numbers if useful, then reveal and compare.",
             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Card(shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth()) {
+        Card(shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
             Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (!revealed) {
                     OutlinedTextField(
@@ -1871,7 +1939,10 @@ private fun RecallScreen(
             }
         }
         if (item == null) {
-            Card(shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth()) {
+            Card(shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                 Column(Modifier.padding(20.dp)) {
                     Text("Your first recall session starts here", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(8.dp))
@@ -1881,7 +1952,10 @@ private fun RecallScreen(
                 }
             }
         } else {
-            Card(shape = RoundedCornerShape(26.dp), modifier = Modifier.fillMaxWidth()) {
+            Card(shape = RoundedCornerShape(26.dp), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                 Column(Modifier.padding(22.dp)) {
                     if (mode != RecallMode.Free) {
                         Text(if (mode == RecallMode.Reverse) "REVERSE CUE · ANSWER" else "RECALL PROMPT",
@@ -2003,7 +2077,10 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
             }
         }
         if (memories.isEmpty()) {
-            Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
+            Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Your library starts with one useful question", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text("Example: ‘What gas do plants absorb?’ Answer: ‘Carbon dioxide.’ Keep the question specific so you can test yourself later.",
@@ -2047,7 +2124,10 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
             }
             LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(filteredMemories, key = { it.id }) { item ->
-                    Card(shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
+                    Card(shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
                         Column(Modifier.padding(16.dp)) {
                             Text(item.prompt, fontWeight = FontWeight.SemiBold)
                             Spacer(Modifier.height(4.dp))
