@@ -92,7 +92,7 @@ capture_tabs() {
   tap_label "Today"
   tap_label "Add a first fact" "Create a memory · 1 of 3"
   capture "add-memory-${theme}"
-  tap_label "Cancel"
+  tap_label "Cancel" "Today"
 }
 
 adb shell cmd uimode night no
