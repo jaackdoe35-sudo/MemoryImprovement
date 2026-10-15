@@ -565,4 +565,72 @@ class LegacyMigrationIntegrationTest {
         assertFalse(repository.loadItems().any { it.id == "old" })
     }
 
+    @Test
+    fun fullBackupCodecRoundTripsMemoriesPalacesAttemptsAndCheckpoints() {
+        val snapshot = MemoryBackupSnapshot(
+            createdAt = 123456L,
+            memories = listOf(
+                MemoryItem(
+                    id = "memory-1",
+                    prompt = "Question\twith tab\nand newline",
+                    answer = "Answer\\with slash",
+                    palace = "Home",
+                    locus = "Desk",
+                    createdAt = 100L,
+                    nextReviewAt = 200L,
+                    lastScore = 4,
+                    reviewCount = 3,
+                    palaceNodeId = "locus-1",
+                    chunkLabel = "Protocol",
+                    association = "A vivid association",
+                    sequenceOrder = 2,
+                ),
+            ),
+            palaceNodes = listOf(
+                PalaceNode("palace-1", "Home", PalaceNodeKind.Palace, null, position = 0, createdAt = 10L),
+                PalaceNode("route-1", "Hallway", PalaceNodeKind.Route, "palace-1", position = 1, createdAt = 11L),
+                PalaceNode("locus-1", "Desk", PalaceNodeKind.Locus, "route-1", position = 2, createdAt = 12L),
+            ),
+            attempts = listOf(
+                RecallAttempt("memory-1", RecallMode.Free, false, 2, 1500L, "Partial answer", 300L),
+            ),
+            checkpoints = listOf(
+                RetentionCheckpoint(
+                    "memory-1-7", "memory-1", 7, 700L,
+                    completedAt = 800L, score = 4, latencyMs = 900L,
+                    recalledResponse = "Answer", accuracy = 2,
+                ),
+            ),
+        )
+
+        val decoded = MemoryBackupPlan.decode(MemoryBackupPlan.encode(snapshot))
+
+        assertEquals(snapshot, decoded)
+    }
+
+    @Test
+    fun fullBackupCodecRejectsMissingMemoryReferencesAndHierarchyCycles() {
+        val missingMemoryReference = MemoryBackupSnapshot(
+            createdAt = 1L,
+            memories = emptyList(),
+            palaceNodes = emptyList(),
+            attempts = listOf(RecallAttempt("missing", RecallMode.Cued, false, 0, 0L)),
+            checkpoints = emptyList(),
+        )
+        assertTrue(runCatching { MemoryBackupPlan.encode(missingMemoryReference) }.exceptionOrNull() is IllegalArgumentException)
+
+        val cycle = MemoryBackupSnapshot(
+            createdAt = 1L,
+            memories = emptyList(),
+            palaceNodes = listOf(
+                PalaceNode("a", "A", PalaceNodeKind.Route, "b"),
+                PalaceNode("b", "B", PalaceNodeKind.Route, "a"),
+            ),
+            attempts = emptyList(),
+            checkpoints = emptyList(),
+        )
+        assertTrue(runCatching { MemoryBackupPlan.encode(cycle) }.exceptionOrNull() is IllegalArgumentException)
+    }
+
+
 }
