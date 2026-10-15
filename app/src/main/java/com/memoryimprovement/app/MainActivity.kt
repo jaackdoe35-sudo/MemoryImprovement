@@ -2098,23 +2098,16 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
                 }
             }
             if (filteredMemories.isEmpty()) {
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = StudioSpacing.xl),
-                    verticalArrangement = Arrangement.spacedBy(StudioSpacing.xs),
-                ) {
-                    Text(
-                        if (dueOnly) "No reviews are due right now" else "No matching memories",
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    Text(
-                        if (dueOnly) "You are up to date. Show all memories to browse your library."
-                        else "Try a different search, or clear the search to see all saved memories.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    TextButton(onClick = { if (dueOnly) dueOnly = false else searchQuery = "" }) {
-                        Text(if (dueOnly) "Show all memories" else "Clear search")
-                    }
-                }
+                EmptyState(
+                    headline = if (dueOnly) "No reviews are due right now" else "No matching memories",
+                    explanation = if (dueOnly) {
+                        "You are up to date. Show all memories to browse your library."
+                    } else {
+                        "Try a different search, or clear the search to see all saved memories."
+                    },
+                    actionLabel = if (dueOnly) "Show all memories" else "Clear search",
+                    onAction = { if (dueOnly) dueOnly = false else searchQuery = "" },
+                )
             }
             LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(filteredMemories, key = { it.id }) { item ->
