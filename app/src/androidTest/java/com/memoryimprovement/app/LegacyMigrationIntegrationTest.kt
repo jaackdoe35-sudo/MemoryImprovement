@@ -407,4 +407,60 @@ class LegacyMigrationIntegrationTest {
         }
     }
 
+    @Test
+    fun retentionCompletionUpdatesAndPersistsMemoryScheduleAndHistory() = runBlocking {
+        val item = MemoryItem(
+            id = "retention-lifecycle",
+            prompt = "What is working memory?",
+            answer = "The system that temporarily holds and manipulates information",
+            createdAt = 1_000L,
+            nextReviewAt = 1_000L,
+            reviewCount = 2,
+        )
+        repository.saveItems(listOf(item))
+        val checkpointId = "${item.id}-7"
+        val completedAt = 10L * 24L * 60L * 60L * 1000L
+
+        val completed = repository.completeRetentionCheckpoint(
+            id = checkpointId,
+            score = 1,
+            latencyMs = 2_500L,
+            recalledResponse = " Temporarily holds information ",
+            accuracy = 1,
+            completedAt = completedAt,
+        )
+
+        assertTrue(completed)
+        val updated = repository.loadItems().single { it.id == item.id }
+        assertEquals(completedAt + 24L * 60L * 60L * 1000L, updated.nextReviewAt)
+        assertEquals(1, updated.lastScore)
+        assertEquals(3, updated.reviewCount)
+
+        val checkpoint = repository.loadRetentionCheckpoints().single { it.id == checkpointId }
+        assertEquals(completedAt, checkpoint.completedAt)
+        assertEquals(1, checkpoint.score)
+        assertEquals(2_500L, checkpoint.latencyMs)
+        assertEquals("Temporarily holds information", checkpoint.recalledResponse)
+        assertEquals(1, checkpoint.accuracy)
+
+        val attempt = repository.loadAttempts().single()
+        assertEquals(item.id, attempt.itemId)
+        assertEquals(RecallMode.Retention, attempt.mode)
+        assertEquals(false, attempt.correct)
+        assertEquals(1, attempt.score)
+        assertEquals(2_500L, attempt.latencyMs)
+        assertEquals("Temporarily holds information", attempt.recalledResponse)
+        assertEquals(completedAt, attempt.reviewedAt)
+
+        repository.close()
+        repository = MemoryRepository(context, databaseName)
+
+        val reloaded = repository.loadItems().single { it.id == item.id }
+        assertEquals(updated.nextReviewAt, reloaded.nextReviewAt)
+        assertEquals(updated.lastScore, reloaded.lastScore)
+        assertEquals(updated.reviewCount, reloaded.reviewCount)
+        assertEquals(completedAt, repository.loadRetentionCheckpoints().single { it.id == checkpointId }.completedAt)
+        assertEquals(1, repository.loadAttempts().size)
+    }
+
 }
