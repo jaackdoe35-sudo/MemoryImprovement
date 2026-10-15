@@ -57,6 +57,7 @@ launch_app() {
 
 tap_label() {
   local label="$1"
+  local expected="${2:-$1}"
   local coords
   adb shell uiautomator dump /sdcard/window.xml >/dev/null
   adb pull /sdcard/window.xml /tmp/window.xml >/dev/null
@@ -66,7 +67,7 @@ tap_label() {
   sleep 3
   adb shell uiautomator dump /sdcard/window.xml >/dev/null
   adb pull /sdcard/window.xml /tmp/window.xml >/dev/null
-  python3 scripts/assert_text.py "$label"
+  python3 scripts/assert_text.py "$expected"
 }
 
 capture_tabs() {
@@ -89,7 +90,7 @@ capture_tabs() {
   capture "library-${theme}"
 
   tap_label "Today"
-  tap_label "Add a first fact"
+  tap_label "Add a first fact" "Create a memory · 1 of 3"
   capture "add-memory-${theme}"
   tap_label "Cancel"
 }
