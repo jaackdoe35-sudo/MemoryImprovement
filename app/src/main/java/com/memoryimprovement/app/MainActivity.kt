@@ -38,6 +38,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text as MaterialText
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Home
@@ -1599,7 +1600,7 @@ private fun PalaceScreen(
     ) {
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Heading("Memory palace")
+                Text("Memory palace", style = MaterialTheme.typography.headlineMedium)
                 TextButton(onClick = { addParent = null; showAddDialog = true }) { Text("+ Palace") }
             }
             Text(
@@ -2009,7 +2010,7 @@ private fun RecallScreen(
     var userCheckedCorrect by remember(item?.id, mode) { mutableStateOf<Boolean?>(null) }
     val recallStartedAt = remember(item?.id, mode) { SystemClock.elapsedRealtime() }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(StudioSpacing.screenHorizontal), verticalArrangement = Arrangement.spacedBy(StudioSpacing.md)) {
-        Heading("Retrieval practice")
+        Text("Retrieval practice", style = MaterialTheme.typography.headlineMedium)
         Text("Your practice loop: try to remember → reveal the answer → compare honestly → record the result. Do not worry about getting everything right; mistakes show what to practise next.",
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text("Choose a mode", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -2152,7 +2153,7 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
     Column(Modifier.fillMaxSize().padding(horizontal = StudioSpacing.screenHorizontal)) {
         Spacer(Modifier.height(StudioSpacing.sm))
         Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm), modifier = Modifier.fillMaxWidth()) {
-            Heading("Your memory library")
+            Text("Your memory library", style = MaterialTheme.typography.headlineMedium)
             Text("Keep useful facts organised, then return to the ones due for review.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -2165,6 +2166,20 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
                 TextButton(onClick = onImport, modifier = Modifier.weight(1f)) { Text("Import") }
                 TextButton(onClick = onExport, enabled = memories.isNotEmpty(), modifier = Modifier.weight(1f)) { Text("Export") }
             }
+        }
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Search memories") },
+            singleLine = true,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm),
+        ) {
+            FilterChip(selected = !dueOnly, onClick = { dueOnly = false }, label = { Text("All memories") })
+            FilterChip(selected = dueOnly, onClick = { dueOnly = !dueOnly }, label = { Text("Due for review") })
         }
         if (memories.isEmpty()) {
             Card(shape = RoundedCornerShape(StudioSpacing.screenHorizontalPhone), modifier = Modifier.fillMaxWidth(),
@@ -2180,19 +2195,8 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
                 }
             }
         } else {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Search memories") },
-                singleLine = true,
-            )
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("${filteredMemories.size} memories", style = MaterialTheme.typography.labelSmall)
-                TextButton(onClick = { dueOnly = !dueOnly }) {
-                    Text(if (dueOnly) "Show all" else "Due reviews only")
-                }
-            }
+            Text("${filteredMemories.size} memories", style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (filteredMemories.isEmpty()) {
                 EmptyState(
                     headline = if (dueOnly) "No reviews are due right now" else "No matching memories",
