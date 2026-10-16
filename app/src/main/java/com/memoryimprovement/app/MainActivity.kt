@@ -8,6 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,11 +35,19 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.Text as MaterialText
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.outlined.Replay
+import androidx.compose.material.icons.outlined.Today
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,9 +55,106 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import java.util.UUID
+
+
+/**
+ * App-wide text wrapper: every unstyled label receives the semantic body style
+ * instead of falling back to an implicit Material default.
+ */
+@Composable
+private fun Text(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = Color.Unspecified,
+    fontSize: TextUnit = TextUnit.Unspecified,
+    fontStyle: FontStyle? = null,
+    fontWeight: FontWeight? = null,
+    fontFamily: FontFamily? = null,
+    letterSpacing: TextUnit = TextUnit.Unspecified,
+    textDecoration: TextDecoration? = null,
+    textAlign: TextAlign? = null,
+    lineHeight: TextUnit = TextUnit.Unspecified,
+    overflow: TextOverflow = TextOverflow.Clip,
+    softWrap: Boolean = true,
+    maxLines: Int = Int.MAX_VALUE,
+    minLines: Int = 1,
+    onTextLayout: (TextLayoutResult) -> Unit = {},
+    style: TextStyle = MaterialTheme.typography.bodyMedium,
+) {
+    MaterialText(
+        text = text,
+        modifier = modifier,
+        color = color,
+        fontSize = fontSize,
+        fontStyle = fontStyle,
+        fontWeight = fontWeight,
+        fontFamily = fontFamily,
+        letterSpacing = letterSpacing,
+        textDecoration = textDecoration,
+        textAlign = textAlign,
+        lineHeight = lineHeight,
+        overflow = overflow,
+        softWrap = softWrap,
+        maxLines = maxLines,
+        minLines = minLines,
+        onTextLayout = onTextLayout,
+        style = style,
+    )
+}
+
+@Composable
+private fun Text(
+    text: AnnotatedString,
+    modifier: Modifier = Modifier,
+    color: Color = Color.Unspecified,
+    fontSize: TextUnit = TextUnit.Unspecified,
+    fontStyle: FontStyle? = null,
+    fontWeight: FontWeight? = null,
+    fontFamily: FontFamily? = null,
+    letterSpacing: TextUnit = TextUnit.Unspecified,
+    textDecoration: TextDecoration? = null,
+    textAlign: TextAlign? = null,
+    lineHeight: TextUnit = TextUnit.Unspecified,
+    overflow: TextOverflow = TextOverflow.Clip,
+    softWrap: Boolean = true,
+    maxLines: Int = Int.MAX_VALUE,
+    minLines: Int = 1,
+    inlineContent: Map<String, androidx.compose.foundation.text.InlineTextContent> = mapOf(),
+    onTextLayout: (TextLayoutResult) -> Unit = {},
+    style: TextStyle = MaterialTheme.typography.bodyMedium,
+) {
+    MaterialText(
+        text = text,
+        modifier = modifier,
+        color = color,
+        fontSize = fontSize,
+        fontStyle = fontStyle,
+        fontWeight = fontWeight,
+        fontFamily = fontFamily,
+        letterSpacing = letterSpacing,
+        textDecoration = textDecoration,
+        textAlign = textAlign,
+        lineHeight = lineHeight,
+        overflow = overflow,
+        softWrap = softWrap,
+        maxLines = maxLines,
+        minLines = minLines,
+        inlineContent = inlineContent,
+        onTextLayout = onTextLayout,
+        style = style,
+    )
+}
 
 class MainActivity : ComponentActivity() {
     private var pendingExport: String = ""
@@ -101,19 +207,7 @@ class MainActivity : ComponentActivity() {
             val initialAttempts = repository.loadAttempts()
             val initialCheckpoints = repository.loadRetentionCheckpoints()
             setContent {
-                MaterialTheme(
-                    colorScheme = lightColorScheme(
-                        primary = Color(0xFF245B4A),
-                        onPrimary = Color.White,
-                        secondary = Color(0xFFB96F43),
-                        background = Color(0xFFF6F4EF),
-                        surface = Color(0xFFFFFEFA),
-                        onSurface = Color(0xFF202820),
-                        onSurfaceVariant = Color(0xFF626B63),
-                        primaryContainer = Color(0xFFDCEBE2),
-                        onPrimaryContainer = Color(0xFF173E31),
-                    ),
-                ) {
+                MemoryImprovementTheme {
                     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                         MemoryApp(
                             initialItems = initialItems,
@@ -281,25 +375,47 @@ private fun MemoryApp(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = {
-                Column {
-                    Text("MEMORY STUDIO", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                    Text("Learn it. Remember it. Recall it.", style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            })
+            TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                ),
+                title = {
+                    Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp1)) {
+                        Text("MEMORY STUDIO", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        Text("A quieter way to learn what lasts", style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                },
+            )
         },
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                tonalElevation = StudioSpacing.dp0,
+            ) {
                 AppTab.entries.forEach { destination ->
                     NavigationBarItem(
                         selected = tab == destination,
                         onClick = { tab = destination; if (destination == AppTab.Recall) startRecall() },
-                        icon = { Text(when (destination) {
-                            AppTab.Today -> "◎"; AppTab.Palace -> "⌂"
-                            AppTab.Recall -> "↻"; AppTab.Library -> "▤"
-                        }) },
-                        label = { Text(destination.label) },
+                        icon = {
+                            val image = when (destination) {
+                                AppTab.Today -> Icons.Outlined.Today
+                                AppTab.Palace -> Icons.Outlined.Home
+                                AppTab.Recall -> Icons.Outlined.Replay
+                                AppTab.Library -> Icons.Outlined.MenuBook
+                            }
+                            Icon(imageVector = image, contentDescription = destination.label)
+                        },
+                        label = { Text(destination.label, style = MaterialTheme.typography.labelSmall) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
                     )
                 }
             }
@@ -506,7 +622,7 @@ private fun MemoryApp(
             },
             title = { Text("Restore full backup") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
                     Text("A full backup replaces all current memories, palace locations, recall attempts, and retention checkpoints. Export a backup of your current data first if you may need it.")
                     Button(onClick = {
                         onChooseBackupFile { result ->
@@ -579,7 +695,7 @@ private fun MemoryApp(
             onDismissRequest = { bulkImportOpen = false; bulkImportError = null; bulkImportStatus = null; bulkImportPreview = null },
             title = { Text("Bulk import memories") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
                     Text("Paste tab-separated rows: prompt, answer, palace, locus, chunk, association, sequence order. The first two columns are required.")
                     OutlinedTextField(
                         value = bulkImportText,
@@ -608,13 +724,13 @@ private fun MemoryApp(
                     bulkImportPreview?.let { preview ->
                         Text("Preview: ${preview.rows.size} new memories; ${preview.duplicatesSkipped} duplicates will be skipped.")
                         preview.rows.take(3).forEach { row ->
-                            Text("• ${row.prompt} → ${row.answer}", style = MaterialTheme.typography.bodySmall)
+                            Text("• ${row.prompt} → ${row.answer}", style = MaterialTheme.typography.bodyMedium)
                         }
                         if (preview.rows.size > 3) {
-                            Text("…and ${preview.rows.size - 3} more", style = MaterialTheme.typography.bodySmall)
+                            Text("…and ${preview.rows.size - 3} more", style = MaterialTheme.typography.bodyMedium)
                         }
                     }
-                    Text("Duplicate prompt + answer pairs are skipped automatically.", style = MaterialTheme.typography.bodySmall)
+                    Text("Duplicate prompt + answer pairs are skipped automatically.", style = MaterialTheme.typography.bodyMedium)
                 }
             },
             confirmButton = {
@@ -676,11 +792,14 @@ private fun MemoryApp(
             },
             title = { Text("Review similar cues") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
                     Text("This prompt matches or closely resembles existing cues. Similar wording can make retrieval ambiguous. Review the matches before deciding.")
                     pendingCueConflicts.forEach { conflict ->
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Card(modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                            Column(Modifier.padding(StudioSpacing.dp10), verticalArrangement = Arrangement.spacedBy(StudioSpacing.xs)) {
                                 Text(conflict.existing.prompt, fontWeight = FontWeight.SemiBold)
                                 Text("Answer: ${conflict.existing.answer}")
                                 Text(
@@ -692,7 +811,7 @@ private fun MemoryApp(
                             }
                         }
                     }
-                    Text("This is a wording-based warning, not a semantic judgment. It may miss synonyms or flag legitimate related facts.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("This is a wording-based warning, not a semantic judgment. It may miss synonyms or flag legitimate related facts.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
             confirmButton = {
@@ -707,7 +826,7 @@ private fun MemoryApp(
                 }) { Text("Save anyway") }
             },
             dismissButton = {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(StudioSpacing.xs)) {
                     TextButton(onClick = {
                         pendingCueCandidate = null
                         pendingCueConflicts = emptyList()
@@ -786,15 +905,23 @@ private fun TodayScreen(
     var selectedAnswerId by remember { mutableStateOf<String?>(null) }
     var drillChecked by remember { mutableStateOf(false) }
     var drillStartedAt by remember { mutableStateOf(0L) }
-    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item { Spacer(Modifier.height(4.dp)) }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(horizontal = StudioSpacing.screenHorizontalPhone),
+        verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp18),
+    ) {
+        item { Spacer(Modifier.height(StudioSpacing.dp6)) }
         item {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Data safety", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(StudioSpacing.screenHorizontalPhone),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant)
+        ) {
+                Column(Modifier.padding(StudioSpacing.dp18), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp10)) {
+                    Text("Your data, in your hands", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                     Text("Full JSON backups include memories, palace locations, recall history, and retention checkpoints.")
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
                         Button(onClick = onExportFullBackup, modifier = Modifier.weight(1f)) { Text("Export backup") }
                         TextButton(onClick = onImportFullBackup, modifier = Modifier.weight(1f)) { Text("Restore backup") }
                     }
@@ -806,12 +933,14 @@ private fun TodayScreen(
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
                     modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                    Column(Modifier.padding(StudioSpacing.lg), verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
                         Text("Legacy data needs recovery", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onErrorContainer)
                         Text(migrationResult.errorMessage, color = MaterialTheme.colorScheme.onErrorContainer)
                         Text("The original JSON is still preserved. Export a backup before editing or replacing it.",
-                            color = MaterialTheme.colorScheme.onErrorContainer, style = MaterialTheme.typography.bodySmall)
+                            color = MaterialTheme.colorScheme.onErrorContainer, style = MaterialTheme.typography.bodyMedium)
                         migrationResult.preservedRawData?.let { raw ->
                             Button(onClick = { onExportLegacyData(raw) }) { Text("Export legacy JSON backup") }
                         }
@@ -822,90 +951,103 @@ private fun TodayScreen(
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
-                shape = RoundedCornerShape(26.dp), modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(Modifier.padding(22.dp)) {
-                    Text(if (memories.isEmpty()) "YOUR STARTING POINT" else "YOUR NEXT PRACTICE", color = Color(0xFFC9E8D5), style = MaterialTheme.typography.labelLarge)
-                    Spacer(Modifier.height(10.dp))
-                    Text(if (memories.isEmpty()) "You can train your memory." else "Recall first. Review second.",
-                        color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(8.dp))
-                    Text(if (memories.isEmpty()) "No experience needed. Start with one small fact and learn the method as you go." else "Try to retrieve the answer before revealing it. Effortful recall helps you find what you really know.", color = Color(0xFFE1EEE6))
-                    Spacer(Modifier.height(18.dp))
-                    Button(onClick = if (memories.isEmpty()) onAdd else onRecall) {
-                        Text(if (memories.isEmpty()) "Add a first fact" else "Practise recall")
-                    }
+                shape = RoundedCornerShape(StudioSpacing.dp28), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                Column(Modifier.padding(horizontal = StudioSpacing.xl, vertical = StudioSpacing.dp26), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp2)) {
+                    Text(if (memories.isEmpty()) "YOUR STARTING POINT" else "YOUR NEXT PRACTICE", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.labelSmall)
+                    Spacer(Modifier.height(StudioSpacing.md))
+                    Text(if (memories.isEmpty()) "Build a memory that lasts." else "Recall first. Review second.",
+                        color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.headlineMedium)
+                    Spacer(Modifier.height(StudioSpacing.sm))
+                    Text(if (memories.isEmpty()) "Start with one useful fact. We’ll guide you through the method, one small step at a time." else "Try to retrieve the answer before revealing it. Effortful recall helps you see what you can actually remember.", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.bodyLarge)
+                    Spacer(Modifier.height(StudioSpacing.dp18))
+                    PrimaryAction(
+                        label = if (memories.isEmpty()) "Add a first fact" else "Practise recall",
+                        onClick = if (memories.isEmpty()) onAdd else onRecall,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             }
         }
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Heading("Learn the essentials")
+            Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp10)) {
+                Text("Learn the essentials", style = MaterialTheme.typography.titleLarge)
                 Text("Three useful skills. Start with the first; you do not need to know any terminology.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                    shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    shape = RoundedCornerShape(StudioSpacing.screenHorizontalPhone), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                    Column(Modifier.padding(StudioSpacing.lg), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp6)) {
                         Text("01  Active recall", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer)
                         Text("What it means: try to remember before looking at the answer. Example: close your notes and explain one idea in your own words.",
                             color = MaterialTheme.colorScheme.onPrimaryContainer)
                         Text("Why use it: it reveals what you can actually retrieve, not just what looks familiar.",
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
                     }
                 }
-                Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Card(shape = RoundedCornerShape(StudioSpacing.screenHorizontalPhone), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                    Column(Modifier.padding(StudioSpacing.lg), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp6)) {
                         Text("02  Spaced practice", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Text("What it means: revisit information across separate sessions instead of cramming it all at once.")
                         Text("Try this: test yourself today, then return to the same fact tomorrow. Adjust the interval based on how well you remember.",
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Card(shape = RoundedCornerShape(StudioSpacing.screenHorizontalPhone), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                    Column(Modifier.padding(StudioSpacing.lg), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp6)) {
                         Text("03  Distinctive associations", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Text("What it means: connect a fact to a concrete, unusual image or action that gives you a retrieval cue.")
                         Text("Example: to remember that a person is a baker, imagine them juggling enormous loaves in a bakery. The stranger and more specific cue may be easier to recall.",
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
         }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            Row(horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm), modifier = Modifier.fillMaxWidth()) {
                 MetricCard("Stored", memories.size.toString(), "memory units", Modifier.weight(1f))
                 MetricCard("Attempts", attempts.toString(), "all recorded", Modifier.weight(1f))
                 MetricCard("Self-rated success", if (attempts == 0) "—" else "${(correct * 100) / attempts}%", "all recorded attempts", Modifier.weight(1f))
             }
         }
         item {
-            Heading("Your practice results")
+            Text("Your practice results", style = MaterialTheme.typography.titleLarge)
             Text("These numbers describe your recorded practice, not a test of intelligence. A marked-correct result is self-checked; the app does not automatically judge free-text meaning.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
             if (attemptHistory.isEmpty()) {
                 Text("Results will appear after your first recall attempt.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 RecallAnalytics.byMode(attemptHistory).forEach { summary ->
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.xs)) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text(summary.mode.label(), fontWeight = FontWeight.SemiBold)
                             Text("${summary.accuracyPercent}% · ${summary.attempts} attempts")
                         }
                         Text("Mean retrieval time: ${summary.meanLatencyMs / 1000.0}s",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 Text("Success is based on recorded scores/self-ratings, not independently verified correctness.",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         item {
-            Heading("Delayed-retention results")
+            Text("Delayed-retention results", style = MaterialTheme.typography.titleLarge)
             RetentionAnalytics.byDelay(checkpoints).forEach { summary ->
-                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp3)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("${summary.delayDays}-day checkpoint", fontWeight = FontWeight.SemiBold)
                         Text("${summary.completed}/${summary.total} completed")
@@ -928,24 +1070,27 @@ private fun TodayScreen(
                 }
             }
             Text("Self-ratings and user-checked accuracy are separate measures; neither is an automated semantic evaluation.",
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
-            Heading("How each fact is going")
+            Text("How each fact is going", style = MaterialTheme.typography.titleLarge)
             Text("Look for facts repeatedly marked incorrect and practise those again. Faster answers alone do not prove stronger memory; correctness and delayed recall matter too.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
             val progress = MemoryProgressPlan.summarize(memories, attemptHistory)
             if (progress.isEmpty()) {
                 Text("Each memory appears here after at least two recorded recall attempts.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 Text("First-versus-latest comparisons use recorded attempt labels, not automatic grading of free-text responses.",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 progress.forEach { itemProgress ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Card(shape = RoundedCornerShape(StudioSpacing.lg), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                        Column(Modifier.padding(StudioSpacing.dp14), verticalArrangement = Arrangement.spacedBy(StudioSpacing.xs)) {
                             Text(itemProgress.item.prompt, fontWeight = FontWeight.SemiBold)
                             Text("${itemProgress.attemptCount} attempts · ${itemProgress.correctCount} marked correct")
                             val change = when {
@@ -956,7 +1101,7 @@ private fun TodayScreen(
                             }
                             Text(change, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text("Mean retrieval time: ${"%.1f".format(itemProgress.meanLatencyMs / 1000.0)} s",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
@@ -964,24 +1109,27 @@ private fun TodayScreen(
             }
         }
         item {
-            Heading("Repeated errors")
+            Text("Repeated errors", style = MaterialTheme.typography.titleLarge)
             val repeatedErrors = RepeatedErrorPlan.find(memories, attemptHistory)
             if (repeatedErrors.isEmpty()) {
                 Text("No memories have two or more attempts marked incorrect yet.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 Text("These items have repeated recorded failures. The list uses saved attempt labels, not automatic grading of free-text answers.",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 repeatedErrors.forEach { error ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Card(shape = RoundedCornerShape(StudioSpacing.lg), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                        Column(Modifier.padding(StudioSpacing.dp14), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp5)) {
                             Text(error.item.prompt, fontWeight = FontWeight.SemiBold)
                             Text("${error.incorrectAttempts} recorded incorrect attempts",
                                 color = MaterialTheme.colorScheme.error)
                             error.lastIncorrectResponse?.let {
                                 Text("Latest recorded response: $it",
-                                    style = MaterialTheme.typography.bodySmall,
+                                    style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             Button(onClick = { onStartPriority(error.item) }, modifier = Modifier.fillMaxWidth()) {
@@ -993,14 +1141,14 @@ private fun TodayScreen(
             }
         }
         item {
-            Heading("Learning progress")
+            Text("Learning progress", style = MaterialTheme.typography.titleLarge)
             val progress = MemoryProgressPlan.summarize(memories, attemptHistory)
             if (progress.isEmpty()) {
                 Text("Progress comparisons appear after a memory has at least two recorded attempts.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 progress.forEach { summary ->
-                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp3)) {
                         Text(summary.item.prompt, fontWeight = FontWeight.SemiBold)
                         val trajectory = when {
                             !summary.firstCorrect && summary.latestCorrect -> "Improved: latest attempt marked correct"
@@ -1010,7 +1158,7 @@ private fun TodayScreen(
                         }
                         Text(trajectory, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("${summary.correctCount}/${summary.attemptCount} marked correct · mean retrieval time ${summary.meanLatencyMs / 1000.0}s",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Button(onClick = { onStartPriority(summary.item) }, modifier = Modifier.fillMaxWidth()) {
                             Text("Practise this memory")
@@ -1018,7 +1166,7 @@ private fun TodayScreen(
                     }
                 }
                 Text("These trends compare saved first/latest correctness labels; they do not establish causation or independently grade answers.",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
@@ -1031,7 +1179,7 @@ private fun TodayScreen(
             } else {
                 val itemById = memories.associateBy { it.id }
                 recentAttempts.forEach { attempt ->
-                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp3)) {
                         Text(itemById[attempt.itemId]?.prompt ?: "Memory no longer in library",
                             fontWeight = FontWeight.SemiBold)
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -1041,17 +1189,17 @@ private fun TodayScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Text("Rating ${attempt.score}/5 · ${android.text.format.DateUtils.getRelativeTimeSpanString(attempt.reviewedAt, System.currentTimeMillis(), android.text.format.DateUtils.MINUTE_IN_MILLIS)}",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                         attempt.recalledResponse?.takeIf { it.isNotBlank() }?.let { response ->
-                            Text("Response: $response", style = MaterialTheme.typography.bodySmall)
+                            Text("Response: $response", style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 }
             }
             Text("History displays saved correctness labels and responses; it does not independently evaluate free-text answers.",
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
@@ -1063,11 +1211,14 @@ private fun TodayScreen(
                 Text("Low previous ratings and overdue reviews rise to the top. Untested items are included until you have results.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 priorities.forEach { priority ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Card(shape = RoundedCornerShape(StudioSpacing.lg), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                        Column(Modifier.padding(StudioSpacing.dp14), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp5)) {
                             Text(priority.item.prompt, fontWeight = FontWeight.SemiBold)
                             Text(priority.reason, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodySmall)
+                                style = MaterialTheme.typography.bodyMedium)
                             Button(onClick = { onStartPriority(priority.item) }, modifier = Modifier.fillMaxWidth()) {
                                 Text("Practise this memory")
                             }
@@ -1089,8 +1240,11 @@ private fun TodayScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 sequences.forEach { sequence ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Card(shape = RoundedCornerShape(StudioSpacing.lg), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                        Column(Modifier.padding(StudioSpacing.dp14), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp6)) {
                             Text(sequence.label, fontWeight = FontWeight.SemiBold)
                             Text("${sequence.items.size} ordered items", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Button(onClick = { onStartSequence(sequence) }, modifier = Modifier.fillMaxWidth()) {
@@ -1114,17 +1268,20 @@ private fun TodayScreen(
                 Text("These items share important words. This is a wording-based warning, not proof that you confuse them.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 interference.forEach { pair ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Card(shape = RoundedCornerShape(StudioSpacing.lg), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                        Column(Modifier.padding(StudioSpacing.dp14), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp6)) {
                             Text("Shared terms: ${pair.sharedTerms.joinToString(", ")}",
-                                color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
+                                color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall)
                             Text("A · ${pair.first.prompt}", fontWeight = FontWeight.SemiBold)
                             Text(pair.first.answer, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Surface(modifier = Modifier.fillMaxWidth().height(1.dp), color = MaterialTheme.colorScheme.outlineVariant) {}
+                            Surface(modifier = Modifier.fillMaxWidth().height(StudioSpacing.dp1), color = MaterialTheme.colorScheme.outlineVariant) {}
                             Text("B · ${pair.second.prompt}", fontWeight = FontWeight.SemiBold)
                             Text(pair.second.answer, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text("Discrimination cue: make each prompt specific and give the two facts distinct, vivid associations.",
-                                style = MaterialTheme.typography.bodySmall)
+                                style = MaterialTheme.typography.bodyMedium)
                             Button(
                                 onClick = {
                                     activeDrill = pair
@@ -1135,7 +1292,7 @@ private fun TodayScreen(
                                 modifier = Modifier.fillMaxWidth(),
                             ) { Text(if (activeDrill == pair) "Restart discrimination drill" else "Practise distinction") }
                             if (activeDrill == pair) {
-                                Surface(modifier = Modifier.fillMaxWidth().height(1.dp), color = MaterialTheme.colorScheme.outlineVariant) {}
+                                Surface(modifier = Modifier.fillMaxWidth().height(StudioSpacing.dp1), color = MaterialTheme.colorScheme.outlineVariant) {}
                                 Text("Which answer belongs to this cue?", fontWeight = FontWeight.SemiBold)
                                 Text(pair.first.prompt, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 TextButton(
@@ -1186,7 +1343,7 @@ private fun TodayScreen(
             Text("A delayed test checks whether you can still retrieve a fact after time has passed. It is different from remembering it immediately after studying.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
             Text("When a checkpoint is due, try free recall first, reveal the stored answer, then record accuracy and effort separately.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
             val now = System.currentTimeMillis()
             val pending = checkpoints.filter { it.completedAt == null }.sortedBy { it.dueAt }
             val due = pending.filter { it.dueAt <= now }
@@ -1196,23 +1353,26 @@ private fun TodayScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             if (pending.isEmpty()) {
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(StudioSpacing.dp6))
                 Text("Checkpoints are planned for 24 hours, 7 days, and 30 days after each memory is created.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 pending.take(8).forEach { checkpoint ->
                     val item = memories.firstOrNull { it.id == checkpoint.itemId }
                     if (item != null) {
-                        Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(14.dp)) {
+                        Card(shape = RoundedCornerShape(StudioSpacing.lg), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                            Column(Modifier.padding(StudioSpacing.dp14)) {
                                 Text("${checkpoint.delayDays}-day retention test", fontWeight = FontWeight.SemiBold)
                                 Text(item.prompt, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Text(
                                     if (checkpoint.dueAt <= now) "Due now"
                                     else "Due ${android.text.format.DateUtils.getRelativeTimeSpanString(checkpoint.dueAt, now, android.text.format.DateUtils.MINUTE_IN_MILLIS)}",
-                                    style = MaterialTheme.typography.labelMedium,
+                                    style = MaterialTheme.typography.labelSmall,
                                 )
-                                Spacer(Modifier.height(6.dp))
+                                Spacer(Modifier.height(StudioSpacing.dp6))
                                 Button(onClick = { onStartRetention(checkpoint) }, modifier = Modifier.fillMaxWidth()) {
                                     Text(if (checkpoint.dueAt <= now) "Start delayed test" else "Test early")
                                 }
@@ -1234,15 +1394,18 @@ private fun TodayScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
                     listOf(1, 7, 30).forEach { delayDays ->
                         val group = completed.filter { it.delayDays == delayDays }
                         val scheduled = checkpoints.count { it.delayDays == delayDays }
                         val notTested = (scheduled - group.size).coerceAtLeast(0)
                         val rated = group.mapNotNull { it.score }
                         val timed = group.mapNotNull { it.latencyMs }
-                        Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Card(shape = RoundedCornerShape(StudioSpacing.lg), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                            Column(Modifier.padding(StudioSpacing.dp14), verticalArrangement = Arrangement.spacedBy(StudioSpacing.xs)) {
                                 Text("${delayDays}-day checkpoint", fontWeight = FontWeight.SemiBold)
                                 Text("${group.size} completed · $notTested not tested")
                                 if (rated.isNotEmpty()) {
@@ -1272,12 +1435,15 @@ private fun TodayScreen(
                         }
                     }
                 }
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(StudioSpacing.xs))
                 Text("Recent completed tests", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 completed.take(12).forEach { checkpoint ->
                     val memory = memories.firstOrNull { it.id == checkpoint.itemId }
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Card(shape = RoundedCornerShape(StudioSpacing.lg), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                        Column(Modifier.padding(StudioSpacing.dp14), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp5)) {
                             Text("${checkpoint.delayDays}-day test", fontWeight = FontWeight.SemiBold)
                             if (memory != null) {
                                 Text(memory.prompt)
@@ -1293,7 +1459,7 @@ private fun TodayScreen(
                             }
                             Text(
                                 "Answer accuracy: $accuracyLabel · Self-rating: ${checkpoint.score?.let { "$it / 5" } ?: "not recorded"} · Retrieval time: ${checkpoint.latencyMs?.let { "${"%.1f".format(it / 1000.0)} s" } ?: "not recorded"}",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = MaterialTheme.typography.bodyMedium,
                             )
                             Text(
                                 "Completed ${android.text.format.DateUtils.getRelativeTimeSpanString(checkpoint.completedAt!!, now, android.text.format.DateUtils.MINUTE_IN_MILLIS)}",
@@ -1319,15 +1485,18 @@ private fun TodayScreen(
             Text(
                 "Descriptive history, not a controlled experiment. Correctness reflects saved attempt labels; ratings are self-reported.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
             )
             val summaries = RecallAnalytics.byMode(attemptHistory)
             if (summaries.isEmpty()) {
                 Text("Complete recall sessions to compare methods.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 summaries.forEach { summary ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Card(shape = RoundedCornerShape(StudioSpacing.lg), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                        Column(Modifier.padding(StudioSpacing.dp14), verticalArrangement = Arrangement.spacedBy(StudioSpacing.xs)) {
                             Text(summary.mode.name.lowercase().replaceFirstChar { it.uppercase() },
                                 fontWeight = FontWeight.SemiBold)
                             Text("${summary.attempts} attempts · ${summary.accuracyPercent}% marked correct (${summary.correct})")
@@ -1344,17 +1513,22 @@ private fun TodayScreen(
                 else "$due of ${memories.size} memory units are due now.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        item { Spacer(Modifier.height(12.dp)) }
+        item { Spacer(Modifier.height(StudioSpacing.md)) }
     }
 }
 
 @Composable
 private fun MetricCard(title: String, value: String, detail: String, modifier: Modifier = Modifier) {
-    Card(modifier = modifier, shape = RoundedCornerShape(18.dp)) {
-        Column(Modifier.padding(11.dp)) {
-            Text(title, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(7.dp))
-            Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(StudioSpacing.dp18),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant)
+        ) {
+        Column(Modifier.padding(StudioSpacing.dp14), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp5)) {
+            Text(title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
             Text(detail, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
@@ -1367,8 +1541,11 @@ private fun Heading(value: String) {
 
 @Composable
 private fun PrincipleCard(number: String, title: String, detail: String) {
-    Card(shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(15.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+    Card(shape = RoundedCornerShape(StudioSpacing.dp18), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+        Row(Modifier.padding(StudioSpacing.dp15), horizontalArrangement = Arrangement.spacedBy(StudioSpacing.dp14)) {
             Text(number, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
             Column {
                 Text(title, fontWeight = FontWeight.SemiBold)
@@ -1420,12 +1597,12 @@ private fun PalaceScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     val flattened = remember(nodes) { flattenPalaceTree(nodes) }
     LazyColumn(
-        Modifier.fillMaxSize().padding(18.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        Modifier.fillMaxSize().padding(StudioSpacing.screenHorizontal),
+        verticalArrangement = Arrangement.spacedBy(StudioSpacing.xs),
     ) {
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Heading("Memory palace")
+                Text("Memory palace", style = MaterialTheme.typography.headlineMedium)
                 TextButton(onClick = { addParent = null; showAddDialog = true }) { Text("+ Palace") }
             }
             Text(
@@ -1434,29 +1611,34 @@ private fun PalaceScreen(
             )
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(StudioSpacing.dp18),
                 modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                Column(Modifier.padding(StudioSpacing.lg), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp6)) {
                     Text("How to make your first palace", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer)
                     Text("1. Choose a place you know well, such as your home.\n2. Pick a consistent route through it.\n3. Choose distinct stops, such as the front door, sofa, and kitchen sink.\n4. Attach one fact to each stop with a vivid image.\n5. Mentally walk the route and try to recall each fact before checking.",
                         color = MaterialTheme.colorScheme.onPrimaryContainer)
                     Text("Example: imagine a giant leaf blocking your front door to cue ‘plants absorb carbon dioxide’. The image is a reminder, not proof you will remember it.",
-                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
                 }
             }
             Text("The app organises palace → area or route → specific spot. Start with one palace and a few distinct spots; you can add more structure later.",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (flattened.isEmpty()) {
             item {
-                Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(18.dp)) {
+                Card(shape = RoundedCornerShape(StudioSpacing.screenHorizontalPhone), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                    Column(Modifier.padding(StudioSpacing.dp18)) {
                         Text("Start with a palace", fontWeight = FontWeight.SemiBold)
                         Text("Create a familiar building, then add routes, areas, and distinct loci.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(Modifier.height(10.dp))
+                        Spacer(Modifier.height(StudioSpacing.dp10))
                         Button(onClick = { addParent = null; showAddDialog = true }) { Text("Create first palace") }
                     }
                 }
@@ -1466,19 +1648,21 @@ private fun PalaceScreen(
             val node = entry.node
             val itemCount = memories.count { it.palaceNodeId == node.id }
             Card(
-                shape = RoundedCornerShape(18.dp),
-                modifier = Modifier.fillMaxWidth().padding(start = (entry.depth * 12).dp),
-            ) {
-                Column(Modifier.padding(14.dp)) {
+                shape = RoundedCornerShape(StudioSpacing.dp18),
+                modifier = Modifier.fillMaxWidth().padding(start = (StudioSpacing.md * entry.depth.toFloat())),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                Column(Modifier.padding(StudioSpacing.dp14)) {
                     Text(node.kind.label.uppercase(), color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.labelSmall)
-                    Text(node.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(node.name, style = MaterialTheme.typography.titleMedium)
                     Text(
                         if (itemCount == 1) "1 linked memory" else "$itemCount linked memories",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
                         if (allowedChildKinds(node).isNotEmpty()) {
                             TextButton(onClick = { addParent = node; showAddDialog = true }) { Text("+ Add child location") }
                         }
@@ -1492,7 +1676,7 @@ private fun PalaceScreen(
             }
         }
         item {
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(StudioSpacing.xs))
             Button(onClick = onAddMemory, modifier = Modifier.fillMaxWidth()) {
                 Text("Add memory item")
             }
@@ -1567,7 +1751,7 @@ private fun MovePalaceNodeDialog(
             if (candidates.isEmpty()) {
                 Text("There are no valid parent locations for this item.")
             } else {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.xs)) {
                     Text("Choose a new parent location:")
                     candidates.forEach { candidate ->
                         TextButton(onClick = { onMove(candidate.id) }, modifier = Modifier.fillMaxWidth()) {
@@ -1620,7 +1804,7 @@ private fun AddPalaceNodeDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (parent == null) "Create palace" else "Add location") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
                 if (parent != null) {
                     Text("Parent: \${parent.name}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -1632,12 +1816,12 @@ private fun AddPalaceNodeDialog(
                 )
                 Text("Location type", style = MaterialTheme.typography.labelLarge)
                 allowedKinds.forEach { option ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
                         androidx.compose.material3.RadioButton(
                             selected = kind == option,
                             onClick = { kind = option },
                         )
-                        Text(option.label, modifier = Modifier.padding(top = 12.dp))
+                        Text(option.label, modifier = Modifier.padding(top = StudioSpacing.md))
                     }
                 }
             }
@@ -1671,7 +1855,7 @@ private fun RetentionTestScreen(
     var selectedAccuracy by remember(checkpoint.id) { mutableStateOf<Int?>(null) }
     var selectedEffort by remember(checkpoint.id) { mutableStateOf<Int?>(null) }
     val startedAt = remember(checkpoint.id) { SystemClock.elapsedRealtime() }
-    Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(Modifier.fillMaxSize().padding(StudioSpacing.screenHorizontalPhone), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp14)) {
         Heading("${checkpoint.delayDays}-day retention test")
         Text(
             "Recall first, then reveal the stored fact. Record answer accuracy separately from how easy recall felt.",
@@ -1680,8 +1864,11 @@ private fun RetentionTestScreen(
         if (item == null) {
             Text("The linked memory item could not be found.")
         } else {
-            Card(shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Card(shape = RoundedCornerShape(StudioSpacing.dp22), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                Column(Modifier.padding(StudioSpacing.dp18), verticalArrangement = Arrangement.spacedBy(StudioSpacing.md)) {
                     Text("FREE RECALL · NO CUE", color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.labelLarge)
                     Text("Write everything you can recall about this memory before checking the answer.",
@@ -1696,10 +1883,10 @@ private fun RetentionTestScreen(
                     )
                     if (revealed) {
                         Text("EXPECTED PROMPT", color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.labelMedium)
+                            style = MaterialTheme.typography.labelSmall)
                         Text(item.prompt, fontWeight = FontWeight.SemiBold)
                         Text("EXPECTED ANSWER", color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.labelMedium)
+                            style = MaterialTheme.typography.labelSmall)
                         Text(item.answer)
                     } else {
                         Button(onClick = { revealed = true }, modifier = Modifier.fillMaxWidth()) {
@@ -1718,7 +1905,7 @@ private fun RetentionTestScreen(
                             Text(if (selectedAccuracy == value) "✓ $label" else label)
                         }
                     }
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(StudioSpacing.xs))
                 Text("2. How did retrieval feel?", fontWeight = FontWeight.SemiBold)
                 listOf(0 to "Forgot", 2 to "Difficult", 3 to "Partial", 4 to "Mostly recalled", 5 to "Fully recalled")
                     .forEach { (score, label) ->
@@ -1753,13 +1940,16 @@ private fun SequenceRecallScreen(
     var selectedScore by remember(sequence.label, sequence.items.map { it.id }) { mutableStateOf<Int?>(null) }
     var sequenceCorrect by remember(sequence.label, sequence.items.map { it.id }) { mutableStateOf<Boolean?>(null) }
     val startedAt = remember(sequence.label, sequence.items.map { it.id }) { SystemClock.elapsedRealtime() }
-    Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(Modifier.fillMaxSize().padding(StudioSpacing.screenHorizontalPhone), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp14)) {
         Heading("Ordered recall")
         Text("Sequence: ${sequence.label}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Text("Recall the items in order without looking. Include the sequence numbers if useful, then reveal and compare.",
             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Card(shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Card(shape = RoundedCornerShape(StudioSpacing.dp22), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+            Column(Modifier.padding(StudioSpacing.dp18), verticalArrangement = Arrangement.spacedBy(StudioSpacing.md)) {
                 if (!revealed) {
                     OutlinedTextField(
                         value = response,
@@ -1775,7 +1965,7 @@ private fun SequenceRecallScreen(
                         Text("${item.sequenceOrder ?: index + 1}. ${item.prompt} — ${item.answer}",
                             style = MaterialTheme.typography.bodyLarge)
                         if (item.association.isNotBlank()) {
-                            Text("Association: ${item.association}", style = MaterialTheme.typography.bodySmall,
+                            Text("Association: ${item.association}", style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
@@ -1784,7 +1974,7 @@ private fun SequenceRecallScreen(
         }
         if (revealed) {
             Text("After comparing, mark correctness separately from retrieval effort.", fontWeight = FontWeight.SemiBold)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            Row(horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm), modifier = Modifier.fillMaxWidth()) {
                 TextButton(onClick = { sequenceCorrect = false }, modifier = Modifier.weight(1f)) {
                     Text(if (sequenceCorrect == false) "✓ Incorrect" else "Incorrect")
                 }
@@ -1821,14 +2011,14 @@ private fun RecallScreen(
     var recalledResponse by remember(item?.id, mode) { mutableStateOf("") }
     var userCheckedCorrect by remember(item?.id, mode) { mutableStateOf<Boolean?>(null) }
     val recallStartedAt = remember(item?.id, mode) { SystemClock.elapsedRealtime() }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Heading("Retrieval practice")
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(StudioSpacing.screenHorizontal), verticalArrangement = Arrangement.spacedBy(StudioSpacing.md)) {
+        Text("Retrieval practice", style = MaterialTheme.typography.headlineMedium)
         Text("Your practice loop: try to remember → reveal the answer → compare honestly → record the result. Do not worry about getting everything right; mistakes show what to practise next.",
             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("Choose a mode", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+        Text("Choose a mode", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Text("Prompt = answer from a question. Free = recall without a cue. Reverse = see the answer and recall its question.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+            color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+        Row(horizontalArrangement = Arrangement.spacedBy(StudioSpacing.dp6), modifier = Modifier.fillMaxWidth()) {
             listOf(RecallMode.Cued, RecallMode.Free, RecallMode.Reverse).forEach { option ->
                 if (mode == option) {
                     Button(onClick = { onModeChange(option) }, modifier = Modifier.weight(1f)) {
@@ -1842,50 +2032,56 @@ private fun RecallScreen(
             }
         }
         if (item == null) {
-            Card(shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(20.dp)) {
-                    Text("Nothing to practise yet", fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(8.dp))
-                    Text("Add a prompt and answer to start a recall session.")
-                    Spacer(Modifier.height(14.dp))
+            Card(shape = RoundedCornerShape(StudioSpacing.xl), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                Column(Modifier.padding(StudioSpacing.screenHorizontalPhone)) {
+                    Text("Your first recall session starts here", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(StudioSpacing.sm))
+                    Text("Create one small question and answer in your library, then come back here to practise retrieving it.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(StudioSpacing.dp14))
                     Button(onClick = onAdd) { Text("Add memory") }
                 }
             }
         } else {
-            Card(shape = RoundedCornerShape(26.dp), modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(22.dp)) {
+            Card(shape = RoundedCornerShape(StudioSpacing.dp26), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                Column(Modifier.padding(StudioSpacing.dp22)) {
                     if (mode != RecallMode.Free) {
                         Text(if (mode == RecallMode.Reverse) "REVERSE CUE · ANSWER" else "RECALL PROMPT",
                             color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(StudioSpacing.lg))
                         Text(if (mode == RecallMode.Reverse) item.answer else item.prompt,
-                            style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                            style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                     } else {
                         Text("FREE RECALL · NO CUE", color = MaterialTheme.colorScheme.primary,
                             style = MaterialTheme.typography.labelLarge)
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(StudioSpacing.lg))
                         Text("Retrieve the fact from memory without seeing its prompt.",
                             style = MaterialTheme.typography.bodyLarge)
                     }
                     if (item.palace.isNotBlank()) {
-                        Spacer(Modifier.height(10.dp))
+                        Spacer(Modifier.height(StudioSpacing.dp10))
                         Text("Place: ${item.palace} · ${item.locus.ifBlank { "locus not set" }}",
-                            style = MaterialTheme.typography.labelMedium)
+                            style = MaterialTheme.typography.labelSmall)
                     }
                     if (revealed) {
-                        Spacer(Modifier.height(20.dp))
+                        Spacer(Modifier.height(StudioSpacing.screenHorizontalPhone))
                         Text(if (mode == RecallMode.Reverse) "EXPECTED PROMPT" else "ANSWER",
                             color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
-                        Spacer(Modifier.height(6.dp))
+                        Spacer(Modifier.height(StudioSpacing.dp6))
                         if (mode == RecallMode.Reverse) {
                             Text(item.prompt, style = MaterialTheme.typography.bodyLarge)
                         } else if (mode == RecallMode.Free) {
                             Text("PROMPT", color = MaterialTheme.colorScheme.primary,
-                                style = MaterialTheme.typography.labelMedium)
+                                style = MaterialTheme.typography.labelSmall)
                             Text(item.prompt, style = MaterialTheme.typography.bodyLarge)
-                            Spacer(Modifier.height(8.dp))
+                            Spacer(Modifier.height(StudioSpacing.sm))
                             Text("ANSWER", color = MaterialTheme.colorScheme.primary,
-                                style = MaterialTheme.typography.labelMedium)
+                                style = MaterialTheme.typography.labelSmall)
                             Text(item.answer, style = MaterialTheme.typography.bodyLarge)
                         } else {
                             Text(item.answer, style = MaterialTheme.typography.bodyLarge)
@@ -1906,7 +2102,7 @@ private fun RecallScreen(
                             modifier = Modifier.fillMaxWidth(),
                             minLines = if (mode == RecallMode.Free) 3 else 1,
                         )
-                        Spacer(Modifier.height(20.dp))
+                        Spacer(Modifier.height(StudioSpacing.screenHorizontalPhone))
                         Button(onClick = onReveal) { Text("Reveal answer") }
                     }
                 }
@@ -1914,7 +2110,7 @@ private fun RecallScreen(
             if (revealed) {
                 Text("Compare before you rate", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text("Compare what you wrote with the answer above. Mark ‘Correct’ only if it matches the important fact; otherwise mark ‘Incorrect’. The app does not automatically grade your wording.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                Row(horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm), modifier = Modifier.fillMaxWidth()) {
                     if (userCheckedCorrect == false) {
                         Button(onClick = { userCheckedCorrect = false }, modifier = Modifier.weight(1f)) {
                             Text("✓ Incorrect")
@@ -1935,7 +2131,7 @@ private fun RecallScreen(
                     }
                 }
                 Text("How hard was it to remember?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Text("Choose how it felt, separately from whether your answer was correct. You must mark correctness first; this keeps accuracy and effort as separate records.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                Text("Choose how it felt, separately from whether your answer was correct. You must mark correctness first; this keeps accuracy and effort as separate records.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
                 listOf(0 to "Again · forgot", 2 to "Hard · effortful", 3 to "Got it · some effort", 5 to "Easy · immediate").forEach { (score, label) ->
                     TextButton(
                         enabled = userCheckedCorrect != null,
@@ -1956,59 +2152,84 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
     val filteredMemories = remember(memories, searchQuery, dueOnly, now) {
         MemoryLibraryPlan.filterAndSort(memories, searchQuery, dueOnly, now)
     }
-    Column(Modifier.fillMaxSize().padding(horizontal = 18.dp)) {
-        Spacer(Modifier.height(8.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Heading("Memory library")
-            Row {
-                TextButton(onClick = onExport, enabled = memories.isNotEmpty()) { Text("Export TSV") }
-                TextButton(onClick = onImport) { Text("Import TSV") }
-                TextButton(onClick = onAdd) { Text("+ Add") }
+    Column(Modifier.fillMaxSize().padding(horizontal = StudioSpacing.screenHorizontal)) {
+        Spacer(Modifier.height(StudioSpacing.sm))
+        Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm), modifier = Modifier.fillMaxWidth()) {
+            Text("Your memory library", style = MaterialTheme.typography.headlineMedium)
+            Text("Keep useful facts organised, then return to the ones due for review.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(StudioSpacing.dp6),
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            ) {
+                Button(onClick = onAdd, modifier = Modifier.weight(1f)) { Text("＋ Add memory") }
+                TextButton(onClick = onImport, modifier = Modifier.weight(1f)) { Text("Import") }
+                TextButton(onClick = onExport, enabled = memories.isNotEmpty(), modifier = Modifier.weight(1f)) { Text("Export") }
             }
         }
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Search memories") },
+            singleLine = true,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm),
+        ) {
+            FilterChip(selected = !dueOnly, onClick = { dueOnly = false }, label = { Text("All memories") })
+            FilterChip(selected = dueOnly, onClick = { dueOnly = !dueOnly }, label = { Text("Due for review") })
+        }
         if (memories.isEmpty()) {
-            Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Card(shape = RoundedCornerShape(StudioSpacing.screenHorizontalPhone), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                Column(Modifier.padding(StudioSpacing.dp18), verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
                     Text("Your library starts with one useful question", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text("Example: ‘What gas do plants absorb?’ Answer: ‘Carbon dioxide.’ Keep the question specific so you can test yourself later.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Button(onClick = onAdd, modifier = Modifier.fillMaxWidth()) { Text("Create my first memory") }
-                    Text("Your saved facts stay on this device.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Your saved facts stay on this device.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         } else {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text("Search memories") },
-                singleLine = true,
-            )
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("${filteredMemories.size} memories", style = MaterialTheme.typography.labelMedium)
-                TextButton(onClick = { dueOnly = !dueOnly }) {
-                    Text(if (dueOnly) "Show all" else "Due reviews only")
-                }
-            }
+            Text("${filteredMemories.size} memories", style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (filteredMemories.isEmpty()) {
-                Text("No memories match this search.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                EmptyState(
+                    headline = if (dueOnly) "No reviews are due right now" else "No matching memories",
+                    explanation = if (dueOnly) {
+                        "You are up to date. Show all memories to browse your library."
+                    } else {
+                        "Try a different search, or clear the search to see all saved memories."
+                    },
+                    actionLabel = if (dueOnly) "Show all memories" else "Clear search",
+                    onAction = { if (dueOnly) dueOnly = false else searchQuery = "" },
+                )
             }
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp10)) {
                 items(filteredMemories, key = { it.id }) { item ->
-                    Card(shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(16.dp)) {
-                            Text(item.prompt, fontWeight = FontWeight.SemiBold)
-                            Spacer(Modifier.height(4.dp))
-                            Text(item.answer, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Card(shape = RoundedCornerShape(StudioSpacing.dp18), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
+        ) {
+                        Column(Modifier.padding(StudioSpacing.lg)) {
+                            Text(item.prompt, style = MaterialTheme.typography.titleMedium)
+                            Spacer(Modifier.height(StudioSpacing.xs))
+                            Text(item.answer, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             if (item.chunkLabel.isNotBlank()) {
-                                Text("Chunk: ${item.chunkLabel}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                                Text("Chunk: ${item.chunkLabel}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                             }
                             if (item.association.isNotBlank()) {
-                                Text("Association: ${item.association}", style = MaterialTheme.typography.bodySmall)
+                                Text("Association: ${item.association}", style = MaterialTheme.typography.bodyMedium)
                             }
                             item.sequenceOrder?.let { order -> Text("Sequence position: $order", style = MaterialTheme.typography.labelSmall) }
                             if (item.palace.isNotBlank()) {
-                                Spacer(Modifier.height(8.dp))
+                                Spacer(Modifier.height(StudioSpacing.sm))
                                 Text("${item.palace} / ${item.locus}", style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.primary)
                             }
@@ -2054,7 +2275,7 @@ private fun AddMemoryDialog(
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp10),
             ) {
                 Text(when (setupStep) {
                     0 -> "STEP 1 · THE FACT"
@@ -2073,18 +2294,18 @@ private fun AddMemoryDialog(
                 if (setupStep == 1) {
                     OutlinedTextField(chunkLabel, { chunkLabel = it }, label = { Text("Topic (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     OutlinedTextField(association, { association = it }, label = { Text("Unusual image or action (optional)") }, minLines = 2, modifier = Modifier.fillMaxWidth())
-                    Text("Example: picture a giant green leaf vacuuming carbon dioxide out of the air.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Example: picture a giant green leaf vacuuming carbon dioxide out of the air.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     val encodingCheck = EncodingQualityPlan.evaluate(prompt, answer, chunkLabel, association)
-                    Text("Preparation checklist: ${encodingCheck.score}/${encodingCheck.maxScore}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    Text("This checks whether details were added; it cannot predict or guarantee retention.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-                    encodingCheck.suggestions.forEach { suggestion -> Text("• $suggestion", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }
+                    Text("Preparation checklist: ${encodingCheck.score}/${encodingCheck.maxScore}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text("This checks whether details were added; it cannot predict or guarantee retention.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+                    encodingCheck.suggestions.forEach { suggestion -> Text("• $suggestion", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium) }
                 }
                 if (setupStep == 2) {
                     OutlinedTextField(sequenceOrderText, { value -> sequenceOrderText = value.filter(Char::isDigit).take(4) }, label = { Text("Order number (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     OutlinedTextField(palace, { palace = it }, label = { Text("Familiar building (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     OutlinedTextField(locus, { locus = it }, label = { Text("Specific spot in that building (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     if (locusNodes.isNotEmpty()) {
-                        Text("Or link to a saved memory-palace spot", style = MaterialTheme.typography.labelMedium)
+                        Text("Or link to a saved memory-palace spot", style = MaterialTheme.typography.labelSmall)
                         Box {
                             TextButton(onClick = { nodeMenuExpanded = true }) { Text(selectedNodeName) }
                             DropdownMenu(expanded = nodeMenuExpanded, onDismissRequest = { nodeMenuExpanded = false }) {

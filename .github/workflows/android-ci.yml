@@ -1,11 +1,11 @@
 name: Android CI
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-  workflow_dispatch:
 
 concurrency:
   group: android-ci-build-${{ github.ref }}

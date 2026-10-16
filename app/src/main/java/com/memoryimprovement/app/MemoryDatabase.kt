@@ -174,17 +174,120 @@ interface MemoryDao {
 
     @Query("DELETE FROM palace_nodes")
     suspend fun deleteAllPalaceNodes()
+
+    // Documents
+    @Query("SELECT * FROM documents ORDER BY addedAt DESC")
+    suspend fun getDocuments(): List<Document>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertDocument(document: Document)
+
+    @Query("DELETE FROM documents WHERE id = :id")
+    suspend fun deleteDocument(id: String)
+
+    // Memory Chunks
+    @Query("SELECT * FROM memory_chunks WHERE documentId = :documentId ORDER BY position, createdAt")
+    suspend fun getChunksForDocument(documentId: String): List<MemoryChunk>
+
+    @Query("SELECT * FROM memory_chunks ORDER BY createdAt DESC")
+    suspend fun getAllChunks(): List<MemoryChunk>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertChunk(chunk: MemoryChunk)
+
+    @Query("DELETE FROM memory_chunks WHERE id = :id")
+    suspend fun deleteChunk(id: String)
+
+    // Recall Prompts
+    @Query("SELECT * FROM recall_prompts WHERE chunkId = :chunkId ORDER BY createdAt")
+    suspend fun getPromptsForChunk(chunkId: String): List<RecallPrompt>
+
+    @Query("SELECT * FROM recall_prompts ORDER BY createdAt DESC")
+    suspend fun getAllRecallPrompts(): List<RecallPrompt>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertRecallPrompt(prompt: RecallPrompt)
+
+    @Query("DELETE FROM recall_prompts WHERE id = :id")
+    suspend fun deleteRecallPrompt(id: String)
+
+    // Associations
+    @Query("SELECT * FROM associations WHERE promptId = :promptId ORDER BY createdAt")
+    suspend fun getAssociationsForPrompt(promptId: String): List<Association>
+
+    @Query("SELECT * FROM associations ORDER BY createdAt DESC")
+    suspend fun getAllAssociations(): List<Association>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAssociation(association: Association)
+
+    @Query("DELETE FROM associations WHERE id = :id")
+    suspend fun deleteAssociation(id: String)
 }
 
 @Database(
-    entities = [MemoryItemEntity::class, RecallAttemptEntity::class, PalaceNodeEntity::class, RetentionCheckpointEntity::class],
-    version = 6,
+    entities = [
+        MemoryItemEntity::class,
+        RecallAttemptEntity::class,
+        PalaceNodeEntity::class,
+        RetentionCheckpointEntity::class,
+        Document::class,
+        MemoryChunk::class,
+        RecallPrompt::class,
+        Association::class,
+    ],
+    version = 7,
     exportSchema = false,
 )
 abstract class MemoryDatabase : RoomDatabase() {
     abstract fun memoryDao(): MemoryDao
 
     companion object {
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""CREATE TABLE IF NOT EXISTS documents (
+                    id TEXT NOT NULL PRIMARY KEY,
+                    title TEXT NOT NULL,
+                    fileUri TEXT NOT NULL,
+                    fileType TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    addedAt INTEGER NOT NULL,
+                    processed INTEGER NOT NULL
+                )""")
+                db.execSQL("""CREATE TABLE IF NOT EXISTS memory_chunks (
+                    id TEXT NOT NULL PRIMARY KEY,
+                    documentId TEXT,
+                    title TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    position INTEGER NOT NULL,
+                    createdAt INTEGER NOT NULL,
+                    FOREIGN KEY(documentId) REFERENCES documents(id) ON UPDATE NO ACTION ON DELETE CASCADE
+                )""")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_memory_chunks_documentId ON memory_chunks(documentId)")
+                db.execSQL("""CREATE TABLE IF NOT EXISTS recall_prompts (
+                    id TEXT NOT NULL PRIMARY KEY,
+                    chunkId TEXT,
+                    prompt TEXT NOT NULL,
+                    answer TEXT NOT NULL,
+                    type TEXT NOT NULL,
+                    createdAt INTEGER NOT NULL,
+                    FOREIGN KEY(chunkId) REFERENCES memory_chunks(id) ON UPDATE NO ACTION ON DELETE CASCADE
+                )""")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_recall_prompts_chunkId ON recall_prompts(chunkId)")
+                db.execSQL("""CREATE TABLE IF NOT EXISTS associations (
+                    id TEXT NOT NULL PRIMARY KEY,
+                    promptId TEXT,
+                    chunkId TEXT,
+                    visualCue TEXT NOT NULL,
+                    actionCue TEXT NOT NULL,
+                    createdAt INTEGER NOT NULL,
+                    FOREIGN KEY(promptId) REFERENCES recall_prompts(id) ON UPDATE NO ACTION ON DELETE CASCADE
+                )""")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_associations_promptId ON associations(promptId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_associations_chunkId ON associations(chunkId)")
+            }
+        }
+
         val MIGRATION_5_6 = object : Migration(5, 6) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE memory_items ADD COLUMN chunkLabel TEXT NOT NULL DEFAULT ''")
