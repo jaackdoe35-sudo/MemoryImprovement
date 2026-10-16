@@ -1,7 +1,9 @@
 name: Build MemoryImprovement APK
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - redesign-beginner-first-ux
 
 permissions:
   contents: read
