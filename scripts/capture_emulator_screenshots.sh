@@ -32,6 +32,11 @@ until adb shell getprop sys.boot_completed 2>/dev/null | grep -q "1"; do
 done
 echo "Emulator booted successfully."
 
+if [ -f "app/build/outputs/apk/debug/app-debug.apk" ]; then
+  echo "Installing debug APK onto emulator..."
+  adb install -r app/build/outputs/apk/debug/app-debug.apk
+fi
+
 mkdir -p docs/screenshots
 
 # Launch the installed debug build from its package launcher activity.
