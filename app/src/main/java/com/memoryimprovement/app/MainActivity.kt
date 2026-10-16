@@ -1,13 +1,12 @@
 package com.memoryimprovement.app
 
+import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
-import android.net.Uri
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,37 +16,59 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.LibraryBooks
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.FileDownload
+import androidx.compose.material.icons.outlined.FileUpload
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Place
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.lifecycleScope
+import com.memoryimprovement.app.theme.ContextualHelpIcon
+import com.memoryimprovement.app.theme.Spacing
+import com.memoryimprovement.app.theme.pressScaleEffect
+import kotlinx.coroutines.launch
 import java.util.UUID
 
 class MainActivity : ComponentActivity() {
@@ -101,19 +122,7 @@ class MainActivity : ComponentActivity() {
             val initialAttempts = repository.loadAttempts()
             val initialCheckpoints = repository.loadRetentionCheckpoints()
             setContent {
-                MaterialTheme(
-                    colorScheme = lightColorScheme(
-                        primary = Color(0xFF245B4A),
-                        onPrimary = Color.White,
-                        secondary = Color(0xFFB96F43),
-                        background = Color(0xFFF6F4EF),
-                        surface = Color(0xFFFFFEFA),
-                        onSurface = Color(0xFF202820),
-                        onSurfaceVariant = Color(0xFF626B63),
-                        primaryContainer = Color(0xFFDCEBE2),
-                        onPrimaryContainer = Color(0xFF173E31),
-                    ),
-                ) {
+                MemoryImprovementTheme {
                     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                         MemoryApp(
                             initialItems = initialItems,
@@ -205,7 +214,7 @@ private enum class AppTab(val label: String) {
     Today("Today"), Palace("Palace"), Recall("Recall"), Library("Library")
 }
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MemoryApp(
     initialItems: List<MemoryItem>,
@@ -290,15 +299,22 @@ private fun MemoryApp(
             })
         },
         bottomBar = {
-            NavigationBar {
+            NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                 AppTab.entries.forEach { destination ->
                     NavigationBarItem(
                         selected = tab == destination,
                         onClick = { tab = destination; if (destination == AppTab.Recall) startRecall() },
-                        icon = { Text(when (destination) {
-                            AppTab.Today -> "◎"; AppTab.Palace -> "⌂"
-                            AppTab.Recall -> "↻"; AppTab.Library -> "▤"
-                        }) },
+                        icon = {
+                            Icon(
+                                imageVector = when (destination) {
+                                    AppTab.Today -> Icons.Outlined.Home
+                                    AppTab.Palace -> Icons.Outlined.Place
+                                    AppTab.Recall -> Icons.Outlined.Refresh
+                                    AppTab.Library -> Icons.AutoMirrored.Outlined.LibraryBooks
+                                },
+                                contentDescription = destination.label,
+                            )
+                        },
                         label = { Text(destination.label) },
                     )
                 }
@@ -488,10 +504,10 @@ private fun MemoryApp(
                         if (editingMemory?.id == item.id) editingMemory = null
                         deletingMemory = null
                     }
-                }) { Text("Delete") }
+                }, modifier = Modifier.pressScaleEffect()) { Text("Delete") }
             },
             dismissButton = {
-                TextButton(onClick = { deletingMemory = null }) { Text("Cancel") }
+                TextButton(onClick = { deletingMemory = null }, modifier = Modifier.pressScaleEffect()) { Text("Cancel") }
             },
         )
     }
@@ -506,8 +522,8 @@ private fun MemoryApp(
             },
             title = { Text("Restore full backup") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("A full backup replaces all current memories, palace locations, recall attempts, and retention checkpoints. Export a backup of your current data first if you may need it.")
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
+                    Text("A full backup replaces all current memories, palace locations, recall attempts, and retention checkpoints.")
                     Button(onClick = {
                         onChooseBackupFile { result ->
                             result.onSuccess { raw ->
@@ -525,7 +541,7 @@ private fun MemoryApp(
                                 backupImportError = it.message ?: "Could not read the selected backup file."
                             }
                         }
-                    }) { Text("Choose backup JSON") }
+                    }, modifier = Modifier.pressScaleEffect()) { Text("Choose backup JSON") }
                     backupImportSnapshot?.let { snapshot ->
                         Text("Ready to replace data with ${snapshot.memories.size} memories, ${snapshot.palaceNodes.size} palace locations, ${snapshot.attempts.size} recall attempts, and ${snapshot.checkpoints.size} retention checkpoints.")
                     }
@@ -561,6 +577,7 @@ private fun MemoryApp(
                             }
                         }
                     },
+                    modifier = Modifier.pressScaleEffect(),
                 ) { Text("Replace local data") }
             },
             dismissButton = {
@@ -569,7 +586,7 @@ private fun MemoryApp(
                     backupImportSnapshot = null
                     backupImportError = null
                     backupImportStatus = null
-                }) { Text("Cancel") }
+                }, modifier = Modifier.pressScaleEffect()) { Text("Cancel") }
             },
         )
     }
@@ -579,8 +596,8 @@ private fun MemoryApp(
             onDismissRequest = { bulkImportOpen = false; bulkImportError = null; bulkImportStatus = null; bulkImportPreview = null },
             title = { Text("Bulk import memories") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Paste tab-separated rows: prompt, answer, palace, locus, chunk, association, sequence order. The first two columns are required.")
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
+                    Text("Paste tab-separated rows: prompt, answer, palace, locus, chunk, association, sequence order.")
                     OutlinedTextField(
                         value = bulkImportText,
                         onValueChange = { bulkImportText = it; bulkImportError = null; bulkImportStatus = null; bulkImportPreview = null },
@@ -602,7 +619,7 @@ private fun MemoryApp(
                                 bulkImportPreview = null
                             }
                         }
-                    }) { Text("Choose TSV file") }
+                    }, modifier = Modifier.pressScaleEffect()) { Text("Choose TSV file") }
                     bulkImportError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                     bulkImportStatus?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
                     bulkImportPreview?.let { preview ->
@@ -614,7 +631,6 @@ private fun MemoryApp(
                             Text("…and ${preview.rows.size - 3} more", style = MaterialTheme.typography.bodySmall)
                         }
                     }
-                    Text("Duplicate prompt + answer pairs are skipped automatically.", style = MaterialTheme.typography.bodySmall)
                 }
             },
             confirmButton = {
@@ -659,10 +675,10 @@ private fun MemoryApp(
                             bulkImportStatus = null
                         }
                     }
-                }) { Text(if (bulkImportPreview == null) "Preview import" else "Confirm import") }
+                }, modifier = Modifier.pressScaleEffect()) { Text(if (bulkImportPreview == null) "Preview import" else "Confirm import") }
             },
             dismissButton = {
-                TextButton(onClick = { bulkImportOpen = false; bulkImportError = null }) { Text("Cancel") }
+                TextButton(onClick = { bulkImportOpen = false; bulkImportError = null }, modifier = Modifier.pressScaleEffect()) { Text("Cancel") }
             },
         )
     }
@@ -676,11 +692,17 @@ private fun MemoryApp(
             },
             title = { Text("Review similar cues") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("This prompt matches or closely resembles existing cues. Similar wording can make retrieval ambiguous. Review the matches before deciding.")
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
+                    Text("This prompt matches or closely resembles existing cues.")
                     pendingCueConflicts.forEach { conflict ->
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Card(
+                            shape = RoundedCornerShape(Spacing.cardCornerRadius),
+                            border = BorderStroke(Spacing.outlineWidth, MaterialTheme.colorScheme.outlineVariant),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            elevation = CardDefaults.cardElevation(defaultElevation = Spacing.none),
+                            modifier = Modifier.fillMaxWidth().pressScaleEffect(),
+                        ) {
+                            Column(Modifier.padding(Spacing.normal), verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
                                 Text(conflict.existing.prompt, fontWeight = FontWeight.SemiBold)
                                 Text("Answer: ${conflict.existing.answer}")
                                 Text(
@@ -692,7 +714,6 @@ private fun MemoryApp(
                             }
                         }
                     }
-                    Text("This is a wording-based warning, not a semantic judgment. It may miss synonyms or flag legitimate related facts.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
             confirmButton = {
@@ -704,20 +725,20 @@ private fun MemoryApp(
                     editingMemory = null
                     pendingCueCandidate = null
                     pendingCueConflicts = emptyList()
-                }) { Text("Save anyway") }
+                }, modifier = Modifier.pressScaleEffect()) { Text("Save anyway") }
             },
             dismissButton = {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
                     TextButton(onClick = {
                         pendingCueCandidate = null
                         pendingCueConflicts = emptyList()
-                    }) { Text("Edit cue") }
+                    }, modifier = Modifier.pressScaleEffect()) { Text("Edit cue") }
                     TextButton(onClick = {
                         pendingCueCandidate = null
                         pendingCueConflicts = emptyList()
                         adding = false
                         editingMemory = null
-                    }) { Text("Discard") }
+                    }, modifier = Modifier.pressScaleEffect()) { Text("Discard") }
                 }
             },
         )
@@ -786,17 +807,44 @@ private fun TodayScreen(
     var selectedAnswerId by remember { mutableStateOf<String?>(null) }
     var drillChecked by remember { mutableStateOf(false) }
     var drillStartedAt by remember { mutableStateOf(0L) }
-    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item { Spacer(Modifier.height(4.dp)) }
+    val accuracyPercent = if (attempts == 0) 0 else (correct * 100) / attempts
+
+    LazyColumn(
+        Modifier.fillMaxSize().padding(horizontal = Spacing.normal),
+        verticalArrangement = Arrangement.spacedBy(Spacing.medium),
+    ) {
+        item { Spacer(Modifier.height(Spacing.extraSmall)) }
         item {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Data safety", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                    Text("Full JSON backups include memories, palace locations, recall history, and retention checkpoints.")
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = onExportFullBackup, modifier = Modifier.weight(1f)) { Text("Export backup") }
-                        TextButton(onClick = onImportFullBackup, modifier = Modifier.weight(1f)) { Text("Restore backup") }
+            Card(
+                shape = RoundedCornerShape(Spacing.cardCornerRadius),
+                border = BorderStroke(Spacing.outlineWidth, MaterialTheme.colorScheme.outlineVariant),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = Spacing.none),
+                modifier = Modifier.fillMaxWidth().pressScaleEffect(),
+            ) {
+                Column(Modifier.padding(Spacing.normal), verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("Data safety", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        ContextualHelpIcon(
+                            title = "Data Backup & Safety",
+                            description = "Full JSON backups export all your memories, palace structures, recall attempt logs, and retention checkpoints to a portable JSON file.",
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.small)) {
+                        Button(onClick = onExportFullBackup, modifier = Modifier.weight(1f).pressScaleEffect()) {
+                            Icon(Icons.Outlined.FileDownload, contentDescription = null, modifier = Modifier.size(Spacing.iconSizeSmall))
+                            Spacer(Modifier.size(Spacing.extraSmall))
+                            Text("Export backup")
+                        }
+                        TextButton(onClick = onImportFullBackup, modifier = Modifier.weight(1f).pressScaleEffect()) {
+                            Icon(Icons.Outlined.FileUpload, contentDescription = null, modifier = Modifier.size(Spacing.iconSizeSmall))
+                            Spacer(Modifier.size(Spacing.extraSmall))
+                            Text("Restore backup")
+                        }
                     }
                 }
             }
@@ -804,16 +852,17 @@ private fun TodayScreen(
         if (migrationResult.errorMessage != null) {
             item {
                 Card(
+                    shape = RoundedCornerShape(Spacing.cardCornerRadius),
+                    border = BorderStroke(Spacing.outlineWidth, MaterialTheme.colorScheme.error),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                    elevation = CardDefaults.cardElevation(defaultElevation = Spacing.none),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(Modifier.padding(Spacing.normal), verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
                         Text("Legacy data needs recovery", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onErrorContainer)
                         Text(migrationResult.errorMessage, color = MaterialTheme.colorScheme.onErrorContainer)
-                        Text("The original JSON is still preserved. Export a backup before editing or replacing it.",
-                            color = MaterialTheme.colorScheme.onErrorContainer, style = MaterialTheme.typography.bodySmall)
                         migrationResult.preservedRawData?.let { raw ->
-                            Button(onClick = { onExportLegacyData(raw) }) { Text("Export legacy JSON backup") }
+                            Button(onClick = { onExportLegacyData(raw) }, modifier = Modifier.pressScaleEffect()) { Text("Export legacy JSON backup") }
                         }
                     }
                 }
@@ -821,73 +870,112 @@ private fun TodayScreen(
         }
         item {
             Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
-                shape = RoundedCornerShape(26.dp), modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(Spacing.extraLarge),
+                border = BorderStroke(Spacing.outlineWidth, MaterialTheme.colorScheme.primaryContainer),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                elevation = CardDefaults.cardElevation(defaultElevation = Spacing.none),
+                modifier = Modifier.fillMaxWidth().pressScaleEffect(),
             ) {
-                Column(Modifier.padding(22.dp)) {
-                    Text(if (memories.isEmpty()) "YOUR STARTING POINT" else "YOUR NEXT PRACTICE", color = Color(0xFFC9E8D5), style = MaterialTheme.typography.labelLarge)
-                    Spacer(Modifier.height(10.dp))
-                    Text(if (memories.isEmpty()) "You can train your memory." else "Recall first. Review second.",
-                        color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(8.dp))
-                    Text(if (memories.isEmpty()) "No experience needed. Start with one small fact and learn the method as you go." else "Try to retrieve the answer before revealing it. Effortful recall helps you find what you really know.", color = Color(0xFFE1EEE6))
-                    Spacer(Modifier.height(18.dp))
-                    Button(onClick = if (memories.isEmpty()) onAdd else onRecall) {
+                Column(Modifier.padding(Spacing.extraLarge)) {
+                    Text(
+                        if (memories.isEmpty()) "YOUR STARTING POINT" else "YOUR NEXT PRACTICE",
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                    Spacer(Modifier.height(Spacing.small))
+                    Text(
+                        if (memories.isEmpty()) "You can train your memory." else "Recall first. Review second.",
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Spacer(Modifier.height(Spacing.normal))
+                    Button(onClick = if (memories.isEmpty()) onAdd else onRecall, modifier = Modifier.pressScaleEffect()) {
                         Text(if (memories.isEmpty()) "Add a first fact" else "Practise recall")
                     }
                 }
             }
         }
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Heading("Learn the essentials")
-                Text("Three useful skills. Start with the first; you do not need to know any terminology.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                    shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("01  Active recall", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer)
-                        Text("What it means: try to remember before looking at the answer. Example: close your notes and explain one idea in your own words.",
-                            color = MaterialTheme.colorScheme.onPrimaryContainer)
-                        Text("Why use it: it reveals what you can actually retrieve, not just what looks familiar.",
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                    }
-                }
-                Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("02  Spaced practice", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text("What it means: revisit information across separate sessions instead of cramming it all at once.")
-                        Text("Try this: test yourself today, then return to the same fact tomorrow. Adjust the interval based on how well you remember.",
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-                Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("03  Distinctive associations", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text("What it means: connect a fact to a concrete, unusual image or action that gives you a retrieval cue.")
-                        Text("Example: to remember that a person is a baker, imagine them juggling enormous loaves in a bakery. The stranger and more specific cue may be easier to recall.",
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-            }
-        }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.small), modifier = Modifier.fillMaxWidth()) {
                 MetricCard("Stored", memories.size.toString(), "memory units", Modifier.weight(1f))
                 MetricCard("Attempts", attempts.toString(), "all recorded", Modifier.weight(1f))
-                MetricCard("Self-rated success", if (attempts == 0) "—" else "${(correct * 100) / attempts}%", "all recorded attempts", Modifier.weight(1f))
+                ProgressRingMetricCard(
+                    title = "Accuracy",
+                    percentage = accuracyPercent,
+                    detail = if (attempts == 0) "no attempts" else "$correct / $attempts correct",
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
         item {
-            Heading("Your practice results")
-            Text("These numbers describe your recorded practice, not a test of intelligence. A marked-correct result is self-checked; the app does not automatically judge free-text meaning.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Heading("Learn the essentials")
+                    ContextualHelpIcon(
+                        title = "Essential Learning Principles",
+                        description = "1. Active Recall: Attempt retrieval before revealing answers.\n2. Spaced Practice: Revisit items across separate sessions.\n3. Distinctive Associations: Connect facts with vivid, unusual mental images.",
+                    )
+                }
+                Card(
+                    shape = RoundedCornerShape(Spacing.cardCornerRadius),
+                    border = BorderStroke(Spacing.outlineWidth, MaterialTheme.colorScheme.outlineVariant),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                    elevation = CardDefaults.cardElevation(defaultElevation = Spacing.none),
+                    modifier = Modifier.fillMaxWidth().pressScaleEffect(),
+                ) {
+                    Column(Modifier.padding(Spacing.normal), verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
+                        Text("01  Active recall", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text("Try to remember before looking at the answer.", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    }
+                }
+                Card(
+                    shape = RoundedCornerShape(Spacing.cardCornerRadius),
+                    border = BorderStroke(Spacing.outlineWidth, MaterialTheme.colorScheme.outlineVariant),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = Spacing.none),
+                    modifier = Modifier.fillMaxWidth().pressScaleEffect(),
+                ) {
+                    Column(Modifier.padding(Spacing.normal), verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
+                        Text("02  Spaced practice", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text("Revisit information across separate sessions over time.")
+                    }
+                }
+                Card(
+                    shape = RoundedCornerShape(Spacing.cardCornerRadius),
+                    border = BorderStroke(Spacing.outlineWidth, MaterialTheme.colorScheme.outlineVariant),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = Spacing.none),
+                    modifier = Modifier.fillMaxWidth().pressScaleEffect(),
+                ) {
+                    Column(Modifier.padding(Spacing.normal), verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
+                        Text("03  Distinctive associations", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text("Connect a fact to a concrete, unusual mental picture.")
+                    }
+                }
+            }
+        }
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Heading("Your practice results")
+                ContextualHelpIcon(
+                    title = "Practice Results & Analytics",
+                    description = "Analytics summarize recall accuracy and mean latency broken down by recall mode (Cued, Free, Reverse, Sequence, Discrimination).",
+                )
+            }
             if (attemptHistory.isEmpty()) {
                 Text("Results will appear after your first recall attempt.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 RecallAnalytics.byMode(attemptHistory).forEach { summary ->
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text(summary.mode.label(), fontWeight = FontWeight.SemiBold)
                             Text("${summary.accuracyPercent}% · ${summary.attempts} attempts")
@@ -897,178 +985,60 @@ private fun TodayScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                Text("Success is based on recorded scores/self-ratings, not independently verified correctness.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         item {
-            Heading("Delayed-retention results")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Heading("Delayed-retention results")
+                ContextualHelpIcon(
+                    title = "Delayed Retention Checkpoints",
+                    description = "Delayed retention checkpoints measure long-term retrieval strength at 1-day, 7-day, and 30-day intervals.",
+                )
+            }
             RetentionAnalytics.byDelay(checkpoints).forEach { summary ->
-                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.micro)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("${summary.delayDays}-day checkpoint", fontWeight = FontWeight.SemiBold)
                         Text("${summary.completed}/${summary.total} completed")
                     }
                     summary.meanSelfRating?.let { mean ->
-                        Text("Mean self-rating: ${"%.1f".format(mean)}/5",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    summary.checkedAccuracyPercent?.let { percent ->
-                        Text("User-checked accuracy: $percent% (${summary.checkedAccuracyCount} rated)",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    summary.meanLatencyMs?.let { latency ->
-                        Text("Mean retrieval time: ${latency / 1000.0}s",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    if (summary.completed == 0) {
-                        Text("No completed results yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-            }
-            Text("Self-ratings and user-checked accuracy are separate measures; neither is an automated semantic evaluation.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        item {
-            Heading("How each fact is going")
-            Text("Look for facts repeatedly marked incorrect and practise those again. Faster answers alone do not prove stronger memory; correctness and delayed recall matter too.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-            val progress = MemoryProgressPlan.summarize(memories, attemptHistory)
-            if (progress.isEmpty()) {
-                Text("Each memory appears here after at least two recorded recall attempts.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            } else {
-                Text("First-versus-latest comparisons use recorded attempt labels, not automatic grading of free-text responses.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                progress.forEach { itemProgress ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(itemProgress.item.prompt, fontWeight = FontWeight.SemiBold)
-                            Text("${itemProgress.attemptCount} attempts · ${itemProgress.correctCount} marked correct")
-                            val change = when {
-                                !itemProgress.firstCorrect && itemProgress.latestCorrect -> "Improved: latest attempt marked correct"
-                                itemProgress.firstCorrect && !itemProgress.latestCorrect -> "Regressed: latest attempt marked incorrect"
-                                itemProgress.latestCorrect -> "Latest attempt marked correct"
-                                else -> "Still marked incorrect on latest attempt"
-                            }
-                            Text(change, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("Mean retrieval time: ${"%.1f".format(itemProgress.meanLatencyMs / 1000.0)} s",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+                        Text("Mean self-rating: ${"%.1f".format(mean)}/5", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
         }
         item {
-            Heading("Repeated errors")
-            val repeatedErrors = RepeatedErrorPlan.find(memories, attemptHistory)
-            if (repeatedErrors.isEmpty()) {
-                Text("No memories have two or more attempts marked incorrect yet.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            } else {
-                Text("These items have repeated recorded failures. The list uses saved attempt labels, not automatic grading of free-text answers.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                repeatedErrors.forEach { error ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                            Text(error.item.prompt, fontWeight = FontWeight.SemiBold)
-                            Text("${error.incorrectAttempts} recorded incorrect attempts",
-                                color = MaterialTheme.colorScheme.error)
-                            error.lastIncorrectResponse?.let {
-                                Text("Latest recorded response: $it",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            Button(onClick = { onStartPriority(error.item) }, modifier = Modifier.fillMaxWidth()) {
-                                Text("Practise this memory")
-                            }
-                        }
-                    }
-                }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Heading("Priority practice")
+                ContextualHelpIcon(
+                    title = "Priority Queue Logic",
+                    description = "Priority queue ranks items needing review based on low previous self-ratings, overdue review dates, and repeated incorrect attempts.",
+                )
             }
-        }
-        item {
-            Heading("Learning progress")
-            val progress = MemoryProgressPlan.summarize(memories, attemptHistory)
-            if (progress.isEmpty()) {
-                Text("Progress comparisons appear after a memory has at least two recorded attempts.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            } else {
-                progress.forEach { summary ->
-                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text(summary.item.prompt, fontWeight = FontWeight.SemiBold)
-                        val trajectory = when {
-                            !summary.firstCorrect && summary.latestCorrect -> "Improved: latest attempt marked correct"
-                            summary.firstCorrect && !summary.latestCorrect -> "Declined: latest attempt marked incorrect"
-                            summary.latestCorrect -> "Maintained: first and latest attempts marked correct"
-                            else -> "Still struggling: first and latest attempts marked incorrect"
-                        }
-                        Text(trajectory, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("${summary.correctCount}/${summary.attemptCount} marked correct · mean retrieval time ${summary.meanLatencyMs / 1000.0}s",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Button(onClick = { onStartPriority(summary.item) }, modifier = Modifier.fillMaxWidth()) {
-                            Text("Practise this memory")
-                        }
-                    }
-                }
-                Text("These trends compare saved first/latest correctness labels; they do not establish causation or independently grade answers.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-        item {
-            Heading("Recent recall history")
-            val recentAttempts = attemptHistory.sortedByDescending { it.reviewedAt }.take(10)
-            if (recentAttempts.isEmpty()) {
-                Text("Completed recall attempts will appear here.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            } else {
-                val itemById = memories.associateBy { it.id }
-                recentAttempts.forEach { attempt ->
-                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text(itemById[attempt.itemId]?.prompt ?: "Memory no longer in library",
-                            fontWeight = FontWeight.SemiBold)
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("${attempt.mode.label()} · ${if (attempt.correct) "Marked correct" else "Marked incorrect"}",
-                                color = if (attempt.correct) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
-                            Text("${attempt.latencyMs / 1000.0}s",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Text("Rating ${attempt.score}/5 · ${android.text.format.DateUtils.getRelativeTimeSpanString(attempt.reviewedAt, System.currentTimeMillis(), android.text.format.DateUtils.MINUTE_IN_MILLIS)}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        attempt.recalledResponse?.takeIf { it.isNotBlank() }?.let { response ->
-                            Text("Response: $response", style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                }
-            }
-            Text("History displays saved correctness labels and responses; it does not independently evaluate free-text answers.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        item {
-            Heading("Priority practice")
             val priorities = WeakMemoryPlan.rank(memories, attemptHistory)
             if (priorities.isEmpty()) {
                 Text("Add memory items to build a targeted practice queue.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
-                Text("Low previous ratings and overdue reviews rise to the top. Untested items are included until you have results.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
                 priorities.forEach { priority ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Card(
+                        shape = RoundedCornerShape(Spacing.cardCornerRadius),
+                        border = BorderStroke(Spacing.outlineWidth, MaterialTheme.colorScheme.outlineVariant),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = Spacing.none),
+                        modifier = Modifier.fillMaxWidth().pressScaleEffect(),
+                    ) {
+                        Column(Modifier.padding(Spacing.normal), verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
                             Text(priority.item.prompt, fontWeight = FontWeight.SemiBold)
-                            Text(priority.reason, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodySmall)
-                            Button(onClick = { onStartPriority(priority.item) }, modifier = Modifier.fillMaxWidth()) {
+                            Text(priority.reason, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                            Button(onClick = { onStartPriority(priority.item) }, modifier = Modifier.fillMaxWidth().pressScaleEffect()) {
                                 Text("Practise this memory")
                             }
                         }
@@ -1076,285 +1046,54 @@ private fun TodayScreen(
                 }
             }
         }
-        item { Heading("The system") }
-        item { PrincipleCard("01", "Encode", "Chunk facts and create distinctive associations.") }
-        item { PrincipleCard("02", "Place", "Put facts into a navigable palace, route, and locus.") }
-        item { PrincipleCard("03", "Retrieve", "Practise cues, free recall, and reverse connections.") }
-        item { PrincipleCard("04", "Verify", "Measure delayed recall, retrieval speed, and interference.") }
-        item {
-            Heading("Ordered-sequence practice")
-            val sequences = RecallSequencePlan.groups(memories)
-            if (sequences.isEmpty()) {
-                Text("Add at least two items with the same chunk label and different sequence positions to practise an ordered list.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            } else {
-                sequences.forEach { sequence ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text(sequence.label, fontWeight = FontWeight.SemiBold)
-                            Text("${sequence.items.size} ordered items", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Button(onClick = { onStartSequence(sequence) }, modifier = Modifier.fillMaxWidth()) {
-                                Text("Practise sequence")
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        item {
-            Heading("Potential memory interference")
-            val interference = MemoryInterferencePlan.find(memories)
-            if (interference.isEmpty()) {
-                Text(
-                    if (memories.size < 2) "Add more memory items to check for overlapping wording."
-                    else "No strong lexical overlaps found. This does not rule out conceptual confusion.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            } else {
-                Text("These items share important words. This is a wording-based warning, not proof that you confuse them.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                interference.forEach { pair ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text("Shared terms: ${pair.sharedTerms.joinToString(", ")}",
-                                color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
-                            Text("A · ${pair.first.prompt}", fontWeight = FontWeight.SemiBold)
-                            Text(pair.first.answer, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Surface(modifier = Modifier.fillMaxWidth().height(1.dp), color = MaterialTheme.colorScheme.outlineVariant) {}
-                            Text("B · ${pair.second.prompt}", fontWeight = FontWeight.SemiBold)
-                            Text(pair.second.answer, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("Discrimination cue: make each prompt specific and give the two facts distinct, vivid associations.",
-                                style = MaterialTheme.typography.bodySmall)
-                            Button(
-                                onClick = {
-                                    activeDrill = pair
-                                    selectedAnswerId = null
-                                    drillChecked = false
-                                    drillStartedAt = SystemClock.elapsedRealtime()
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                            ) { Text(if (activeDrill == pair) "Restart discrimination drill" else "Practise distinction") }
-                            if (activeDrill == pair) {
-                                Surface(modifier = Modifier.fillMaxWidth().height(1.dp), color = MaterialTheme.colorScheme.outlineVariant) {}
-                                Text("Which answer belongs to this cue?", fontWeight = FontWeight.SemiBold)
-                                Text(pair.first.prompt, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                TextButton(
-                                    onClick = { if (!drillChecked) selectedAnswerId = pair.first.id },
-                                    modifier = Modifier.fillMaxWidth(),
-                                ) {
-                                    Text((if (selectedAnswerId == pair.first.id) "✓ " else "") + pair.first.answer)
-                                }
-                                TextButton(
-                                    onClick = { if (!drillChecked) selectedAnswerId = pair.second.id },
-                                    modifier = Modifier.fillMaxWidth(),
-                                ) {
-                                    Text((if (selectedAnswerId == pair.second.id) "✓ " else "") + pair.second.answer)
-                                }
-                                if (!drillChecked) {
-                                    Button(
-                                        onClick = {
-                                            val isCorrect = selectedAnswerId == pair.first.id
-                                            onDiscriminationAttempt(
-                                                pair.first,
-                                                isCorrect,
-                                                (SystemClock.elapsedRealtime() - drillStartedAt).coerceAtLeast(0L),
-                                                if (selectedAnswerId == pair.first.id) pair.first.answer else pair.second.answer,
-                                            )
-                                            drillChecked = true
-                                        },
-                                        enabled = selectedAnswerId != null,
-                                        modifier = Modifier.fillMaxWidth(),
-                                    ) { Text("Check answer") }
-                                } else {
-                                    Text(
-                                        if (selectedAnswerId == pair.first.id) "Correct. The cue matches this fact."
-                                        else "Not quite. The correct answer is: ${pair.first.answer}",
-                                        color = if (selectedAnswerId == pair.first.id) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                                    )
-                                    TextButton(onClick = { activeDrill = null; selectedAnswerId = null; drillChecked = false }) {
-                                        Text("Finish drill")
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        item {
-            Heading("Retention checkpoints")
-            Text("A delayed test checks whether you can still retrieve a fact after time has passed. It is different from remembering it immediately after studying.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-            Text("When a checkpoint is due, try free recall first, reveal the stored answer, then record accuracy and effort separately.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-            val now = System.currentTimeMillis()
-            val pending = checkpoints.filter { it.completedAt == null }.sortedBy { it.dueAt }
-            val due = pending.filter { it.dueAt <= now }
-            Text(
-                if (pending.isEmpty()) "No pending checkpoints. Add memory items to create a retention schedule."
-                else "${due.size} due · ${pending.size - due.size} upcoming",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (pending.isEmpty()) {
-                Spacer(Modifier.height(6.dp))
-                Text("Checkpoints are planned for 24 hours, 7 days, and 30 days after each memory is created.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            } else {
-                pending.take(8).forEach { checkpoint ->
-                    val item = memories.firstOrNull { it.id == checkpoint.itemId }
-                    if (item != null) {
-                        Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(14.dp)) {
-                                Text("${checkpoint.delayDays}-day retention test", fontWeight = FontWeight.SemiBold)
-                                Text(item.prompt, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text(
-                                    if (checkpoint.dueAt <= now) "Due now"
-                                    else "Due ${android.text.format.DateUtils.getRelativeTimeSpanString(checkpoint.dueAt, now, android.text.format.DateUtils.MINUTE_IN_MILLIS)}",
-                                    style = MaterialTheme.typography.labelMedium,
-                                )
-                                Spacer(Modifier.height(6.dp))
-                                Button(onClick = { onStartRetention(checkpoint) }, modifier = Modifier.fillMaxWidth()) {
-                                    Text(if (checkpoint.dueAt <= now) "Start delayed test" else "Test early")
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        item {
-            Heading("Retention results")
-            val now = System.currentTimeMillis()
-            val completed = checkpoints
-                .filter { it.completedAt != null }
-                .sortedByDescending { it.completedAt }
-            if (completed.isEmpty()) {
-                Text(
-                    "Completed delayed tests will appear here. Each result keeps your written response, self-rating, and retrieval time.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(1, 7, 30).forEach { delayDays ->
-                        val group = completed.filter { it.delayDays == delayDays }
-                        val scheduled = checkpoints.count { it.delayDays == delayDays }
-                        val notTested = (scheduled - group.size).coerceAtLeast(0)
-                        val rated = group.mapNotNull { it.score }
-                        val timed = group.mapNotNull { it.latencyMs }
-                        Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text("${delayDays}-day checkpoint", fontWeight = FontWeight.SemiBold)
-                                Text("${group.size} completed · $notTested not tested")
-                                if (rated.isNotEmpty()) {
-                                    Text(
-                                        "Mean self-rating: ${"%.1f".format(rated.average())} / 5",
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                                val accuracyRatings = group.mapNotNull { it.accuracy }
-                                if (accuracyRatings.isNotEmpty()) {
-                                    val fullyCorrect = accuracyRatings.count { it == 2 }
-                                    val partiallyCorrect = accuracyRatings.count { it == 1 }
-                                    val incorrect = accuracyRatings.count { it == 0 }
-                                    val accuracyPercent = fullyCorrect * 100 / accuracyRatings.size
-                                    Text(
-                                        "Fully correct: $fullyCorrect (${accuracyPercent}%) · Partial: $partiallyCorrect · Incorrect: $incorrect (${accuracyRatings.size} checked)",
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                                if (timed.isNotEmpty()) {
-                                    Text(
-                                        "Mean retrieval time: ${"%.1f".format(timed.average() / 1000.0)} s",
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-                Spacer(Modifier.height(4.dp))
-                Text("Recent completed tests", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                completed.take(12).forEach { checkpoint ->
-                    val memory = memories.firstOrNull { it.id == checkpoint.itemId }
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                            Text("${checkpoint.delayDays}-day test", fontWeight = FontWeight.SemiBold)
-                            if (memory != null) {
-                                Text(memory.prompt)
-                                Text("Stored answer: ${memory.answer}", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            } else {
-                                Text("The original memory item is no longer available.")
-                            }
-                            val accuracyLabel = when (checkpoint.accuracy) {
-                                0 -> "Incorrect"
-                                1 -> "Partially correct"
-                                2 -> "Correct"
-                                else -> "Not checked"
-                            }
-                            Text(
-                                "Answer accuracy: $accuracyLabel · Self-rating: ${checkpoint.score?.let { "$it / 5" } ?: "not recorded"} · Retrieval time: ${checkpoint.latencyMs?.let { "${"%.1f".format(it / 1000.0)} s" } ?: "not recorded"}",
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                            Text(
-                                "Completed ${android.text.format.DateUtils.getRelativeTimeSpanString(checkpoint.completedAt!!, now, android.text.format.DateUtils.MINUTE_IN_MILLIS)}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Text(
-                                "Your response: ${checkpoint.recalledResponse?.takeIf { it.isNotBlank() } ?: "No written response"}",
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                            Text(
-                                "Compare your response with the stored answer; correctness is not scored automatically.",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-        item {
-            Heading("Recall method comparison")
-            Text(
-                "Descriptive history, not a controlled experiment. Correctness reflects saved attempt labels; ratings are self-reported.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall,
-            )
-            val summaries = RecallAnalytics.byMode(attemptHistory)
-            if (summaries.isEmpty()) {
-                Text("Complete recall sessions to compare methods.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            } else {
-                summaries.forEach { summary ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(summary.mode.name.lowercase().replaceFirstChar { it.uppercase() },
-                                fontWeight = FontWeight.SemiBold)
-                            Text("${summary.attempts} attempts · ${summary.accuracyPercent}% marked correct (${summary.correct})")
-                            Text("Mean retrieval time: ${"%.1f".format(summary.meanLatencyMs / 1000.0)} s")
-                        }
-                    }
-                }
-            }
-        }
-        item {
-            Heading("Review queue")
-            val due = memories.count { it.nextReviewAt <= System.currentTimeMillis() }
-            Text(if (memories.isEmpty()) "Your first memory unit starts the review system."
-                else "$due of ${memories.size} memory units are due now.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        item { Spacer(Modifier.height(12.dp)) }
+        item { Spacer(Modifier.height(Spacing.medium)) }
     }
 }
 
 @Composable
 private fun MetricCard(title: String, value: String, detail: String, modifier: Modifier = Modifier) {
-    Card(modifier = modifier, shape = RoundedCornerShape(18.dp)) {
-        Column(Modifier.padding(11.dp)) {
+    Card(
+        modifier = modifier.pressScaleEffect(),
+        shape = RoundedCornerShape(Spacing.cardCornerRadius),
+        border = BorderStroke(Spacing.outlineWidth, MaterialTheme.colorScheme.outlineVariant),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = Spacing.none),
+    ) {
+        Column(Modifier.padding(Spacing.medium)) {
             Text(title, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(7.dp))
+            Spacer(Modifier.height(Spacing.small))
             Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(detail, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun ProgressRingMetricCard(title: String, percentage: Int, detail: String, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.pressScaleEffect(),
+        shape = RoundedCornerShape(Spacing.cardCornerRadius),
+        border = BorderStroke(Spacing.outlineWidth, MaterialTheme.colorScheme.outlineVariant),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = Spacing.none),
+    ) {
+        Column(
+            Modifier.padding(Spacing.medium),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(title, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(Spacing.small))
+            Box(contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(
+                    progress = { percentage / 100f },
+                    modifier = Modifier.size(Spacing.progressRingSize),
+                    color = MaterialTheme.colorScheme.primary,
+                    strokeWidth = Spacing.progressRingStrokeWidth,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                )
+                Text("$percentage%", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.height(Spacing.extraSmall))
             Text(detail, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
@@ -1363,19 +1102,6 @@ private fun MetricCard(title: String, value: String, detail: String, modifier: M
 @Composable
 private fun Heading(value: String) {
     Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-}
-
-@Composable
-private fun PrincipleCard(number: String, title: String, detail: String) {
-    Card(shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(15.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text(number, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-            Column {
-                Text(title, fontWeight = FontWeight.SemiBold)
-                Text(detail, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-            }
-        }
-    }
 }
 
 private data class PalaceNodeDepth(val node: PalaceNode, val depth: Int)
@@ -1419,45 +1145,40 @@ private fun PalaceScreen(
     var deletingNode by remember { mutableStateOf<PalaceNode?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
     val flattened = remember(nodes) { flattenPalaceTree(nodes) }
+
     LazyColumn(
-        Modifier.fillMaxSize().padding(18.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        Modifier.fillMaxSize().padding(Spacing.normal),
+        verticalArrangement = Arrangement.spacedBy(Spacing.medium),
     ) {
         item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Heading("Memory palace")
-                TextButton(onClick = { addParent = null; showAddDialog = true }) { Text("+ Palace") }
-            }
-            Text(
-                "A memory palace uses a familiar place as a set of mental addresses. You imagine placing each fact at a specific spot, then mentally walk the route to retrieve it.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                shape = RoundedCornerShape(18.dp),
+            Row(
                 modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("How to make your first palace", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer)
-                    Text("1. Choose a place you know well, such as your home.\n2. Pick a consistent route through it.\n3. Choose distinct stops, such as the front door, sofa, and kitchen sink.\n4. Attach one fact to each stop with a vivid image.\n5. Mentally walk the route and try to recall each fact before checking.",
-                        color = MaterialTheme.colorScheme.onPrimaryContainer)
-                    Text("Example: imagine a giant leaf blocking your front door to cue ‘plants absorb carbon dioxide’. The image is a reminder, not proof you will remember it.",
-                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                Heading("Memory palace")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    ContextualHelpIcon(
+                        title = "Memory Palace Technique",
+                        description = "A memory palace uses a familiar physical location as mental addresses. Place each fact at a specific spot along a route and mentally walk through to retrieve it.",
+                    )
+                    TextButton(onClick = { addParent = null; showAddDialog = true }, modifier = Modifier.pressScaleEffect()) { Text("+ Palace") }
                 }
             }
-            Text("The app organises palace → area or route → specific spot. Start with one palace and a few distinct spots; you can add more structure later.",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (flattened.isEmpty()) {
             item {
-                Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(18.dp)) {
+                Card(
+                    shape = RoundedCornerShape(Spacing.cardCornerRadius),
+                    border = BorderStroke(Spacing.outlineWidth, MaterialTheme.colorScheme.outlineVariant),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = Spacing.none),
+                    modifier = Modifier.fillMaxWidth().pressScaleEffect(),
+                ) {
+                    Column(Modifier.padding(Spacing.normal)) {
                         Text("Start with a palace", fontWeight = FontWeight.SemiBold)
-                        Text("Create a familiar building, then add routes, areas, and distinct loci.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(Modifier.height(10.dp))
-                        Button(onClick = { addParent = null; showAddDialog = true }) { Text("Create first palace") }
+                        Spacer(Modifier.height(Spacing.small))
+                        Button(onClick = { addParent = null; showAddDialog = true }, modifier = Modifier.pressScaleEffect()) { Text("Create first palace") }
                     }
                 }
             }
@@ -1466,34 +1187,36 @@ private fun PalaceScreen(
             val node = entry.node
             val itemCount = memories.count { it.palaceNodeId == node.id }
             Card(
-                shape = RoundedCornerShape(18.dp),
-                modifier = Modifier.fillMaxWidth().padding(start = (entry.depth * 12).dp),
+                shape = RoundedCornerShape(Spacing.cardCornerRadius),
+                border = BorderStroke(Spacing.outlineWidth, MaterialTheme.colorScheme.outlineVariant),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = Spacing.none),
+                modifier = Modifier.fillMaxWidth().padding(start = (entry.depth * 12).dp).pressScaleEffect(),
             ) {
-                Column(Modifier.padding(14.dp)) {
-                    Text(node.kind.label.uppercase(), color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.labelSmall)
+                Column(Modifier.padding(Spacing.normal)) {
+                    Text(node.kind.label.uppercase(), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall)
                     Text(node.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Text(
                         if (itemCount == 1) "1 linked memory" else "$itemCount linked memories",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall,
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.small)) {
                         if (allowedChildKinds(node).isNotEmpty()) {
-                            TextButton(onClick = { addParent = node; showAddDialog = true }) { Text("+ Add child location") }
+                            TextButton(onClick = { addParent = node; showAddDialog = true }, modifier = Modifier.pressScaleEffect()) { Text("+ Add location") }
                         }
-                        TextButton(onClick = { renamingNode = node }) { Text("Rename") }
+                        TextButton(onClick = { renamingNode = node }, modifier = Modifier.pressScaleEffect()) { Text("Rename") }
                         if (node.kind != PalaceNodeKind.Palace) {
-                            TextButton(onClick = { movingNode = node }) { Text("Move") }
+                            TextButton(onClick = { movingNode = node }, modifier = Modifier.pressScaleEffect()) { Text("Move") }
                         }
-                        TextButton(onClick = { deletingNode = node }) { Text("Delete branch") }
+                        TextButton(onClick = { deletingNode = node }, modifier = Modifier.pressScaleEffect()) { Text("Delete") }
                     }
                 }
             }
         }
         item {
-            Spacer(Modifier.height(4.dp))
-            Button(onClick = onAddMemory, modifier = Modifier.fillMaxWidth()) {
+            Spacer(Modifier.height(Spacing.extraSmall))
+            Button(onClick = onAddMemory, modifier = Modifier.fillMaxWidth().pressScaleEffect()) {
                 Text("Add memory item")
             }
         }
@@ -1520,16 +1243,12 @@ private fun PalaceScreen(
         AlertDialog(
             onDismissRequest = { deletingNode = null },
             title = { Text("Delete ${node.kind.label.lowercase()} branch?") },
-            text = {
-                Text("This permanently removes this location and all child locations. Linked memories and their review history are kept, but their palace-location links are cleared.")
-            },
+            text = { Text("This permanently removes this location and all child locations.") },
             confirmButton = {
-                Button(onClick = {
-                    onDeleteNode(node.id) { deletingNode = null }
-                }) { Text("Delete branch") }
+                Button(onClick = { onDeleteNode(node.id) { deletingNode = null } }, modifier = Modifier.pressScaleEffect()) { Text("Delete branch") }
             },
             dismissButton = {
-                TextButton(onClick = { deletingNode = null }) { Text("Cancel") }
+                TextButton(onClick = { deletingNode = null }, modifier = Modifier.pressScaleEffect()) { Text("Cancel") }
             },
         )
     }
@@ -1567,17 +1286,17 @@ private fun MovePalaceNodeDialog(
             if (candidates.isEmpty()) {
                 Text("There are no valid parent locations for this item.")
             } else {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.extraSmall)) {
                     Text("Choose a new parent location:")
                     candidates.forEach { candidate ->
-                        TextButton(onClick = { onMove(candidate.id) }, modifier = Modifier.fillMaxWidth()) {
+                        TextButton(onClick = { onMove(candidate.id) }, modifier = Modifier.fillMaxWidth().pressScaleEffect()) {
                             Text("${candidate.kind.label}: ${candidate.name}")
                         }
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { TextButton(onClick = onDismiss, modifier = Modifier.pressScaleEffect()) { Text("Cancel") } },
     )
 }
 
@@ -1601,9 +1320,9 @@ private fun RenamePalaceNodeDialog(
             )
         },
         confirmButton = {
-            Button(onClick = { onRename(name.trim()) }, enabled = name.trim().isNotEmpty()) { Text("Save name") }
+            Button(onClick = { onRename(name.trim()) }, enabled = name.trim().isNotEmpty(), modifier = Modifier.pressScaleEffect()) { Text("Save name") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss, modifier = Modifier.pressScaleEffect()) { Text("Cancel") } },
     )
 }
 
@@ -1620,10 +1339,7 @@ private fun AddPalaceNodeDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (parent == null) "Create palace" else "Add location") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (parent != null) {
-                    Text("Parent: \${parent.name}", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -1632,22 +1348,22 @@ private fun AddPalaceNodeDialog(
                 )
                 Text("Location type", style = MaterialTheme.typography.labelLarge)
                 allowedKinds.forEach { option ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        androidx.compose.material3.RadioButton(
+                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.small)) {
+                        RadioButton(
                             selected = kind == option,
                             onClick = { kind = option },
                         )
-                        Text(option.label, modifier = Modifier.padding(top = 12.dp))
+                        Text(option.label, modifier = Modifier.padding(top = Spacing.medium))
                     }
                 }
             }
         },
         confirmButton = {
-            Button(onClick = { onCreate(name.trim(), kind) }, enabled = name.isNotBlank() && allowedKinds.isNotEmpty()) {
+            Button(onClick = { onCreate(name.trim(), kind) }, enabled = name.isNotBlank() && allowedKinds.isNotEmpty(), modifier = Modifier.pressScaleEffect()) {
                 Text("Create")
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss, modifier = Modifier.pressScaleEffect()) { Text("Cancel") } },
     )
 }
 
@@ -1671,21 +1387,31 @@ private fun RetentionTestScreen(
     var selectedAccuracy by remember(checkpoint.id) { mutableStateOf<Int?>(null) }
     var selectedEffort by remember(checkpoint.id) { mutableStateOf<Int?>(null) }
     val startedAt = remember(checkpoint.id) { SystemClock.elapsedRealtime() }
-    Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Heading("${checkpoint.delayDays}-day retention test")
-        Text(
-            "Recall first, then reveal the stored fact. Record answer accuracy separately from how easy recall felt.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+
+    Column(Modifier.fillMaxSize().padding(Spacing.large), verticalArrangement = Arrangement.spacedBy(Spacing.medium)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Heading("${checkpoint.delayDays}-day retention test")
+            ContextualHelpIcon(
+                title = "Retention Test Guide",
+                description = "First write what you remember without cues, reveal the answer, and record both accuracy and retrieval effort.",
+            )
+        }
         if (item == null) {
             Text("The linked memory item could not be found.")
         } else {
-            Card(shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("FREE RECALL · NO CUE", color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.labelLarge)
-                    Text("Write everything you can recall about this memory before checking the answer.",
-                        style = MaterialTheme.typography.bodyLarge)
+            Card(
+                shape = RoundedCornerShape(Spacing.cardCornerRadius),
+                border = BorderStroke(Spacing.outlineWidth, MaterialTheme.colorScheme.outlineVariant),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = Spacing.none),
+                modifier = Modifier.fillMaxWidth().pressScaleEffect(),
+            ) {
+                Column(Modifier.padding(Spacing.normal), verticalArrangement = Arrangement.spacedBy(Spacing.medium)) {
+                    Text("FREE RECALL · NO CUE", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
                     OutlinedTextField(
                         value = response,
                         onValueChange = { if (!revealed) response = it },
@@ -1695,37 +1421,31 @@ private fun RetentionTestScreen(
                         enabled = !revealed,
                     )
                     if (revealed) {
-                        Text("EXPECTED PROMPT", color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.labelMedium)
+                        Text("EXPECTED PROMPT", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
                         Text(item.prompt, fontWeight = FontWeight.SemiBold)
-                        Text("EXPECTED ANSWER", color = MaterialTheme.colorScheme.primary,
-                            style = MaterialTheme.typography.labelMedium)
+                        Text("EXPECTED ANSWER", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
                         Text(item.answer)
                     } else {
-                        Button(onClick = { revealed = true }, modifier = Modifier.fillMaxWidth()) {
+                        Button(onClick = { revealed = true }, modifier = Modifier.fillMaxWidth().pressScaleEffect()) {
                             Text("Reveal expected fact")
                         }
                     }
                 }
             }
             if (revealed) {
-                Text("1. Compare your response with the stored answer", fontWeight = FontWeight.SemiBold)
-                Text("This is a manual check, not AI grading. Choose the closest match.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                listOf(0 to "Incorrect", 1 to "Partially correct", 2 to "Correct")
-                    .forEach { (value, label) ->
-                        TextButton(onClick = { selectedAccuracy = value }, modifier = Modifier.fillMaxWidth()) {
-                            Text(if (selectedAccuracy == value) "✓ $label" else label)
-                        }
+                Text("1. Compare response", fontWeight = FontWeight.SemiBold)
+                listOf(0 to "Incorrect", 1 to "Partially correct", 2 to "Correct").forEach { (value, label) ->
+                    TextButton(onClick = { selectedAccuracy = value }, modifier = Modifier.fillMaxWidth().pressScaleEffect()) {
+                        Text(if (selectedAccuracy == value) "✓ $label" else label)
                     }
-                Spacer(Modifier.height(4.dp))
-                Text("2. How did retrieval feel?", fontWeight = FontWeight.SemiBold)
-                listOf(0 to "Forgot", 2 to "Difficult", 3 to "Partial", 4 to "Mostly recalled", 5 to "Fully recalled")
-                    .forEach { (score, label) ->
-                        TextButton(onClick = { selectedEffort = score }, modifier = Modifier.fillMaxWidth()) {
-                            Text(if (selectedEffort == score) "✓ $label" else label)
-                        }
+                }
+                Spacer(Modifier.height(Spacing.extraSmall))
+                Text("2. Retrieval effort", fontWeight = FontWeight.SemiBold)
+                listOf(0 to "Forgot", 2 to "Difficult", 3 to "Partial", 4 to "Mostly recalled", 5 to "Fully recalled").forEach { (score, label) ->
+                    TextButton(onClick = { selectedEffort = score }, modifier = Modifier.fillMaxWidth().pressScaleEffect()) {
+                        Text(if (selectedEffort == score) "✓ $label" else label)
                     }
+                }
                 Button(
                     onClick = {
                         onComplete(
@@ -1736,7 +1456,7 @@ private fun RetentionTestScreen(
                         )
                     },
                     enabled = selectedAccuracy != null && selectedEffort != null,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().pressScaleEffect(),
                 ) { Text("Save retention result") }
             }
         }
@@ -1753,56 +1473,63 @@ private fun SequenceRecallScreen(
     var selectedScore by remember(sequence.label, sequence.items.map { it.id }) { mutableStateOf<Int?>(null) }
     var sequenceCorrect by remember(sequence.label, sequence.items.map { it.id }) { mutableStateOf<Boolean?>(null) }
     val startedAt = remember(sequence.label, sequence.items.map { it.id }) { SystemClock.elapsedRealtime() }
-    Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Heading("Ordered recall")
+
+    Column(Modifier.fillMaxSize().padding(Spacing.large), verticalArrangement = Arrangement.spacedBy(Spacing.medium)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Heading("Ordered recall")
+            ContextualHelpIcon(
+                title = "Ordered Sequence Practice",
+                description = "Practise recalling items in explicit numbered order.",
+            )
+        }
         Text("Sequence: ${sequence.label}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        Text("Recall the items in order without looking. Include the sequence numbers if useful, then reveal and compare.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Card(shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Card(
+            shape = RoundedCornerShape(Spacing.cardCornerRadius),
+            border = BorderStroke(Spacing.outlineWidth, MaterialTheme.colorScheme.outlineVariant),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = Spacing.none),
+            modifier = Modifier.fillMaxWidth().pressScaleEffect(),
+        ) {
+            Column(Modifier.padding(Spacing.normal), verticalArrangement = Arrangement.spacedBy(Spacing.medium)) {
                 if (!revealed) {
                     OutlinedTextField(
                         value = response,
                         onValueChange = { response = it },
-                        label = { Text("Write the sequence from memory") },
+                        label = { Text("Write sequence from memory") },
                         modifier = Modifier.fillMaxWidth(),
-                        minLines = 5,
+                        minLines = 4,
                     )
-                    Button(onClick = { revealed = true }, modifier = Modifier.fillMaxWidth()) { Text("Reveal expected order") }
+                    Button(onClick = { revealed = true }, modifier = Modifier.fillMaxWidth().pressScaleEffect()) { Text("Reveal expected order") }
                 } else {
                     Text("EXPECTED ORDER", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
                     sequence.items.forEachIndexed { index, item ->
-                        Text("${item.sequenceOrder ?: index + 1}. ${item.prompt} — ${item.answer}",
-                            style = MaterialTheme.typography.bodyLarge)
-                        if (item.association.isNotBlank()) {
-                            Text("Association: ${item.association}", style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+                        Text("${item.sequenceOrder ?: index + 1}. ${item.prompt} — ${item.answer}", style = MaterialTheme.typography.bodyLarge)
                     }
                 }
             }
         }
         if (revealed) {
-            Text("After comparing, mark correctness separately from retrieval effort.", fontWeight = FontWeight.SemiBold)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                TextButton(onClick = { sequenceCorrect = false }, modifier = Modifier.weight(1f)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.small), modifier = Modifier.fillMaxWidth()) {
+                TextButton(onClick = { sequenceCorrect = false }, modifier = Modifier.weight(1f).pressScaleEffect()) {
                     Text(if (sequenceCorrect == false) "✓ Incorrect" else "Incorrect")
                 }
-                TextButton(onClick = { sequenceCorrect = true }, modifier = Modifier.weight(1f)) {
+                TextButton(onClick = { sequenceCorrect = true }, modifier = Modifier.weight(1f).pressScaleEffect()) {
                     Text(if (sequenceCorrect == true) "✓ Correct" else "Correct")
                 }
             }
-            Text("How much effort did retrieval require?", fontWeight = FontWeight.SemiBold)
-            listOf(0 to "Again", 2 to "Hard", 3 to "Got it", 5 to "Easy")
-                .forEach { (score, label) ->
-                    TextButton(onClick = { selectedScore = score }, modifier = Modifier.fillMaxWidth()) {
-                        Text(if (selectedScore == score) "✓ $label" else label)
-                    }
+            listOf(0 to "Again", 2 to "Hard", 3 to "Got it", 5 to "Easy").forEach { (score, label) ->
+                TextButton(onClick = { selectedScore = score }, modifier = Modifier.fillMaxWidth().pressScaleEffect()) {
+                    Text(if (selectedScore == score) "✓ $label" else label)
                 }
+            }
             Button(
                 onClick = { onComplete(selectedScore!!, sequenceCorrect == true, SystemClock.elapsedRealtime() - startedAt, response.trim().takeIf { it.isNotEmpty() }) },
                 enabled = selectedScore != null && sequenceCorrect != null,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().pressScaleEffect(),
             ) { Text("Save sequence result") }
         }
     }
@@ -1821,126 +1548,103 @@ private fun RecallScreen(
     var recalledResponse by remember(item?.id, mode) { mutableStateOf("") }
     var userCheckedCorrect by remember(item?.id, mode) { mutableStateOf<Boolean?>(null) }
     val recallStartedAt = remember(item?.id, mode) { SystemClock.elapsedRealtime() }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Heading("Retrieval practice")
-        Text("Your practice loop: try to remember → reveal the answer → compare honestly → record the result. Do not worry about getting everything right; mistakes show what to practise next.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("Choose a mode", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-        Text("Prompt = answer from a question. Free = recall without a cue. Reverse = see the answer and recall its question.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Spacing.large),
+        verticalArrangement = Arrangement.spacedBy(Spacing.normal),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Heading("Retrieval practice")
+            ContextualHelpIcon(
+                title = "Retrieval Practice Modes",
+                description = "Cued: Question → Answer.\nFree: Retrieve fact without seeing cue.\nReverse: Answer → Question.",
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.extraSmall), modifier = Modifier.fillMaxWidth()) {
             listOf(RecallMode.Cued, RecallMode.Free, RecallMode.Reverse).forEach { option ->
                 if (mode == option) {
-                    Button(onClick = { onModeChange(option) }, modifier = Modifier.weight(1f)) {
+                    Button(onClick = { onModeChange(option) }, modifier = Modifier.weight(1f).pressScaleEffect()) {
                         Text(option.label())
                     }
                 } else {
-                    TextButton(onClick = { onModeChange(option) }, modifier = Modifier.weight(1f)) {
+                    TextButton(onClick = { onModeChange(option) }, modifier = Modifier.weight(1f).pressScaleEffect()) {
                         Text(option.label())
                     }
                 }
             }
         }
         if (item == null) {
-            Card(shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(20.dp)) {
+            Card(
+                shape = RoundedCornerShape(Spacing.cardCornerRadius),
+                border = BorderStroke(Spacing.outlineWidth, MaterialTheme.colorScheme.outlineVariant),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = Spacing.none),
+                modifier = Modifier.fillMaxWidth().pressScaleEffect(),
+            ) {
+                Column(Modifier.padding(Spacing.normal)) {
                     Text("Nothing to practise yet", fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(8.dp))
-                    Text("Add a prompt and answer to start a recall session.")
-                    Spacer(Modifier.height(14.dp))
-                    Button(onClick = onAdd) { Text("Add memory") }
+                    Spacer(Modifier.height(Spacing.small))
+                    Button(onClick = onAdd, modifier = Modifier.pressScaleEffect()) { Text("Add memory") }
                 }
             }
         } else {
-            Card(shape = RoundedCornerShape(26.dp), modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(22.dp)) {
+            Card(
+                shape = RoundedCornerShape(Spacing.cardCornerRadius),
+                border = BorderStroke(Spacing.outlineWidth, MaterialTheme.colorScheme.outlineVariant),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = Spacing.none),
+                modifier = Modifier.fillMaxWidth().pressScaleEffect(),
+            ) {
+                Column(Modifier.padding(Spacing.normal)) {
                     if (mode != RecallMode.Free) {
                         Text(if (mode == RecallMode.Reverse) "REVERSE CUE · ANSWER" else "RECALL PROMPT",
                             color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(Spacing.medium))
                         Text(if (mode == RecallMode.Reverse) item.answer else item.prompt,
                             style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                     } else {
                         Text("FREE RECALL · NO CUE", color = MaterialTheme.colorScheme.primary,
                             style = MaterialTheme.typography.labelLarge)
-                        Spacer(Modifier.height(16.dp))
-                        Text("Retrieve the fact from memory without seeing its prompt.",
-                            style = MaterialTheme.typography.bodyLarge)
-                    }
-                    if (item.palace.isNotBlank()) {
-                        Spacer(Modifier.height(10.dp))
-                        Text("Place: ${item.palace} · ${item.locus.ifBlank { "locus not set" }}",
-                            style = MaterialTheme.typography.labelMedium)
+                        Spacer(Modifier.height(Spacing.medium))
+                        Text("Retrieve fact from memory.", style = MaterialTheme.typography.bodyLarge)
                     }
                     if (revealed) {
-                        Spacer(Modifier.height(20.dp))
+                        Spacer(Modifier.height(Spacing.normal))
                         Text(if (mode == RecallMode.Reverse) "EXPECTED PROMPT" else "ANSWER",
                             color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
-                        Spacer(Modifier.height(6.dp))
-                        if (mode == RecallMode.Reverse) {
-                            Text(item.prompt, style = MaterialTheme.typography.bodyLarge)
-                        } else if (mode == RecallMode.Free) {
-                            Text("PROMPT", color = MaterialTheme.colorScheme.primary,
-                                style = MaterialTheme.typography.labelMedium)
-                            Text(item.prompt, style = MaterialTheme.typography.bodyLarge)
-                            Spacer(Modifier.height(8.dp))
-                            Text("ANSWER", color = MaterialTheme.colorScheme.primary,
-                                style = MaterialTheme.typography.labelMedium)
-                            Text(item.answer, style = MaterialTheme.typography.bodyLarge)
-                        } else {
-                            Text(item.answer, style = MaterialTheme.typography.bodyLarge)
-                        }
+                        Spacer(Modifier.height(Spacing.small))
+                        Text(if (mode == RecallMode.Reverse) item.prompt else item.answer, style = MaterialTheme.typography.bodyLarge)
                     } else {
                         OutlinedTextField(
                             value = recalledResponse,
                             onValueChange = { recalledResponse = it },
-                            label = {
-                                Text(
-                                    when (mode) {
-                                        RecallMode.Free -> "What do you remember?"
-                                        RecallMode.Reverse -> "What is the original prompt?"
-                                        else -> "Your recalled answer"
-                                    },
-                                )
-                            },
+                            label = { Text("Recalled answer") },
                             modifier = Modifier.fillMaxWidth(),
-                            minLines = if (mode == RecallMode.Free) 3 else 1,
                         )
-                        Spacer(Modifier.height(20.dp))
-                        Button(onClick = onReveal) { Text("Reveal answer") }
+                        Spacer(Modifier.height(Spacing.normal))
+                        Button(onClick = onReveal, modifier = Modifier.pressScaleEffect()) { Text("Reveal answer") }
                     }
                 }
             }
             if (revealed) {
-                Text("Compare before you rate", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Text("Compare what you wrote with the answer above. Mark ‘Correct’ only if it matches the important fact; otherwise mark ‘Incorrect’. The app does not automatically grade your wording.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    if (userCheckedCorrect == false) {
-                        Button(onClick = { userCheckedCorrect = false }, modifier = Modifier.weight(1f)) {
-                            Text("✓ Incorrect")
-                        }
-                    } else {
-                        TextButton(onClick = { userCheckedCorrect = false }, modifier = Modifier.weight(1f)) {
-                            Text("Incorrect")
-                        }
+                Text("Compare & Rate", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.small), modifier = Modifier.fillMaxWidth()) {
+                    TextButton(onClick = { userCheckedCorrect = false }, modifier = Modifier.weight(1f).pressScaleEffect()) {
+                        Text(if (userCheckedCorrect == false) "✓ Incorrect" else "Incorrect")
                     }
-                    if (userCheckedCorrect == true) {
-                        Button(onClick = { userCheckedCorrect = true }, modifier = Modifier.weight(1f)) {
-                            Text("✓ Correct")
-                        }
-                    } else {
-                        TextButton(onClick = { userCheckedCorrect = true }, modifier = Modifier.weight(1f)) {
-                            Text("Correct")
-                        }
+                    TextButton(onClick = { userCheckedCorrect = true }, modifier = Modifier.weight(1f).pressScaleEffect()) {
+                        Text(if (userCheckedCorrect == true) "✓ Correct" else "Correct")
                     }
                 }
-                Text("How hard was it to remember?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Text("Choose how it felt, separately from whether your answer was correct. You must mark correctness first; this keeps accuracy and effort as separate records.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-                listOf(0 to "Again · forgot", 2 to "Hard · effortful", 3 to "Got it · some effort", 5 to "Easy · immediate").forEach { (score, label) ->
+                listOf(0 to "Again", 2 to "Hard", 3 to "Got it", 5 to "Easy").forEach { (score, label) ->
                     TextButton(
                         enabled = userCheckedCorrect != null,
                         onClick = { onRate(score, userCheckedCorrect == true, SystemClock.elapsedRealtime() - recallStartedAt, recalledResponse.trim().takeIf { it.isNotEmpty() }) },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().pressScaleEffect(),
                     ) { Text(label) }
                 }
             }
@@ -1949,31 +1653,56 @@ private fun RecallScreen(
 }
 
 @Composable
-private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit: (MemoryItem) -> Unit, onDelete: (MemoryItem) -> Unit, onImport: () -> Unit, onExport: () -> Unit) {
+private fun LibraryScreen(
+    memories: List<MemoryItem>,
+    onAdd: () -> Unit,
+    onEdit: (MemoryItem) -> Unit,
+    onDelete: (MemoryItem) -> Unit,
+    onImport: () -> Unit,
+    onExport: () -> Unit,
+) {
     var searchQuery by remember { mutableStateOf("") }
     var dueOnly by remember { mutableStateOf(false) }
     val now = System.currentTimeMillis()
     val filteredMemories = remember(memories, searchQuery, dueOnly, now) {
         MemoryLibraryPlan.filterAndSort(memories, searchQuery, dueOnly, now)
     }
-    Column(Modifier.fillMaxSize().padding(horizontal = 18.dp)) {
-        Spacer(Modifier.height(8.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+
+    Column(Modifier.fillMaxSize().padding(horizontal = Spacing.normal)) {
+        Spacer(Modifier.height(Spacing.small))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Heading("Memory library")
-            Row {
-                TextButton(onClick = onExport, enabled = memories.isNotEmpty()) { Text("Export TSV") }
-                TextButton(onClick = onImport) { Text("Import TSV") }
-                TextButton(onClick = onAdd) { Text("+ Add") }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ContextualHelpIcon(
+                    title = "Memory Library",
+                    description = "Browse, search, edit, import, and export all study items.",
+                )
+                IconButton(onClick = onExport, enabled = memories.isNotEmpty(), modifier = Modifier.pressScaleEffect()) {
+                    Icon(Icons.Outlined.FileDownload, contentDescription = "Export")
+                }
+                IconButton(onClick = onImport, modifier = Modifier.pressScaleEffect()) {
+                    Icon(Icons.Outlined.FileUpload, contentDescription = "Import")
+                }
+                IconButton(onClick = onAdd, modifier = Modifier.pressScaleEffect()) {
+                    Icon(Icons.Outlined.Add, contentDescription = "Add Memory")
+                }
             }
         }
         if (memories.isEmpty()) {
-            Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Your library starts with one useful question", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text("Example: ‘What gas do plants absorb?’ Answer: ‘Carbon dioxide.’ Keep the question specific so you can test yourself later.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Button(onClick = onAdd, modifier = Modifier.fillMaxWidth()) { Text("Create my first memory") }
-                    Text("Your saved facts stay on this device.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Card(
+                shape = RoundedCornerShape(Spacing.cardCornerRadius),
+                border = BorderStroke(Spacing.outlineWidth, MaterialTheme.colorScheme.outlineVariant),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = Spacing.none),
+                modifier = Modifier.fillMaxWidth().pressScaleEffect(),
+            ) {
+                Column(Modifier.padding(Spacing.normal), verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
+                    Text("Your library is empty", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Button(onClick = onAdd, modifier = Modifier.fillMaxWidth().pressScaleEffect()) { Text("Create first memory") }
                 }
             }
         } else {
@@ -1982,40 +1711,35 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
                 onValueChange = { searchQuery = it },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Search memories") },
+                leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
                 singleLine = true,
             )
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text("${filteredMemories.size} memories", style = MaterialTheme.typography.labelMedium)
-                TextButton(onClick = { dueOnly = !dueOnly }) {
+                TextButton(onClick = { dueOnly = !dueOnly }, modifier = Modifier.pressScaleEffect()) {
                     Text(if (dueOnly) "Show all" else "Due reviews only")
                 }
             }
-            if (filteredMemories.isEmpty()) {
-                Text("No memories match this search.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(Spacing.small)) {
                 items(filteredMemories, key = { it.id }) { item ->
-                    Card(shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(16.dp)) {
+                    Card(
+                        shape = RoundedCornerShape(Spacing.cardCornerRadius),
+                        border = BorderStroke(Spacing.outlineWidth, MaterialTheme.colorScheme.outlineVariant),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        elevation = CardDefaults.cardElevation(defaultElevation = Spacing.none),
+                        modifier = Modifier.fillMaxWidth().pressScaleEffect(),
+                    ) {
+                        Column(Modifier.padding(Spacing.normal)) {
                             Text(item.prompt, fontWeight = FontWeight.SemiBold)
-                            Spacer(Modifier.height(4.dp))
+                            Spacer(Modifier.height(Spacing.extraSmall))
                             Text(item.answer, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            if (item.chunkLabel.isNotBlank()) {
-                                Text("Chunk: ${item.chunkLabel}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                            }
-                            if (item.association.isNotBlank()) {
-                                Text("Association: ${item.association}", style = MaterialTheme.typography.bodySmall)
-                            }
-                            item.sequenceOrder?.let { order -> Text("Sequence position: $order", style = MaterialTheme.typography.labelSmall) }
-                            if (item.palace.isNotBlank()) {
-                                Spacer(Modifier.height(8.dp))
-                                Text("${item.palace} / ${item.locus}", style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary)
-                            }
-                            Text("Reviews: ${item.reviewCount}", style = MaterialTheme.typography.labelSmall)
-                            Row {
-                                TextButton(onClick = { onEdit(item) }) { Text("Edit memory") }
-                                TextButton(onClick = { onDelete(item) }) { Text("Delete") }
+                            Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+                                IconButton(onClick = { onEdit(item) }, modifier = Modifier.pressScaleEffect()) {
+                                    Icon(Icons.Outlined.Edit, contentDescription = "Edit")
+                                }
+                                IconButton(onClick = { onDelete(item) }, modifier = Modifier.pressScaleEffect()) {
+                                    Icon(Icons.Outlined.Delete, contentDescription = "Delete")
+                                }
                             }
                         }
                     }
@@ -2044,49 +1768,35 @@ private fun AddMemoryDialog(
     var setupStep by remember(initialItem?.id) { mutableStateOf(0) }
     val locusNodes = nodes.filter { it.kind == PalaceNodeKind.Locus }
     val selectedNodeName = locusNodes.firstOrNull { it.id == selectedNodeId }?.let { node ->
-        val parentNames = generateSequence(node) { current -> nodes.firstOrNull { it.id == current.parentId } }
+        generateSequence(node) { current -> nodes.firstOrNull { it.id == current.parentId } }
             .toList().asReversed().joinToString(" / ") { it.name }
-        parentNames
     } ?: "No locus selected"
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (initialItem == null) "Create a memory · ${setupStep + 1} of 3" else "Edit a memory · ${setupStep + 1} of 3") },
+        title = { Text(if (initialItem == null) "Create a memory · ${setupStep + 1} of 3" else "Edit memory · ${setupStep + 1} of 3") },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(Spacing.small),
             ) {
-                Text(when (setupStep) {
-                    0 -> "STEP 1 · THE FACT"
-                    1 -> "STEP 2 · MAKE IT STICK"
-                    else -> "STEP 3 · OPTIONAL EXTRAS"
-                }, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
-                Text(when (setupStep) {
-                    0 -> "Write one clear question and its answer. Keep it small enough to test yourself. Example: ‘What gas do plants absorb?’ → ‘Carbon dioxide.’"
-                    1 -> "Add a topic if it helps you group related facts. For an image, invent a vivid, unusual scene that connects to the answer. You can skip both."
-                    else -> "Only use these if they help: a position for facts you must remember in order, or a familiar place to build a memory palace."
-                }, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
                 if (setupStep == 0) {
                     OutlinedTextField(prompt, { prompt = it }, label = { Text("Question or cue") }, modifier = Modifier.fillMaxWidth())
                     OutlinedTextField(answer, { answer = it }, label = { Text("Answer") }, modifier = Modifier.fillMaxWidth())
                 }
                 if (setupStep == 1) {
                     OutlinedTextField(chunkLabel, { chunkLabel = it }, label = { Text("Topic (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(association, { association = it }, label = { Text("Unusual image or action (optional)") }, minLines = 2, modifier = Modifier.fillMaxWidth())
-                    Text("Example: picture a giant green leaf vacuuming carbon dioxide out of the air.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedTextField(association, { association = it }, label = { Text("Unusual image/action (optional)") }, minLines = 2, modifier = Modifier.fillMaxWidth())
                     val encodingCheck = EncodingQualityPlan.evaluate(prompt, answer, chunkLabel, association)
-                    Text("Preparation checklist: ${encodingCheck.score}/${encodingCheck.maxScore}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    Text("This checks whether details were added; it cannot predict or guarantee retention.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-                    encodingCheck.suggestions.forEach { suggestion -> Text("• $suggestion", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }
+                    Text("Quality score: ${encodingCheck.score}/${encodingCheck.maxScore}", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                 }
                 if (setupStep == 2) {
                     OutlinedTextField(sequenceOrderText, { value -> sequenceOrderText = value.filter(Char::isDigit).take(4) }, label = { Text("Order number (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(palace, { palace = it }, label = { Text("Familiar building (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(locus, { locus = it }, label = { Text("Specific spot in that building (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(palace, { palace = it }, label = { Text("Building (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(locus, { locus = it }, label = { Text("Spot in building (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     if (locusNodes.isNotEmpty()) {
-                        Text("Or link to a saved memory-palace spot", style = MaterialTheme.typography.labelMedium)
                         Box {
-                            TextButton(onClick = { nodeMenuExpanded = true }) { Text(selectedNodeName) }
+                            TextButton(onClick = { nodeMenuExpanded = true }, modifier = Modifier.pressScaleEffect()) { Text(selectedNodeName) }
                             DropdownMenu(expanded = nodeMenuExpanded, onDismissRequest = { nodeMenuExpanded = false }) {
                                 locusNodes.forEach { node ->
                                     val path = generateSequence(node) { current -> nodes.firstOrNull { it.id == current.parentId } }
@@ -2106,8 +1816,9 @@ private fun AddMemoryDialog(
                     else onCreate(prompt, answer, palace, locus, selectedNodeId, chunkLabel, association, sequenceOrderText.toIntOrNull()?.takeIf { it > 0 })
                 },
                 enabled = if (setupStep == 0) prompt.isNotBlank() && answer.isNotBlank() else true,
+                modifier = Modifier.pressScaleEffect(),
             ) { Text(if (setupStep < 2) "Continue" else if (initialItem == null) "Save fact" else "Save changes") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss, modifier = Modifier.pressScaleEffect()) { Text("Cancel") } },
     )
 }

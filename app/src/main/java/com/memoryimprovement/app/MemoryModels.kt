@@ -172,6 +172,43 @@ object EncodingQualityPlan {
     }
 }
 
+data class Document(
+    val id: String,
+    val title: String,
+    val fileUri: String,
+    val fileType: String,
+    val content: String,
+    val addedAt: Long = System.currentTimeMillis(),
+    val processed: Boolean = false,
+)
+
+data class MemoryChunk(
+    val id: String,
+    val documentId: String?,
+    val title: String,
+    val content: String,
+    val position: Int = 0,
+    val createdAt: Long = System.currentTimeMillis(),
+)
+
+data class RecallPrompt(
+    val id: String,
+    val chunkId: String?,
+    val prompt: String,
+    val answer: String,
+    val type: String = "CUED",
+    val createdAt: Long = System.currentTimeMillis(),
+)
+
+data class Association(
+    val id: String,
+    val promptId: String?,
+    val chunkId: String?,
+    val visualCue: String,
+    val actionCue: String,
+    val createdAt: Long = System.currentTimeMillis(),
+)
+
 data class MemoryCueConflict(
     val existing: MemoryItem,
     val similarity: Double,
