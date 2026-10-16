@@ -64,8 +64,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import java.util.UUID
 
 
@@ -382,9 +380,9 @@ private fun MemoryApp(
                     titleContentColor = MaterialTheme.colorScheme.onBackground,
                 ),
                 title = {
-                    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                        Text("MEMORY STUDIO", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, letterSpacing = 1.1.sp)
-                        Text("A quieter way to learn what lasts", style = MaterialTheme.typography.labelSmall,
+                    Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp1)) {
+                        Text("MEMORY STUDIO", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                        Text("A quieter way to learn what lasts", style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
@@ -394,7 +392,7 @@ private fun MemoryApp(
             NavigationBar(
                 containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.onSurface,
-                tonalElevation = 0.dp,
+                tonalElevation = StudioSpacing.dp0,
             ) {
                 AppTab.entries.forEach { destination ->
                     NavigationBarItem(
@@ -623,7 +621,7 @@ private fun MemoryApp(
             },
             title = { Text("Restore full backup") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
                     Text("A full backup replaces all current memories, palace locations, recall attempts, and retention checkpoints. Export a backup of your current data first if you may need it.")
                     Button(onClick = {
                         onChooseBackupFile { result ->
@@ -696,7 +694,7 @@ private fun MemoryApp(
             onDismissRequest = { bulkImportOpen = false; bulkImportError = null; bulkImportStatus = null; bulkImportPreview = null },
             title = { Text("Bulk import memories") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
                     Text("Paste tab-separated rows: prompt, answer, palace, locus, chunk, association, sequence order. The first two columns are required.")
                     OutlinedTextField(
                         value = bulkImportText,
@@ -793,14 +791,14 @@ private fun MemoryApp(
             },
             title = { Text("Review similar cues") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
                     Text("This prompt matches or closely resembles existing cues. Similar wording can make retrieval ambiguous. Review the matches before deciding.")
                     pendingCueConflicts.forEach { conflict ->
                         Card(modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                            Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Column(Modifier.padding(StudioSpacing.dp10), verticalArrangement = Arrangement.spacedBy(StudioSpacing.xs)) {
                                 Text(conflict.existing.prompt, fontWeight = FontWeight.SemiBold)
                                 Text("Answer: ${conflict.existing.answer}")
                                 Text(
@@ -827,7 +825,7 @@ private fun MemoryApp(
                 }) { Text("Save anyway") }
             },
             dismissButton = {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(StudioSpacing.xs)) {
                     TextButton(onClick = {
                         pendingCueCandidate = null
                         pendingCueConflicts = emptyList()
@@ -907,22 +905,22 @@ private fun TodayScreen(
     var drillChecked by remember { mutableStateOf(false) }
     var drillStartedAt by remember { mutableStateOf(0L) }
     LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp),
+        modifier = Modifier.fillMaxSize().padding(horizontal = StudioSpacing.screenHorizontalPhone),
+        verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp18),
     ) {
-        item { Spacer(Modifier.height(6.dp)) }
+        item { Spacer(Modifier.height(StudioSpacing.dp6)) }
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(StudioSpacing.screenHorizontalPhone),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant)
         ) {
-                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(Modifier.padding(StudioSpacing.dp18), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp10)) {
                     Text("Your data, in your hands", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                     Text("Full JSON backups include memories, palace locations, recall history, and retention checkpoints.")
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
                         Button(onClick = onExportFullBackup, modifier = Modifier.weight(1f)) { Text("Export backup") }
                         TextButton(onClick = onImportFullBackup, modifier = Modifier.weight(1f)) { Text("Restore backup") }
                     }
@@ -934,10 +932,10 @@ private fun TodayScreen(
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
                     modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(Modifier.padding(StudioSpacing.lg), verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
                         Text("Legacy data needs recovery", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onErrorContainer)
                         Text(migrationResult.errorMessage, color = MaterialTheme.colorScheme.onErrorContainer)
                         Text("The original JSON is still preserved. Export a backup before editing or replacing it.",
@@ -952,18 +950,18 @@ private fun TodayScreen(
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
-                shape = RoundedCornerShape(28.dp), modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                shape = RoundedCornerShape(StudioSpacing.dp28), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                Column(Modifier.padding(horizontal = 24.dp, vertical = 26.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(if (memories.isEmpty()) "YOUR STARTING POINT" else "YOUR NEXT PRACTICE", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.labelLarge)
-                    Spacer(Modifier.height(12.dp))
+                Column(Modifier.padding(horizontal = StudioSpacing.xl, vertical = StudioSpacing.dp26), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp2)) {
+                    Text(if (memories.isEmpty()) "YOUR STARTING POINT" else "YOUR NEXT PRACTICE", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.labelSmall)
+                    Spacer(Modifier.height(StudioSpacing.md))
                     Text(if (memories.isEmpty()) "Build a memory that lasts." else "Recall first. Review second.",
-                        color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(8.dp))
+                        color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.headlineMedium)
+                    Spacer(Modifier.height(StudioSpacing.sm))
                     Text(if (memories.isEmpty()) "Start with one useful fact. We’ll guide you through the method, one small step at a time." else "Try to retrieve the answer before revealing it. Effortful recall helps you see what you can actually remember.", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.bodyLarge)
-                    Spacer(Modifier.height(18.dp))
+                    Spacer(Modifier.height(StudioSpacing.dp18))
                     Button(onClick = if (memories.isEmpty()) onAdd else onRecall) {
                         Text(if (memories.isEmpty()) "Add a first fact" else "Practise recall")
                     }
@@ -971,16 +969,16 @@ private fun TodayScreen(
             }
         }
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp10)) {
                 Heading("Learn the essentials")
                 Text("Three useful skills. Start with the first; you do not need to know any terminology.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                    shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    shape = RoundedCornerShape(StudioSpacing.screenHorizontalPhone), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Column(Modifier.padding(StudioSpacing.lg), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp6)) {
                         Text("01  Active recall", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer)
                         Text("What it means: try to remember before looking at the answer. Example: close your notes and explain one idea in your own words.",
@@ -989,22 +987,22 @@ private fun TodayScreen(
                             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
                     }
                 }
-                Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                Card(shape = RoundedCornerShape(StudioSpacing.screenHorizontalPhone), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Column(Modifier.padding(StudioSpacing.lg), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp6)) {
                         Text("02  Spaced practice", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Text("What it means: revisit information across separate sessions instead of cramming it all at once.")
                         Text("Try this: test yourself today, then return to the same fact tomorrow. Adjust the interval based on how well you remember.",
                             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                Card(shape = RoundedCornerShape(StudioSpacing.screenHorizontalPhone), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Column(Modifier.padding(StudioSpacing.lg), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp6)) {
                         Text("03  Distinctive associations", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Text("What it means: connect a fact to a concrete, unusual image or action that gives you a retrieval cue.")
                         Text("Example: to remember that a person is a baker, imagine them juggling enormous loaves in a bakery. The stranger and more specific cue may be easier to recall.",
@@ -1014,7 +1012,7 @@ private fun TodayScreen(
             }
         }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            Row(horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm), modifier = Modifier.fillMaxWidth()) {
                 MetricCard("Stored", memories.size.toString(), "memory units", Modifier.weight(1f))
                 MetricCard("Attempts", attempts.toString(), "all recorded", Modifier.weight(1f))
                 MetricCard("Self-rated success", if (attempts == 0) "—" else "${(correct * 100) / attempts}%", "all recorded attempts", Modifier.weight(1f))
@@ -1028,7 +1026,7 @@ private fun TodayScreen(
                 Text("Results will appear after your first recall attempt.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 RecallAnalytics.byMode(attemptHistory).forEach { summary ->
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.xs)) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text(summary.mode.label(), fontWeight = FontWeight.SemiBold)
                             Text("${summary.accuracyPercent}% · ${summary.attempts} attempts")
@@ -1046,7 +1044,7 @@ private fun TodayScreen(
         item {
             Heading("Delayed-retention results")
             RetentionAnalytics.byDelay(checkpoints).forEach { summary ->
-                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp3)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("${summary.delayDays}-day checkpoint", fontWeight = FontWeight.SemiBold)
                         Text("${summary.completed}/${summary.total} completed")
@@ -1085,11 +1083,11 @@ private fun TodayScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 progress.forEach { itemProgress ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    Card(shape = RoundedCornerShape(StudioSpacing.lg), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Column(Modifier.padding(StudioSpacing.dp14), verticalArrangement = Arrangement.spacedBy(StudioSpacing.xs)) {
                             Text(itemProgress.item.prompt, fontWeight = FontWeight.SemiBold)
                             Text("${itemProgress.attemptCount} attempts · ${itemProgress.correctCount} marked correct")
                             val change = when {
@@ -1118,11 +1116,11 @@ private fun TodayScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 repeatedErrors.forEach { error ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    Card(shape = RoundedCornerShape(StudioSpacing.lg), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Column(Modifier.padding(StudioSpacing.dp14), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp5)) {
                             Text(error.item.prompt, fontWeight = FontWeight.SemiBold)
                             Text("${error.incorrectAttempts} recorded incorrect attempts",
                                 color = MaterialTheme.colorScheme.error)
@@ -1147,7 +1145,7 @@ private fun TodayScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 progress.forEach { summary ->
-                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp3)) {
                         Text(summary.item.prompt, fontWeight = FontWeight.SemiBold)
                         val trajectory = when {
                             !summary.firstCorrect && summary.latestCorrect -> "Improved: latest attempt marked correct"
@@ -1178,7 +1176,7 @@ private fun TodayScreen(
             } else {
                 val itemById = memories.associateBy { it.id }
                 recentAttempts.forEach { attempt ->
-                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp3)) {
                         Text(itemById[attempt.itemId]?.prompt ?: "Memory no longer in library",
                             fontWeight = FontWeight.SemiBold)
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -1210,11 +1208,11 @@ private fun TodayScreen(
                 Text("Low previous ratings and overdue reviews rise to the top. Untested items are included until you have results.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 priorities.forEach { priority ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    Card(shape = RoundedCornerShape(StudioSpacing.lg), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Column(Modifier.padding(StudioSpacing.dp14), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp5)) {
                             Text(priority.item.prompt, fontWeight = FontWeight.SemiBold)
                             Text(priority.reason, color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.bodyMedium)
@@ -1239,11 +1237,11 @@ private fun TodayScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 sequences.forEach { sequence ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    Card(shape = RoundedCornerShape(StudioSpacing.lg), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Column(Modifier.padding(StudioSpacing.dp14), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp6)) {
                             Text(sequence.label, fontWeight = FontWeight.SemiBold)
                             Text("${sequence.items.size} ordered items", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Button(onClick = { onStartSequence(sequence) }, modifier = Modifier.fillMaxWidth()) {
@@ -1267,16 +1265,16 @@ private fun TodayScreen(
                 Text("These items share important words. This is a wording-based warning, not proof that you confuse them.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                 interference.forEach { pair ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    Card(shape = RoundedCornerShape(StudioSpacing.lg), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Column(Modifier.padding(StudioSpacing.dp14), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp6)) {
                             Text("Shared terms: ${pair.sharedTerms.joinToString(", ")}",
                                 color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall)
                             Text("A · ${pair.first.prompt}", fontWeight = FontWeight.SemiBold)
                             Text(pair.first.answer, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Surface(modifier = Modifier.fillMaxWidth().height(1.dp), color = MaterialTheme.colorScheme.outlineVariant) {}
+                            Surface(modifier = Modifier.fillMaxWidth().height(StudioSpacing.dp1), color = MaterialTheme.colorScheme.outlineVariant) {}
                             Text("B · ${pair.second.prompt}", fontWeight = FontWeight.SemiBold)
                             Text(pair.second.answer, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text("Discrimination cue: make each prompt specific and give the two facts distinct, vivid associations.",
@@ -1291,7 +1289,7 @@ private fun TodayScreen(
                                 modifier = Modifier.fillMaxWidth(),
                             ) { Text(if (activeDrill == pair) "Restart discrimination drill" else "Practise distinction") }
                             if (activeDrill == pair) {
-                                Surface(modifier = Modifier.fillMaxWidth().height(1.dp), color = MaterialTheme.colorScheme.outlineVariant) {}
+                                Surface(modifier = Modifier.fillMaxWidth().height(StudioSpacing.dp1), color = MaterialTheme.colorScheme.outlineVariant) {}
                                 Text("Which answer belongs to this cue?", fontWeight = FontWeight.SemiBold)
                                 Text(pair.first.prompt, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 TextButton(
@@ -1352,18 +1350,18 @@ private fun TodayScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             if (pending.isEmpty()) {
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(StudioSpacing.dp6))
                 Text("Checkpoints are planned for 24 hours, 7 days, and 30 days after each memory is created.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 pending.take(8).forEach { checkpoint ->
                     val item = memories.firstOrNull { it.id == checkpoint.itemId }
                     if (item != null) {
-                        Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                        Card(shape = RoundedCornerShape(StudioSpacing.lg), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                            Column(Modifier.padding(14.dp)) {
+                            Column(Modifier.padding(StudioSpacing.dp14)) {
                                 Text("${checkpoint.delayDays}-day retention test", fontWeight = FontWeight.SemiBold)
                                 Text(item.prompt, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Text(
@@ -1371,7 +1369,7 @@ private fun TodayScreen(
                                     else "Due ${android.text.format.DateUtils.getRelativeTimeSpanString(checkpoint.dueAt, now, android.text.format.DateUtils.MINUTE_IN_MILLIS)}",
                                     style = MaterialTheme.typography.labelSmall,
                                 )
-                                Spacer(Modifier.height(6.dp))
+                                Spacer(Modifier.height(StudioSpacing.dp6))
                                 Button(onClick = { onStartRetention(checkpoint) }, modifier = Modifier.fillMaxWidth()) {
                                     Text(if (checkpoint.dueAt <= now) "Start delayed test" else "Test early")
                                 }
@@ -1393,18 +1391,18 @@ private fun TodayScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
                     listOf(1, 7, 30).forEach { delayDays ->
                         val group = completed.filter { it.delayDays == delayDays }
                         val scheduled = checkpoints.count { it.delayDays == delayDays }
                         val notTested = (scheduled - group.size).coerceAtLeast(0)
                         val rated = group.mapNotNull { it.score }
                         val timed = group.mapNotNull { it.latencyMs }
-                        Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                        Card(shape = RoundedCornerShape(StudioSpacing.lg), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Column(Modifier.padding(StudioSpacing.dp14), verticalArrangement = Arrangement.spacedBy(StudioSpacing.xs)) {
                                 Text("${delayDays}-day checkpoint", fontWeight = FontWeight.SemiBold)
                                 Text("${group.size} completed · $notTested not tested")
                                 if (rated.isNotEmpty()) {
@@ -1434,15 +1432,15 @@ private fun TodayScreen(
                         }
                     }
                 }
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(StudioSpacing.xs))
                 Text("Recent completed tests", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 completed.take(12).forEach { checkpoint ->
                     val memory = memories.firstOrNull { it.id == checkpoint.itemId }
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    Card(shape = RoundedCornerShape(StudioSpacing.lg), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Column(Modifier.padding(StudioSpacing.dp14), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp5)) {
                             Text("${checkpoint.delayDays}-day test", fontWeight = FontWeight.SemiBold)
                             if (memory != null) {
                                 Text(memory.prompt)
@@ -1491,11 +1489,11 @@ private fun TodayScreen(
                 Text("Complete recall sessions to compare methods.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 summaries.forEach { summary ->
-                    Card(shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    Card(shape = RoundedCornerShape(StudioSpacing.lg), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Column(Modifier.padding(StudioSpacing.dp14), verticalArrangement = Arrangement.spacedBy(StudioSpacing.xs)) {
                             Text(summary.mode.name.lowercase().replaceFirstChar { it.uppercase() },
                                 fontWeight = FontWeight.SemiBold)
                             Text("${summary.attempts} attempts · ${summary.accuracyPercent}% marked correct (${summary.correct})")
@@ -1512,7 +1510,7 @@ private fun TodayScreen(
                 else "$due of ${memories.size} memory units are due now.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        item { Spacer(Modifier.height(12.dp)) }
+        item { Spacer(Modifier.height(StudioSpacing.md)) }
     }
 }
 
@@ -1520,12 +1518,12 @@ private fun TodayScreen(
 private fun MetricCard(title: String, value: String, detail: String, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(StudioSpacing.dp18),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant)
         ) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        Column(Modifier.padding(StudioSpacing.dp14), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp5)) {
             Text(title, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
             Text(detail, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -1540,11 +1538,11 @@ private fun Heading(value: String) {
 
 @Composable
 private fun PrincipleCard(number: String, title: String, detail: String) {
-    Card(shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    Card(shape = RoundedCornerShape(StudioSpacing.dp18), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-        Row(Modifier.padding(15.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Row(Modifier.padding(StudioSpacing.dp15), horizontalArrangement = Arrangement.spacedBy(StudioSpacing.dp14)) {
             Text(number, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
             Column {
                 Text(title, fontWeight = FontWeight.SemiBold)
@@ -1610,12 +1608,12 @@ private fun PalaceScreen(
             )
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(StudioSpacing.dp18),
                 modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Column(Modifier.padding(StudioSpacing.lg), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp6)) {
                     Text("How to make your first palace", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer)
                     Text("1. Choose a place you know well, such as your home.\n2. Pick a consistent route through it.\n3. Choose distinct stops, such as the front door, sofa, and kitchen sink.\n4. Attach one fact to each stop with a vivid image.\n5. Mentally walk the route and try to recall each fact before checking.",
@@ -1629,15 +1627,15 @@ private fun PalaceScreen(
         }
         if (flattened.isEmpty()) {
             item {
-                Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                Card(shape = RoundedCornerShape(StudioSpacing.screenHorizontalPhone), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                    Column(Modifier.padding(18.dp)) {
+                    Column(Modifier.padding(StudioSpacing.dp18)) {
                         Text("Start with a palace", fontWeight = FontWeight.SemiBold)
                         Text("Create a familiar building, then add routes, areas, and distinct loci.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(Modifier.height(10.dp))
+                        Spacer(Modifier.height(StudioSpacing.dp10))
                         Button(onClick = { addParent = null; showAddDialog = true }) { Text("Create first palace") }
                     }
                 }
@@ -1647,21 +1645,21 @@ private fun PalaceScreen(
             val node = entry.node
             val itemCount = memories.count { it.palaceNodeId == node.id }
             Card(
-                shape = RoundedCornerShape(18.dp),
-                modifier = Modifier.fillMaxWidth().padding(start = (entry.depth * 12).dp),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                shape = RoundedCornerShape(StudioSpacing.dp18),
+                modifier = Modifier.fillMaxWidth().padding(start = (StudioSpacing.md * entry.depth)),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                Column(Modifier.padding(14.dp)) {
+                Column(Modifier.padding(StudioSpacing.dp14)) {
                     Text(node.kind.label.uppercase(), color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.labelSmall)
-                    Text(node.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(node.name, style = MaterialTheme.typography.titleMedium)
                     Text(
                         if (itemCount == 1) "1 linked memory" else "$itemCount linked memories",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
                         if (allowedChildKinds(node).isNotEmpty()) {
                             TextButton(onClick = { addParent = node; showAddDialog = true }) { Text("+ Add child location") }
                         }
@@ -1675,7 +1673,7 @@ private fun PalaceScreen(
             }
         }
         item {
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(StudioSpacing.xs))
             Button(onClick = onAddMemory, modifier = Modifier.fillMaxWidth()) {
                 Text("Add memory item")
             }
@@ -1750,7 +1748,7 @@ private fun MovePalaceNodeDialog(
             if (candidates.isEmpty()) {
                 Text("There are no valid parent locations for this item.")
             } else {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.xs)) {
                     Text("Choose a new parent location:")
                     candidates.forEach { candidate ->
                         TextButton(onClick = { onMove(candidate.id) }, modifier = Modifier.fillMaxWidth()) {
@@ -1803,7 +1801,7 @@ private fun AddPalaceNodeDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (parent == null) "Create palace" else "Add location") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
                 if (parent != null) {
                     Text("Parent: \${parent.name}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -1815,12 +1813,12 @@ private fun AddPalaceNodeDialog(
                 )
                 Text("Location type", style = MaterialTheme.typography.labelLarge)
                 allowedKinds.forEach { option ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
                         androidx.compose.material3.RadioButton(
                             selected = kind == option,
                             onClick = { kind = option },
                         )
-                        Text(option.label, modifier = Modifier.padding(top = 12.dp))
+                        Text(option.label, modifier = Modifier.padding(top = StudioSpacing.md))
                     }
                 }
             }
@@ -1854,7 +1852,7 @@ private fun RetentionTestScreen(
     var selectedAccuracy by remember(checkpoint.id) { mutableStateOf<Int?>(null) }
     var selectedEffort by remember(checkpoint.id) { mutableStateOf<Int?>(null) }
     val startedAt = remember(checkpoint.id) { SystemClock.elapsedRealtime() }
-    Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(Modifier.fillMaxSize().padding(StudioSpacing.screenHorizontalPhone), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp14)) {
         Heading("${checkpoint.delayDays}-day retention test")
         Text(
             "Recall first, then reveal the stored fact. Record answer accuracy separately from how easy recall felt.",
@@ -1863,11 +1861,11 @@ private fun RetentionTestScreen(
         if (item == null) {
             Text("The linked memory item could not be found.")
         } else {
-            Card(shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            Card(shape = RoundedCornerShape(StudioSpacing.dp22), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.padding(StudioSpacing.dp18), verticalArrangement = Arrangement.spacedBy(StudioSpacing.md)) {
                     Text("FREE RECALL · NO CUE", color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.labelLarge)
                     Text("Write everything you can recall about this memory before checking the answer.",
@@ -1904,7 +1902,7 @@ private fun RetentionTestScreen(
                             Text(if (selectedAccuracy == value) "✓ $label" else label)
                         }
                     }
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(StudioSpacing.xs))
                 Text("2. How did retrieval feel?", fontWeight = FontWeight.SemiBold)
                 listOf(0 to "Forgot", 2 to "Difficult", 3 to "Partial", 4 to "Mostly recalled", 5 to "Fully recalled")
                     .forEach { (score, label) ->
@@ -1939,16 +1937,16 @@ private fun SequenceRecallScreen(
     var selectedScore by remember(sequence.label, sequence.items.map { it.id }) { mutableStateOf<Int?>(null) }
     var sequenceCorrect by remember(sequence.label, sequence.items.map { it.id }) { mutableStateOf<Boolean?>(null) }
     val startedAt = remember(sequence.label, sequence.items.map { it.id }) { SystemClock.elapsedRealtime() }
-    Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(Modifier.fillMaxSize().padding(StudioSpacing.screenHorizontalPhone), verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp14)) {
         Heading("Ordered recall")
         Text("Sequence: ${sequence.label}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Text("Recall the items in order without looking. Include the sequence numbers if useful, then reveal and compare.",
             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Card(shape = RoundedCornerShape(22.dp), modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        Card(shape = RoundedCornerShape(StudioSpacing.dp22), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.padding(StudioSpacing.dp18), verticalArrangement = Arrangement.spacedBy(StudioSpacing.md)) {
                 if (!revealed) {
                     OutlinedTextField(
                         value = response,
@@ -1973,7 +1971,7 @@ private fun SequenceRecallScreen(
         }
         if (revealed) {
             Text("After comparing, mark correctness separately from retrieval effort.", fontWeight = FontWeight.SemiBold)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            Row(horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm), modifier = Modifier.fillMaxWidth()) {
                 TextButton(onClick = { sequenceCorrect = false }, modifier = Modifier.weight(1f)) {
                     Text(if (sequenceCorrect == false) "✓ Incorrect" else "Incorrect")
                 }
@@ -2017,7 +2015,7 @@ private fun RecallScreen(
         Text("Choose a mode", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Text("Prompt = answer from a question. Free = recall without a cue. Reverse = see the answer and recall its question.",
             color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+        Row(horizontalArrangement = Arrangement.spacedBy(StudioSpacing.dp6), modifier = Modifier.fillMaxWidth()) {
             listOf(RecallMode.Cued, RecallMode.Free, RecallMode.Reverse).forEach { option ->
                 if (mode == option) {
                     Button(onClick = { onModeChange(option) }, modifier = Modifier.weight(1f)) {
@@ -2031,54 +2029,54 @@ private fun RecallScreen(
             }
         }
         if (item == null) {
-            Card(shape = RoundedCornerShape(24.dp), modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            Card(shape = RoundedCornerShape(StudioSpacing.xl), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                Column(Modifier.padding(20.dp)) {
+                Column(Modifier.padding(StudioSpacing.screenHorizontalPhone)) {
                     Text("Your first recall session starts here", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(StudioSpacing.sm))
                     Text("Create one small question and answer in your library, then come back here to practise retrieving it.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.height(14.dp))
+                    Spacer(Modifier.height(StudioSpacing.dp14))
                     Button(onClick = onAdd) { Text("Add memory") }
                 }
             }
         } else {
-            Card(shape = RoundedCornerShape(26.dp), modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            Card(shape = RoundedCornerShape(StudioSpacing.dp26), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                Column(Modifier.padding(22.dp)) {
+                Column(Modifier.padding(StudioSpacing.dp22)) {
                     if (mode != RecallMode.Free) {
                         Text(if (mode == RecallMode.Reverse) "REVERSE CUE · ANSWER" else "RECALL PROMPT",
                             color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(StudioSpacing.lg))
                         Text(if (mode == RecallMode.Reverse) item.answer else item.prompt,
                             style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                     } else {
                         Text("FREE RECALL · NO CUE", color = MaterialTheme.colorScheme.primary,
                             style = MaterialTheme.typography.labelLarge)
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(StudioSpacing.lg))
                         Text("Retrieve the fact from memory without seeing its prompt.",
                             style = MaterialTheme.typography.bodyLarge)
                     }
                     if (item.palace.isNotBlank()) {
-                        Spacer(Modifier.height(10.dp))
+                        Spacer(Modifier.height(StudioSpacing.dp10))
                         Text("Place: ${item.palace} · ${item.locus.ifBlank { "locus not set" }}",
                             style = MaterialTheme.typography.labelSmall)
                     }
                     if (revealed) {
-                        Spacer(Modifier.height(20.dp))
+                        Spacer(Modifier.height(StudioSpacing.screenHorizontalPhone))
                         Text(if (mode == RecallMode.Reverse) "EXPECTED PROMPT" else "ANSWER",
                             color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
-                        Spacer(Modifier.height(6.dp))
+                        Spacer(Modifier.height(StudioSpacing.dp6))
                         if (mode == RecallMode.Reverse) {
                             Text(item.prompt, style = MaterialTheme.typography.bodyLarge)
                         } else if (mode == RecallMode.Free) {
                             Text("PROMPT", color = MaterialTheme.colorScheme.primary,
                                 style = MaterialTheme.typography.labelSmall)
                             Text(item.prompt, style = MaterialTheme.typography.bodyLarge)
-                            Spacer(Modifier.height(8.dp))
+                            Spacer(Modifier.height(StudioSpacing.sm))
                             Text("ANSWER", color = MaterialTheme.colorScheme.primary,
                                 style = MaterialTheme.typography.labelSmall)
                             Text(item.answer, style = MaterialTheme.typography.bodyLarge)
@@ -2101,7 +2099,7 @@ private fun RecallScreen(
                             modifier = Modifier.fillMaxWidth(),
                             minLines = if (mode == RecallMode.Free) 3 else 1,
                         )
-                        Spacer(Modifier.height(20.dp))
+                        Spacer(Modifier.height(StudioSpacing.screenHorizontalPhone))
                         Button(onClick = onReveal) { Text("Reveal answer") }
                     }
                 }
@@ -2109,7 +2107,7 @@ private fun RecallScreen(
             if (revealed) {
                 Text("Compare before you rate", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text("Compare what you wrote with the answer above. Mark ‘Correct’ only if it matches the important fact; otherwise mark ‘Incorrect’. The app does not automatically grade your wording.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                Row(horizontalArrangement = Arrangement.spacedBy(StudioSpacing.sm), modifier = Modifier.fillMaxWidth()) {
                     if (userCheckedCorrect == false) {
                         Button(onClick = { userCheckedCorrect = false }, modifier = Modifier.weight(1f)) {
                             Text("✓ Incorrect")
@@ -2152,15 +2150,15 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
         MemoryLibraryPlan.filterAndSort(memories, searchQuery, dueOnly, now)
     }
     Column(Modifier.fillMaxSize().padding(horizontal = StudioSpacing.screenHorizontal)) {
-        Spacer(Modifier.height(8.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        Spacer(Modifier.height(StudioSpacing.sm))
+        Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm), modifier = Modifier.fillMaxWidth()) {
             Heading("Your memory library")
             Text("Keep useful facts organised, then return to the ones due for review.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(StudioSpacing.dp6),
                 verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
             ) {
                 Button(onClick = onAdd, modifier = Modifier.weight(1f)) { Text("＋ Add memory") }
@@ -2169,11 +2167,11 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
             }
         }
         if (memories.isEmpty()) {
-            Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            Card(shape = RoundedCornerShape(StudioSpacing.screenHorizontalPhone), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(Modifier.padding(StudioSpacing.dp18), verticalArrangement = Arrangement.spacedBy(StudioSpacing.sm)) {
                     Text("Your library starts with one useful question", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text("Example: ‘What gas do plants absorb?’ Answer: ‘Carbon dioxide.’ Keep the question specific so you can test yourself later.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -2207,16 +2205,16 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
                     onAction = { if (dueOnly) dueOnly = false else searchQuery = "" },
                 )
             }
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp10)) {
                 items(filteredMemories, key = { it.id }) { item ->
-                    Card(shape = RoundedCornerShape(18.dp), modifier = Modifier.fillMaxWidth(),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    Card(shape = RoundedCornerShape(StudioSpacing.dp18), modifier = Modifier.fillMaxWidth(),
+            border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
-                        Column(Modifier.padding(16.dp)) {
-                            Text(item.prompt, fontWeight = FontWeight.SemiBold)
-                            Spacer(Modifier.height(4.dp))
-                            Text(item.answer, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Column(Modifier.padding(StudioSpacing.lg)) {
+                            Text(item.prompt, style = MaterialTheme.typography.titleMedium)
+                            Spacer(Modifier.height(StudioSpacing.xs))
+                            Text(item.answer, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             if (item.chunkLabel.isNotBlank()) {
                                 Text("Chunk: ${item.chunkLabel}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                             }
@@ -2225,7 +2223,7 @@ private fun LibraryScreen(memories: List<MemoryItem>, onAdd: () -> Unit, onEdit:
                             }
                             item.sequenceOrder?.let { order -> Text("Sequence position: $order", style = MaterialTheme.typography.labelSmall) }
                             if (item.palace.isNotBlank()) {
-                                Spacer(Modifier.height(8.dp))
+                                Spacer(Modifier.height(StudioSpacing.sm))
                                 Text("${item.palace} / ${item.locus}", style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.primary)
                             }
@@ -2271,7 +2269,7 @@ private fun AddMemoryDialog(
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp10),
             ) {
                 Text(when (setupStep) {
                     0 -> "STEP 1 · THE FACT"
