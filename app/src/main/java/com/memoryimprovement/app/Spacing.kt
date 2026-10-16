@@ -36,4 +36,6 @@ object StudioSpacing {
     val dp24 = 24.dp
     val dp26 = 26.dp
     val dp28 = 28.dp
+    val dp64 = 64.dp
+    val dp88 = 88.dp
 }
