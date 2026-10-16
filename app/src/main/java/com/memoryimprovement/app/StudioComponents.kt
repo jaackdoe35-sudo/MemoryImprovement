@@ -19,6 +19,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -30,9 +33,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 
-/** Standard page frame. Content padding is consumed here, exactly once. */
+/** Standard page frame with a large editorial title and shared screen gutters. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StudioScaffold(
     title: String,
@@ -43,15 +46,22 @@ fun StudioScaffold(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = StudioSpacing.screenHorizontalPhone, vertical = StudioSpacing.lg),
-        verticalArrangement = Arrangement.spacedBy(StudioSpacing.lg),
+            .background(MaterialTheme.colorScheme.background),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.headlineMedium)
-            actions()
-        }
-        content()
+        TopAppBar(
+            title = { Text(title, style = MaterialTheme.typography.headlineMedium) },
+            actions = actions,
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background,
+                titleContentColor = MaterialTheme.colorScheme.onBackground,
+            ),
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = StudioSpacing.screenHorizontal, vertical = StudioSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(StudioSpacing.lg),
+        ) { content() }
     }
 }
 
@@ -82,8 +92,8 @@ fun StudioCard(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0),
     ) {
         Column(Modifier.padding(StudioSpacing.lg)) { content() }
     }
@@ -103,14 +113,14 @@ fun EmptyState(
         verticalArrangement = Arrangement.spacedBy(StudioSpacing.md),
     ) {
         Box(
-            modifier = Modifier.size(64.dp).background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+            modifier = Modifier.size(StudioSpacing.dp64).background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = Icons.Outlined.HourglassEmpty,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(28.dp),
+                modifier = Modifier.size(StudioSpacing.dp28),
             )
         }
         Text(headline, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
@@ -132,10 +142,10 @@ fun LoadingState(modifier: Modifier = Modifier) {
     ) {
         repeat(3) {
             Surface(
-                modifier = Modifier.fillMaxWidth().height(88.dp),
+                modifier = Modifier.fillMaxWidth().height(StudioSpacing.dp88),
                 shape = MaterialTheme.shapes.medium,
                 color = MaterialTheme.colorScheme.surfaceVariant,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
             ) {}
         }
         Row(
@@ -144,8 +154,8 @@ fun LoadingState(modifier: Modifier = Modifier) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             CircularProgressIndicator(
-                modifier = Modifier.size(18.dp),
-                strokeWidth = 2.dp,
+                modifier = Modifier.size(StudioSpacing.dp18),
+                strokeWidth = StudioSpacing.dp2,
                 color = MaterialTheme.colorScheme.primary,
             )
             Spacer(Modifier.size(StudioSpacing.sm))
@@ -193,7 +203,7 @@ fun StudioBadge(label: String, modifier: Modifier = Modifier) {
         color = MaterialTheme.colorScheme.surfaceVariant,
         contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         shape = MaterialTheme.shapes.small,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Text(label, modifier = Modifier.padding(horizontal = StudioSpacing.sm, vertical = StudioSpacing.xs), style = MaterialTheme.typography.labelSmall)
     }
