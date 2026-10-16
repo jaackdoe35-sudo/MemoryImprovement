@@ -377,6 +377,7 @@ object RecallSequencePlan {
         }
         .sortedBy { it.label.lowercase() }
 }
+
 /** Pure summary model for longitudinal recall history; correctness reflects saved attempt labels. */
 data class RecallModeSummary(
     val mode: RecallMode,
@@ -429,7 +430,6 @@ object RepeatedErrorPlan {
     }
 }
 
-
 data class MemoryProgressSummary(
     val item: MemoryItem,
     val attemptCount: Int,
@@ -464,10 +464,6 @@ object MemoryProgressPlan {
     }
 }
 
-
-
-
-
 data class RecallAttempt(
     val itemId: String,
     val mode: RecallMode,
@@ -477,8 +473,6 @@ data class RecallAttempt(
     val recalledResponse: String? = null,
     val reviewedAt: Long = System.currentTimeMillis(),
 )
-
-
 
 data class RecallOutcome(val nextReviewAt: Long, val intervalDays: Int, val score: Int)
 
@@ -547,7 +541,6 @@ object RetentionAnalytics {
         )
     }
 }
-
 
 /** Transparent baseline; evaluate against measured delayed recall before claiming it is optimal. */
 data class WeakMemoryPriority(val item: MemoryItem, val priority: Int, val reason: String)
@@ -623,7 +616,6 @@ object RetentionReviewPlan {
         )
     }
 }
-
 
 /** Complete logical backup payload; timestamps and stable IDs are retained across restore. */
 data class MemoryBackupSnapshot(

@@ -109,7 +109,6 @@ class MemoryRepository(
             .apply()
     }
 
-
     suspend fun loadItemsWithMigrationStatus(): LegacyMigrationResult {
         val preferences = appContext.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
         val existing = dao.getItems()

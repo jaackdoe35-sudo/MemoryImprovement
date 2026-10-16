@@ -10,13 +10,6 @@ import com.memoryimprovement.app.theme.StudioDarkColorScheme
 import com.memoryimprovement.app.theme.StudioLightColorScheme
 import com.memoryimprovement.app.theme.StudioTypography
 
-/**
- * Memory Studio visual system.
- *
- * A quiet, editorial study workspace: warm paper surfaces, deep botanical green,
- * and restrained clay accents. Semantic colors stay centralized so light/dark
- * surfaces and component states remain coherent.
- */
 private val StudioShapes = Shapes(
     extraSmall = RoundedCornerShape(Spacing.small),
     small = RoundedCornerShape(Spacing.medium),
