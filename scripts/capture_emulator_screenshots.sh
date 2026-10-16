@@ -6,7 +6,7 @@ on_exit() {
   trap - EXIT
   if [ "$status" -ne 0 ]; then
     echo "Screenshot capture failed (exit $status). Recent Android crash/runtime logs:"
-    adb logcat -d -t 500 -v brief 2>/dev/null | grep -E 'FATAL EXCEPTION|AndroidRuntime|Process: com\\.memoryimprovement\\.app|com\\.memoryimprovement\\.app.*(Exception|Error)' | tail -n 120 || true
+    adb logcat -d -t 500 -v brief 2>/dev/null | grep -E 'FATAL EXCEPTION|AndroidRuntime|Process: com\.memoryimprovement\.app|com\.memoryimprovement\.app.*(Exception|Error)' | tail -n 120 || true
     echo "ADB state:"
     adb devices || true
     adb shell dumpsys activity activities 2>/dev/null | grep -E 'mResumedActivity|topResumedActivity' | tail -n 10 || true
@@ -47,7 +47,7 @@ tap_text() {
   local target="$1"
   local xml
   adb shell uiautomator dump /sdcard/window.xml >/dev/null
-  xml="$(adb shell cat /sdcard/window.xml | tr -d '\\r')"
+  xml="$(adb shell cat /sdcard/window.xml | tr -d '\r')"
   local bounds
   bounds="$(TARGET_TEXT="$target" UI_XML="$xml" python3 - <<'PY'
 import os
@@ -73,7 +73,7 @@ PY
   local x y
   read -r x y < <(python3 - "$bounds" <<'PY'
 import re, sys
-m = re.fullmatch(r'\\[(\\d+),(\\d+)\\]\\[(\\d+),(\\d+)\\]', sys.argv[1])
+m = re.fullmatch(r'\[(\d+),(\d+)\]\[(\d+),(\d+)\]', sys.argv[1])
 if not m:
     raise SystemExit(f"Unexpected UI bounds: {sys.argv[1]}")
 x1, y1, x2, y2 = map(int, m.groups())
@@ -158,7 +158,7 @@ for profile, expected_size in profiles.items():
             if len(data) < 1000:
                 errors.append(f"{path}: unexpectedly small ({len(data)} bytes)")
                 continue
-            if data[:8] != b"\\x89PNG\\r\\n\\x1a\\n" or data[12:16] != b"IHDR":
+            if data[:8] != b"\x89PNG\r\n\x1a\n" or data[12:16] != b"IHDR":
                 errors.append(f"{path}: invalid PNG header")
                 continue
             width, height = struct.unpack(">II", data[16:24])
