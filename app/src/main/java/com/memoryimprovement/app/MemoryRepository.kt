@@ -16,7 +16,14 @@ class MemoryRepository(
         appContext,
         MemoryDatabase::class.java,
         databaseName,
-    ).addMigrations(MemoryDatabase.MIGRATION_1_2, MemoryDatabase.MIGRATION_2_3, MemoryDatabase.MIGRATION_3_4, MemoryDatabase.MIGRATION_4_5, MemoryDatabase.MIGRATION_5_6).build()
+    ).addMigrations(
+        MemoryDatabase.MIGRATION_1_2,
+        MemoryDatabase.MIGRATION_2_3,
+        MemoryDatabase.MIGRATION_3_4,
+        MemoryDatabase.MIGRATION_4_5,
+        MemoryDatabase.MIGRATION_5_6,
+        MemoryDatabase.MIGRATION_6_7,
+    ).build()
 
     override fun close() {
         database.close()
@@ -101,7 +108,6 @@ class MemoryRepository(
             .putBoolean(LEGACY_MIGRATION_PENDING_KEY, false)
             .apply()
     }
-
 
     suspend fun loadItemsWithMigrationStatus(): LegacyMigrationResult {
         val preferences = appContext.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
