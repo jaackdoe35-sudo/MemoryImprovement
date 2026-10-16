@@ -1649,7 +1649,7 @@ private fun PalaceScreen(
             val itemCount = memories.count { it.palaceNodeId == node.id }
             Card(
                 shape = RoundedCornerShape(StudioSpacing.dp18),
-                modifier = Modifier.fillMaxWidth().padding(start = (StudioSpacing.md * entry.depth)),
+                modifier = Modifier.fillMaxWidth().padding(start = (StudioSpacing.md * entry.depth.toFloat())),
             border = BorderStroke(StudioSpacing.dp1, MaterialTheme.colorScheme.outlineVariant),
             elevation = CardDefaults.cardElevation(defaultElevation = StudioSpacing.dp0)
         ) {
