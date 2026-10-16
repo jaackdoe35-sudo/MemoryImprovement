@@ -963,15 +963,17 @@ private fun TodayScreen(
                     Spacer(Modifier.height(StudioSpacing.sm))
                     Text(if (memories.isEmpty()) "Start with one useful fact. We’ll guide you through the method, one small step at a time." else "Try to retrieve the answer before revealing it. Effortful recall helps you see what you can actually remember.", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.bodyLarge)
                     Spacer(Modifier.height(StudioSpacing.dp18))
-                    Button(onClick = if (memories.isEmpty()) onAdd else onRecall) {
-                        Text(if (memories.isEmpty()) "Add a first fact" else "Practise recall")
-                    }
+                    PrimaryAction(
+                        label = if (memories.isEmpty()) "Add a first fact" else "Practise recall",
+                        onClick = if (memories.isEmpty()) onAdd else onRecall,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             }
         }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp10)) {
-                Heading("Learn the essentials")
+                Text("Learn the essentials", style = MaterialTheme.typography.titleLarge)
                 Text("Three useful skills. Start with the first; you do not need to know any terminology.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
@@ -1020,7 +1022,7 @@ private fun TodayScreen(
             }
         }
         item {
-            Heading("Your practice results")
+            Text("Your practice results", style = MaterialTheme.typography.titleLarge)
             Text("These numbers describe your recorded practice, not a test of intelligence. A marked-correct result is self-checked; the app does not automatically judge free-text meaning.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
             if (attemptHistory.isEmpty()) {
@@ -1043,7 +1045,7 @@ private fun TodayScreen(
             }
         }
         item {
-            Heading("Delayed-retention results")
+            Text("Delayed-retention results", style = MaterialTheme.typography.titleLarge)
             RetentionAnalytics.byDelay(checkpoints).forEach { summary ->
                 Column(verticalArrangement = Arrangement.spacedBy(StudioSpacing.dp3)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -1072,7 +1074,7 @@ private fun TodayScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
-            Heading("How each fact is going")
+            Text("How each fact is going", style = MaterialTheme.typography.titleLarge)
             Text("Look for facts repeatedly marked incorrect and practise those again. Faster answers alone do not prove stronger memory; correctness and delayed recall matter too.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
             val progress = MemoryProgressPlan.summarize(memories, attemptHistory)
@@ -1107,7 +1109,7 @@ private fun TodayScreen(
             }
         }
         item {
-            Heading("Repeated errors")
+            Text("Repeated errors", style = MaterialTheme.typography.titleLarge)
             val repeatedErrors = RepeatedErrorPlan.find(memories, attemptHistory)
             if (repeatedErrors.isEmpty()) {
                 Text("No memories have two or more attempts marked incorrect yet.",
@@ -1139,7 +1141,7 @@ private fun TodayScreen(
             }
         }
         item {
-            Heading("Learning progress")
+            Text("Learning progress", style = MaterialTheme.typography.titleLarge)
             val progress = MemoryProgressPlan.summarize(memories, attemptHistory)
             if (progress.isEmpty()) {
                 Text("Progress comparisons appear after a memory has at least two recorded attempts.",
